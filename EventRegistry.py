@@ -5,10 +5,43 @@ import os, sys, urllib2, urllib, json, datetime;
 
 allLangs = ["eng", "deu", "zho", "slv", "spa"];
 
+# general class for converting dict to a native python object
+# instead of a["b"]["c"] we can write a.b.c
+class Struct(object):
+    """Comment removed"""
+    def __init__(self, data):
+        for name, value in data.iteritems():
+            setattr(self, name, self._wrap(value))
+
+    def _wrap(self, value):
+        if isinstance(value, (tuple, list, set, frozenset)): 
+            return type(value)([self._wrap(v) for v in value])
+        else:
+            return Struct(value) if isinstance(value, dict) else value
+
+# convert a list or dict to a native python object
+def createStructFromDict(data):
+    if isinstance(data, list):
+        return type(data)([createStructFromDict(v) for v in data])
+    else:
+        return Struct(data)
+
 class Query(object):
     def __init__(self):
         self.queryParams = {};
         self.resultTypeList = [];
+       
+    # set the objects property propName if the propName key exists in dict and it is not the same as default value defVal         
+    def _setQueryParamIfNotDefault(self, propName, dict, defVal):
+        val = dict.pop(propName, defVal)
+        if val != defVal:
+            self.queryParams[propName] = val
+
+    # add value value to key propName in queryParams dict - if key does not exist yet in the dict, create it first
+    def _addQueryParamArray(self, propName, value):
+        if not self.queryParams.has_key(propName):
+            self.queryParams[propName] = []
+        self.queryParams[propName].append(value)
 
     def clearRequestedResults(self):
         self.resultTypeList = [];
@@ -28,41 +61,47 @@ class RequestBase(object):
     def __init__(self):
         pass
 
+    # set the objects property propName if the dictKey key exists in dict and it is not the same as default value defVal
+    def _setPropIfNotDefault(self, propName, dict, dictKey, defVal):
+        val = dict.pop(dictKey, defVal)
+        if val != defVal:
+            self.__dict__[propName] = val
+
     # parse the info that should be returned about an event
     def _parseEventFlags(self, prefix, **kwargs):
-        self.__dict__[prefix + "IncludeArticleCounts"] = kwargs.pop("includeArticleCounts", True);
-        self.__dict__[prefix + "IncludeConcepts"] = kwargs.pop("includeConcepts", True);
-        self.__dict__[prefix + "IncludeMultiLingInfo"] = kwargs.pop("includeMultiLingInfo", True);
-        self.__dict__[prefix + "IncludeCategories"] = kwargs.pop("includeCategories", True);
-        self.__dict__[prefix + "IncludeLocation"] = kwargs.pop("includeLocation", True);
-        self.__dict__[prefix + "IncludeStories"] = kwargs.pop("includeStories", False);
-        self.__dict__[prefix + "IncludeImages"] = kwargs.pop("includeImages", False);
+        self._setPropIfNotDefault(prefix + "IncludeArticleCounts", kwargs, "includeArticleCounts", True);
+        self._setPropIfNotDefault(prefix + "IncludeConcepts", kwargs, "includeConcepts", True);
+        self._setPropIfNotDefault(prefix + "IncludeMultiLingInfo", kwargs, "includeMultiLingInfo", True);
+        self._setPropIfNotDefault(prefix + "IncludeCategories", kwargs, "includeCategories", True);
+        self._setPropIfNotDefault(prefix + "IncludeLocation", kwargs, "includeLocation", True);
+        self._setPropIfNotDefault(prefix + "IncludeStories", kwargs, "includeStories", False);
+        self._setPropIfNotDefault(prefix + "IncludeImages", kwargs, "includeImages", False);
     
     # parse the info that should be returned about an article    
     def _parseArticleFlags(self, prefix, **kwargs):
-        self.__dict__[prefix + "IncludeBasicInfo"] = kwargs.pop("includeBasicInfo", True);
-        self.__dict__[prefix + "IncludeBody"] = kwargs.pop("includeBody", True);
-        self.__dict__[prefix + "IncludeTitle"] = kwargs.pop("includeTitle", True);
-        self.__dict__[prefix + "IncludeConcepts"] = kwargs.pop("includeConcepts", False);
-        self.__dict__[prefix + "IncludeSourceInfo"] = kwargs.pop("includeSourceInfo", True);
-        self.__dict__[prefix + "IncludeEventUri"] = kwargs.pop("includeEventUri", True);
-        self.__dict__[prefix + "IncludeStoryUri"] = kwargs.pop("includeStoryUri", False);
-        self.__dict__[prefix + "IncludeDuplicateList"] = kwargs.pop("includeDuplicateList", False);
-        self.__dict__[prefix + "IncludeCategories"] = kwargs.pop("includeCategories", False);
-        self.__dict__[prefix + "IncludeLocation"] = kwargs.pop("includeLocation", False);
-        self.__dict__[prefix + "IncludeImage"] = kwargs.pop("includeImage", False);
+        self._setPropIfNotDefault(prefix + "IncludeBasicInfo", kwargs, "includeBasicInfo", True);
+        self._setPropIfNotDefault(prefix + "IncludeBody", kwargs, "includeBody", True);
+        self._setPropIfNotDefault(prefix + "IncludeTitle", kwargs, "includeTitle", True);
+        self._setPropIfNotDefault(prefix + "IncludeConcepts", kwargs, "includeConcepts", False);
+        self._setPropIfNotDefault(prefix + "IncludeSourceInfo", kwargs, "includeSourceInfo", True);
+        self._setPropIfNotDefault(prefix + "IncludeEventUri", kwargs, "includeEventUri", True);
+        self._setPropIfNotDefault(prefix + "IncludeStoryUri", kwargs, "includeStoryUri", False);
+        self._setPropIfNotDefault(prefix + "IncludeDuplicateList", kwargs, "includeDuplicateList", False);
+        self._setPropIfNotDefault(prefix + "IncludeCategories", kwargs, "includeCategories", False);
+        self._setPropIfNotDefault(prefix + "IncludeLocation", kwargs, "includeLocation", False);
+        self._setPropIfNotDefault(prefix + "IncludeImage", kwargs, "includeImage", False);
 
     # parse the info that should be returned about a story
     def _parseStoryFlags(self, prefix, **kwargs):
-        self.__dict__[prefix + "IncludeBasicStats"] = kwargs.pop("includeBasicStats", True);
-        self.__dict__[prefix + "IncludeCategory"] = kwargs.pop("includeCategory", True);
-        self.__dict__[prefix + "IncludeLocation"] = kwargs.pop("includeLocation", True);
-        self.__dict__[prefix + "IncludeStoryDate"] = kwargs.pop("includeStoryDate", True);
-        self.__dict__[prefix + "IncludeConcepts"] = kwargs.pop("includeConcepts", False);
-        self.__dict__[prefix + "IncludeTitle"] = kwargs.pop("includeTitle", False);
-        self.__dict__[prefix + "IncludeSummary"] = kwargs.pop("includeSummary", False);
-        self.__dict__[prefix + "IncludeMedoidArticle"] = kwargs.pop("includeMedoidArticle", False);
-        self.__dict__[prefix + "IncludeExtractedDates"] = kwargs.pop("includeExtractedDates", False);
+        self._setPropIfNotDefault(prefix + "IncludeBasicStats", kwargs, "includeBasicStats", True);
+        self._setPropIfNotDefault(prefix + "IncludeCategory", kwargs, "includeCategory", True);
+        self._setPropIfNotDefault(prefix + "IncludeLocation", kwargs, "includeLocation", True);
+        self._setPropIfNotDefault(prefix + "IncludeStoryDate", kwargs, "includeStoryDate", True);
+        self._setPropIfNotDefault(prefix + "IncludeConcepts", kwargs, "includeConcepts", False);
+        self._setPropIfNotDefault(prefix + "IncludeTitle", kwargs, "includeTitle", False);
+        self._setPropIfNotDefault(prefix + "IncludeSummary", kwargs, "includeSummary", False);
+        self._setPropIfNotDefault(prefix + "IncludeMedoidArticle", kwargs, "includeMedoidArticle", False);
+        self._setPropIfNotDefault(prefix + "IncludeExtractedDates", kwargs, "includeExtractedDates", False);
 
 # query class for searching for events in the event registry 
 class QueryEvents(Query):
@@ -71,15 +110,15 @@ class QueryEvents(Query):
         
         self.queryParams["action"] = "getEvents";
 
-        self.queryParams["keywords"] = kwargs.pop("keywords", "");          # e.g. "bla bla"
-        self.queryParams["conceptUri"] = kwargs.pop("conceptUri", []);      # e.g. ["http://en.wikipedia.org/wiki/Barack_Obama"]
-        self.queryParams["lang"] = kwargs.pop("lang", []);                  # eng, deu, spa, zho, slv
-        self.queryParams["publisherUri"] = kwargs.pop("publisherUri", []);    # ["www.bbc.co.uk"]
-        self.queryParams["locationUri"] = kwargs.pop("locationUri", []);    # ["http://en.wikipedia.org/wiki/Ljubljana"]
-        self.queryParams["categoryUri"] = kwargs.pop("categoryUri", []);    # ["http://www.dmoz.org/Science/Astronomy"]
-        self.queryParams["categoryIncludeSub"] = kwargs.pop("categoryIncludeSub", True);
-        self.queryParams["dateStart"] = kwargs.pop("dateStart", "");    # 2014-05-02
-        self.queryParams["dateEnd"] = kwargs.pop("dateEnd", "");        # 2014-05-02
+        self._setQueryParamIfNotDefault("keywords", kwargs, "");          # e.g. "bla bla"
+        self._setQueryParamIfNotDefault("conceptUri", kwargs, []);      # e.g. ["http://en.wikipedia.org/wiki/Barack_Obama"]
+        self._setQueryParamIfNotDefault("lang", kwargs, []);                  # eng, deu, spa, zho, slv
+        self._setQueryParamIfNotDefault("publisherUri", kwargs, []);    # ["www.bbc.co.uk"]
+        self._setQueryParamIfNotDefault("locationUri", kwargs, []);    # ["http://en.wikipedia.org/wiki/Ljubljana"]
+        self._setQueryParamIfNotDefault("categoryUri", kwargs, []);    # ["http://www.dmoz.org/Science/Astronomy"]
+        self._setQueryParamIfNotDefault("categoryIncludeSub", kwargs, True);
+        self._setQueryParamIfNotDefault("dateStart", kwargs, "");    # 2014-05-02
+        self._setQueryParamIfNotDefault("dateEnd", kwargs, "");        # 2014-05-02
         if kwargs.has_key("minArticlesInEvent"):
             self.queryParams["minArticlesInEvent"] = kwargs["minArticlesInEvent"];
         if kwargs.has_key("maxArticlesInEvent"):
@@ -89,34 +128,34 @@ class QueryEvents(Query):
         if kwargs.has_key("dateMentionEnd"):
             self.queryParams["dateMentionEnd"] = kwargs["dateMentionEnd"];      # 2014-05-02
 
-        self.queryParams["ignoreKeywords"] = kwargs.pop("ignoreKeywords", "");
-        self.queryParams["ignoreConceptUri"] = kwargs.pop("ignoreConceptUri", []);
-        self.queryParams["ignoreLang"] = kwargs.pop("ignoreLang", []);
-        self.queryParams["ignoreLocationUri"] = kwargs.pop("ignoreLocationUri", []);
-        self.queryParams["ignorePublisherUri"] = kwargs.pop("ignorePublisherUri", []);
-        self.queryParams["ignoreCategoryUri"] = kwargs.pop("ignoreCategoryUri", []);
-        self.queryParams["ignoreCategoryIncludeSub"] = kwargs.pop("ignoreCategoryIncludeSub", True);
+        self._setQueryParamIfNotDefault("ignoreKeywords", kwargs, "");
+        self._setQueryParamIfNotDefault("ignoreConceptUri", kwargs, []);
+        self._setQueryParamIfNotDefault("ignoreLang", kwargs, []);
+        self._setQueryParamIfNotDefault("ignoreLocationUri", kwargs, []);
+        self._setQueryParamIfNotDefault("ignorePublisherUri", kwargs, []);
+        self._setQueryParamIfNotDefault("ignoreCategoryUri", kwargs, []);
+        self._setQueryParamIfNotDefault("ignoreCategoryIncludeSub", kwargs, True);
 
-        self.queryParams["eventUriList"] = kwargs.pop("eventUriList", "");      # e.g. "1,3,54,65,234"  - Note: if eventUriList is specified, other conditions are ignored!
+        self._setQueryParamIfNotDefault("eventUriList", kwargs, "");      # e.g. "1,3,54,65,234"  - Note: if eventUriList is specified, other conditions are ignored!
         
 
     def _getPath(self):
         return "/json/event";
 
     def addConcept(self, conceptUri):
-        self.queryParams["conceptUri"].append(conceptUri);
+        self._addQueryParamArray("conceptUri", conceptUri);
 
     def addLocation(self, locationUri):
-        self.queryParams["locationUri"].append(locationUri);
+        self._addQueryParamArray("locationUri", locationUri);
         
     def addCategory(self, categoryUri):
-        self.queryParams["categoryUri"].append(categoryUri)
+        self._addQueryParamArray("categoryUri", categoryUri)
 
     def addNewsSource(self, newsSourceUri):
-        self.queryParams["publisherUri"].append(newsSourceUri)
+        self._addQueryParamArray("publisherUri", newsSourceUri)
 
     def addKeyword(self, keyword):
-        self.queryParams["keywords"] = self.queryParams["keywords"] + " " + keyword;
+        self.queryParams["keywords"] = self.queryParams.pop("keywords", "") + " " + keyword;
 
     # set a custom list of event uris. the results will be then computed on this list - no query will be done
     def setEventUriList(self, uriList):
@@ -171,40 +210,41 @@ class QueryArticles(Query):
     def __init__(self,  **kwargs):
         super(QueryArticles, self).__init__();
         self.queryParams["action"] = "getArticles";
-        self.queryParams["keywords"] = kwargs.pop("keywords", "");          # e.g. "bla bla"
-        self.queryParams["conceptUri"] = kwargs.pop("conceptUri", []);      # a single concept uri or a list (e.g. ["http://en.wikipedia.org/wiki/Barack_Obama"])
-        self.queryParams["lang"] = kwargs.pop("lang", []);                  # a single lang or list (possible: eng, deu, spa, zho, slv)
-        self.queryParams["publisherUri"] = kwargs.pop("publisherUri", []);    # a single source uri or a list (e.g. ["www.bbc.co.uk"])
-        self.queryParams["locationUri"] = kwargs.pop("locationUri", []);    # a single location uri or a list (e.g. ["http://en.wikipedia.org/wiki/Ljubljana"])
-        self.queryParams["categoryUri"] = kwargs.pop("categoryUri", []);    # a single category uri or a list (e.g. ["http://www.dmoz.org/Science/Astronomy"])
-        self.queryParams["categoryIncludeSub"] = kwargs.pop("categoryIncludeSub", True);    # also include the subcategories for the given categories
-        self.queryParams["dateStart"] = kwargs.pop("dateStart", "");                # starting date of the published articles (e.g. 2014-05-02)
-        self.queryParams["dateEnd"] = kwargs.pop("dateEnd", "");                    # ending date of the published articles (e.g. 2014-05-02)
-        self.queryParams["dateMentionStart"] = kwargs.pop("dateMentionStart", "");  # first valid mentioned date detected in articles (e.g. 2014-05-02)
-        self.queryParams["dateMentionEnd"] = kwargs.pop("dateMentionEnd", "");      # last valid mentioned date detected in articles (e.g. 2014-05-02)
 
-        self.queryParams["ignoreKeywords"] = kwargs.pop("ignoreKeywords", "");
-        self.queryParams["ignoreConceptUri"] = kwargs.pop("ignoreConceptUri", []);
-        self.queryParams["ignoreLang"] = kwargs.pop("ignoreLang", []);
-        self.queryParams["ignoreLocationUri"] = kwargs.pop("ignoreLocationUri", []);
-        self.queryParams["ignorePublisherUri"] = kwargs.pop("ignorePublisherUri", []);
-        self.queryParams["ignoreCategoryUri"] = kwargs.pop("ignoreCategoryUri", []);
-        self.queryParams["ignoreCategoryIncludeSub"] = kwargs.pop("ignoreCategoryIncludeSub", True);
+        self._setQueryParamIfNotDefault("keywords", kwargs, "");          # e.g. "bla bla"
+        self._setQueryParamIfNotDefault("conceptUri", kwargs, []);      # a single concept uri or a list (e.g. ["http://en.wikipedia.org/wiki/Barack_Obama"])
+        self._setQueryParamIfNotDefault("lang", kwargs, []);                  # a single lang or list (possible: eng, deu, spa, zho, slv)
+        self._setQueryParamIfNotDefault("publisherUri", kwargs, []);    # a single source uri or a list (e.g. ["www.bbc.co.uk"])
+        self._setQueryParamIfNotDefault("locationUri", kwargs, []);    # a single location uri or a list (e.g. ["http://en.wikipedia.org/wiki/Ljubljana"])
+        self._setQueryParamIfNotDefault("categoryUri", kwargs, []);    # a single category uri or a list (e.g. ["http://www.dmoz.org/Science/Astronomy"])
+        self._setQueryParamIfNotDefault("categoryIncludeSub", kwargs, True);    # also include the subcategories for the given categories
+        self._setQueryParamIfNotDefault("dateStart", kwargs, "");                # starting date of the published articles (e.g. 2014-05-02)
+        self._setQueryParamIfNotDefault("dateEnd", kwargs, "");                    # ending date of the published articles (e.g. 2014-05-02)
+        self._setQueryParamIfNotDefault("dateMentionStart", kwargs, "");  # first valid mentioned date detected in articles (e.g. 2014-05-02)
+        self._setQueryParamIfNotDefault("dateMentionEnd", kwargs, "");      # last valid mentioned date detected in articles (e.g. 2014-05-02)
+
+        self._setQueryParamIfNotDefault("ignoreKeywords", kwargs, "");
+        self._setQueryParamIfNotDefault("ignoreConceptUri", kwargs, []);
+        self._setQueryParamIfNotDefault("ignoreLang", kwargs, []);
+        self._setQueryParamIfNotDefault("ignoreLocationUri", kwargs, []);
+        self._setQueryParamIfNotDefault("ignorePublisherUri", kwargs, []);
+        self._setQueryParamIfNotDefault("ignoreCategoryUri", kwargs, []);
+        self._setQueryParamIfNotDefault("ignoreCategoryIncludeSub", kwargs, True);
         
     def _getPath(self):
         return "/json/article";
     
     def addConcept(self, conceptUri):
-        self.queryParams["conceptUri"].append(conceptUri);
+        self._addQueryParamArray("conceptUri", conceptUri);
 
     def addLocation(self, locationUri):
-        self.queryParams["locationUri"].append(locationUri);
+        self._addQueryParamArray("locationUri", locationUri);
 
     def addCategory(self, categoryUri):
-        self.queryParams["categoryUri"].append(categoryUri)
+        self._addQueryParamArray("categoryUri", categoryUri)
 
     def addKeyword(self, keyword):
-        self.queryParams["keywords"] = self.queryParams["keywords"] + " " + keyword;
+        self.queryParams["keywords"] = self.queryParams.pop("keywords", "") + " " + keyword;
 
     # set a custom list of event uris. the results will be then computed on this list - no query will be done
     def setEventUriList(self, uriList):
@@ -660,8 +700,8 @@ class RequestArticlesTrendingConcepts(RequestArticles):
         self.trendingConceptsConceptLang = conceptLang
         self.resultType = "trendingConcepts"
 
-# get trending of concepts in the resulting articles
-class RequestArticlesTrendingConcepts(RequestArticles):
+# get mentioned dates in the articles
+class RequestArticlesDateMentionAggr(RequestArticles):
     def __init__(self):
         self.resultType = "dateMentionAggr"
 
@@ -679,9 +719,13 @@ class RequestArticlesRecentActivity(RequestArticles):
 
 # object that can access event registry 
 class EventRegistry(object):
-    def __init__(self, host = "http://beta.eventregistry.org"):
+    def __init__(self, host = "http://beta.eventregistry.org", logging = False):
         self.Host = host
         self._lastException = None
+        self._logRequests = logging;
+
+    def setLogging(val):
+        self._logRequests = val;
 
     def getLastException(self):
         return self._lastException;
@@ -690,6 +734,9 @@ class EventRegistry(object):
         self._lastException = None;
         try:
             params = urllib.urlencode(paramDict, True)
+            if self._logRequests:
+                with open("requests_log.txt", "a") as log:
+                    log.write(self.Host + methodUrl + "?" + params + "\n")
             req = urllib2.Request(self.Host + methodUrl + "?" + params)
             respInfo = urllib2.urlopen(req).read()
             respInfo = json.loads(respInfo)
@@ -703,6 +750,9 @@ class EventRegistry(object):
         self._lastException = None;
         try:
             params = query._encode()
+            if self._logRequests:
+                with open("requests_log.txt", "a") as log:
+                    log.write(self.Host + query._getPath() + "?" + params + "\n")
             req = urllib2.Request(self.Host + query._getPath() + "?" + params)
             respInfo = urllib2.urlopen(req).read()
             if convertToDict:
@@ -785,16 +835,18 @@ class EventRegistry(object):
 if __name__ == '__main__':
     fileDir = os.path.dirname(os.path.realpath(__file__))
     os.chdir(fileDir)
-    er = EventRegistry(host = "http://beta.eventregistry.org")
+    #er = EventRegistry("http://eventregistry.org", logging = True)
+    er = EventRegistry(host = "http://beta.eventregistry.org", logging = True)
+    #er = EventRegistry(host = "http://babaji.ijs.si:8090", logging = True)
     #er = EventRegistry(host = "http://localhost:8090")
 
     q = QueryEvents()
     q.addConcept(er.getConceptUri("Obama"))                 # get events related to obama
-    q.addCategory(er.getCategoryUri("society issues"))      # and are related to issues in society
-    q.addNewsSource(er.getNewsSourceUri("bbc"))             # and have been reported by BBC
+    #q.addCategory(er.getCategoryUri("society issues"))      # and are related to issues in society
+    #q.addNewsSource(er.getNewsSourceUri("bbc"))             # and have been reported by BBC
     q.addRequestedResult(RequestEventsUriList())            # return uris of all events
-    q.addRequestedResult(RequestEventsInfo(page = 0, count = 30))   # return event details for first 30 events
-    q.addRequestedResult(RequestEventsConceptAggr())        # compute concept aggregate on the events
+    q.addRequestedResult(RequestEventsInfo(page = 0, count = 30, sortBy = "size", sortByAsc = True, conceptLang = "deu", conceptTypes = "person"))   # return event details for first 30 events
+    q.addRequestedResult(RequestEventsConceptAggr(conceptCount = 5, conceptTypes = ["org", "loc"]))        # compute concept aggregate on the events
     res = er.execQuery(q)
 
     q = QueryEvents();
@@ -806,7 +858,7 @@ if __name__ == '__main__':
     res = er.execQuery(q)
 
     # get info about event with uri "123"
-    q = QueryEvent("123");
+    q = QueryEvent("997019");
     q.addRequestedResult(RequestEventInfo(["eng", "spa", "slv"]))
     q.addRequestedResult(RequestEventArticles(0, 10))        # get 10 articles about the event (any language is ok) that are closest to the center of the event
     q.addRequestedResult(RequestEventArticleTrend())
@@ -814,25 +866,46 @@ if __name__ == '__main__':
     eventRes = er.execQuery(q);
 
     if (eventRes.has_key("articles") and len(eventRes["articles"]) > 0):
-        articleUris = [art["uri"] for art in eventRes["articles"]["results"][:2]]  # take only first two articles
+        articleUris = [art["uri"] for art in eventRes["articles"]["results"][:5]]  # take only first two articles
         # query info about specific articles
         qa = QueryArticle(articleUris);
         qa.addRequestedResult(RequestArticleInfo())                 # get all info about the specified article
-        qa.addRequestedResult(RequestArticleDuplicatedArticles())   # get info about duplicated articles for the specified two articles
+        #qa.addRequestedResult(RequestArticleDuplicatedArticles())   # get info about duplicated articles for the specified two articles
         articleRes = er.execQuery(qa);
             
+    q = QueryArticle("http://www.kentucky.com/2014/07/17/3340248/official-malaysian-plane-shot.html");
+    q.addRequestedResult(RequestArticleInfo())                 # get all info about the specified article
+    res = er.execQuery(q);
+
     q = QueryArticles();
     q.setDateLimit(datetime.date(2014, 4, 16), datetime.date(2014, 4, 28))
-    q.addKeyword("apple")
-    q.addKeyword("iphone")
-    q.addRequestedResult(RequestArticlesInfo(page=0, count = 30));
+    #q.addKeyword("apple")
+    #q.addKeyword("iphone")
+    q.addConcept(er.getConceptUri("Apple"));
+    q.addRequestedResult(RequestArticlesInfo(page=0, count = 30, includeDuplicateList = True, includeConcepts = True, includeCategories = True, includeLocation = True, includeImage = True));
     res = er.execQuery(q)
+
+    obj = createStructFromDict(res);
+    uris = [article.uri for article in obj.articles.results[:5]]
+    q = QueryArticle(uris, includeConcepts = True, includeCategories = True, includeLocation = True)
+    q.addRequestedResult(RequestArticleInfo())
+    q.addRequestedResult(RequestArticleOriginalArticle())
+    q.addRequestedResult(RequestArticleDuplicatedArticles())
+    res = er.execQuery(q);
+    obj = createStructFromDict(res)
 
     # recent activity
     q = QueryEvents()
     q.addConcept(er.getConceptUri("Obama"))
     q.addRequestedResult(RequestEventsRecentActivity())     # get most recently updated events related to obama
     res = er.execQuery(q)
+    obj = createStructFromDict(res)
+
+    # let's say now that a minute has passed
+    q.clearRequestedResults()
+    q.addRequestedResult(RequestEventsRecentActivity(lastEventActivityId = obj.recentActivity.events.lastActivityId))
+    res = er.execQuery(q)
+    obj2 = createStructFromDict(res)
 
     q = QueryArticles()
     q.addConcept(er.getConceptUri("Obama"))
@@ -843,5 +916,3 @@ if __name__ == '__main__':
     recentArticles = er.getRecentArticles()
 
     print er.getRecentStats()
-
-    #print res;
