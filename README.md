@@ -1,4 +1,4 @@
-Accessing Event Registry through Python
+Accessing Event Registry data through Python
 =====================
 
 This library contains classes that allow one to easily access the event and article information from Event Registry ([http://eventregistry.org](http://eventregistry.org "http://eventregistry.org")).
@@ -109,7 +109,7 @@ In this case we specify the time limit to include only articles between 16th and
 The last example shows the use of the `QueryArticle` class. 
 
 ```python
-uri = “http://www.bbc.com/news/technology-29139533”
+uri = "http://www.bbc.com/news/technology-29139533"
 q = QueryArticle(uri);						# get info about article from specified URL
 q.addRequestedResult(RequestArticleInfo())	# return available info about the article
 q.addRequestedResult(RequestArticleDuplicatedArticles())	# get information about articles that are duplicates of this article
