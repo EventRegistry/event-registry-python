@@ -636,10 +636,15 @@ class RequestArticlesInfo(RequestArticles):
                 
         self.resultType = "articles"
         
-# return a list of event uris
+# return a list of article uris
 class RequestArticlesUriList(RequestArticles):
     def __init__(self):
         self.resultType = "uriList"
+
+# return a list of article ids
+class RequestArticlesIdList(RequestArticles):
+    def __init__(self):
+        self.resultType = "articleIds"
 
 # get time distribution of resulting articles
 class RequestArticlesTimeAggr(RequestArticles):
@@ -719,7 +724,7 @@ class RequestArticlesRecentActivity(RequestArticles):
 
 # object that can access event registry 
 class EventRegistry(object):
-    def __init__(self, host = "http://beta.eventregistry.org", logging = False):
+    def __init__(self, host = "http://eventregistry.org", logging = False):
         self.Host = host
         self._lastException = None
         self._logRequests = logging;
