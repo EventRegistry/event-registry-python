@@ -1,6 +1,6 @@
 from EventRegistry import *
 
-er = EventRegistry(host = "http://beta.eventregistry.org", logging = True)
+er = EventRegistry(host = "http://eventregistry.org", logging = True)
 
 q = QueryEvents()
 q.addConcept(er.getConceptUri("Obama"))                 # get events related to obama

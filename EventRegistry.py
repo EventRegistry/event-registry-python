@@ -90,6 +90,7 @@ class RequestBase(object):
         self._setPropIfNotDefault(prefix + "IncludeCategories", kwargs, "includeCategories", False);
         self._setPropIfNotDefault(prefix + "IncludeLocation", kwargs, "includeLocation", False);
         self._setPropIfNotDefault(prefix + "IncludeImage", kwargs, "includeImage", False);
+        self._setPropIfNotDefault(prefix + "IncludeExtractedDates", kwargs, "includeExtractedDates", False);
 
     # parse the info that should be returned about a story
     def _parseStoryFlags(self, prefix, **kwargs):
@@ -135,8 +136,6 @@ class QueryEvents(Query):
         self._setQueryParamIfNotDefault("ignorePublisherUri", kwargs, []);
         self._setQueryParamIfNotDefault("ignoreCategoryUri", kwargs, []);
         self._setQueryParamIfNotDefault("ignoreCategoryIncludeSub", kwargs, True);
-
-        self._setQueryParamIfNotDefault("eventUriList", kwargs, "");      # e.g. "1,3,54,65,234"  - Note: if eventUriList is specified, other conditions are ignored!
         
 
     def _getPath(self):
@@ -159,7 +158,7 @@ class QueryEvents(Query):
 
     # set a custom list of event uris. the results will be then computed on this list - no query will be done
     def setEventUriList(self, uriList):
-        self.queryParams = { "eventUriList": uriList };
+        self.queryParams = { "action": "getEvents", "eventUriList": ",".join(uriList) };
 
     def setDateLimit(self, startDate, endDate):
         if isinstance(startDate, datetime.date):
@@ -246,10 +245,6 @@ class QueryArticles(Query):
     def addKeyword(self, keyword):
         self.queryParams["keywords"] = self.queryParams.pop("keywords", "") + " " + keyword;
 
-    # set a custom list of event uris. the results will be then computed on this list - no query will be done
-    def setEventUriList(self, uriList):
-        self.queryParams = { "eventUriList": uriList };
-
     def setDateLimit(self, startDate, endDate):
         if isinstance(startDate, datetime.date):
             self.queryParams["dateStart"] = startDate.isoformat()
@@ -293,6 +288,11 @@ class QueryArticles(Query):
         if not isinstance(requestArticles, RequestArticles):
             raise AssertionError("QueryArticles class can only accept result requests that are of type RequestArticles");
         self.resultTypeList.append(requestArticles);
+
+    # set a custom list of article ids. the results will be then computed on this list - no query will be done
+    def setArticleIdList(self, idList):
+        self.queryParams = { "action": "getArticles", "articleIdList": ",".join(idList)};
+
                
 
 # class for finding all available info for one or more articles in the event registry 
@@ -787,27 +787,27 @@ class EventRegistry(object):
     # return a concept uri that is the best match for the given concept label
     def getConceptUri(self, conceptLabel, lang = "eng"):
         matches = self.suggestConcepts(conceptLabel, lang = lang)
-        if len(matches) > 0 and matches[0].has_key("uri"):
+        if matches != None and len(matches) > 0 and matches[0].has_key("uri"):
             return matches[0]["uri"]
         return None
 
     # return a location uri that is the best match for the given location label
     def getLocationUri(self, locationLabel, lang = "eng"):
         matches = self.suggestLocations(locationLabel, lang = lang);
-        if len(matches) > 0 and matches[0].has_key("wikiUri"):
+        if matches != None and len(matches) > 0 and matches[0].has_key("wikiUri"):
             return matches[0]["wikiUri"]
         return None;
 
     # return a category uri that is the best match for the given label
     def getCategoryUri(self, categoryLabel):
         matches = self.suggestCategories(categoryLabel);
-        if len(matches) > 0 and matches[0].has_key("uri"):
+        if matches != None and len(matches) > 0 and matches[0].has_key("uri"):
             return matches[0]["uri"]
         return None;
 
     def getNewsSourceUri(self, sourceName):
         matches = self.suggestNewsSources(sourceName);
-        if len(matches) > 0 and matches[0].has_key("uri"):
+        if matches != None and len(matches) > 0 and matches[0].has_key("uri"):
             return matches[0]["uri"]
         return None;
 
