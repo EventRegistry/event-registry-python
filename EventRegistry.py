@@ -46,8 +46,12 @@ class Query(object):
     def clearRequestedResults(self):
         self.resultTypeList = [];
 
-    def _encode(self):
+    # encode the request. if the username and pass are also provided then add also them to the request parameters
+    def _encode(self, erUsername = None, erPassword = None):
         self._updateQueryParamsWithResultTypes();
+        if erUsername != None and erPassword != None:
+            self.queryParams["erUsername"] = erUsername;
+            self.queryParams["erPassword"] = erPassword;
         return urllib.urlencode(self.queryParams, True);
 
     def _updateQueryParamsWithResultTypes(self):
@@ -87,10 +91,13 @@ class RequestBase(object):
         self._setPropIfNotDefault(prefix + "IncludeEventUri", kwargs, "includeEventUri", True);
         self._setPropIfNotDefault(prefix + "IncludeStoryUri", kwargs, "includeStoryUri", False);
         self._setPropIfNotDefault(prefix + "IncludeDuplicateList", kwargs, "includeDuplicateList", False);
+        self._setPropIfNotDefault(prefix + "IncludeOriginalArticleInfo", kwargs, "includeOriginalArticleInfo", False);
         self._setPropIfNotDefault(prefix + "IncludeCategories", kwargs, "includeCategories", False);
         self._setPropIfNotDefault(prefix + "IncludeLocation", kwargs, "includeLocation", False);
         self._setPropIfNotDefault(prefix + "IncludeImage", kwargs, "includeImage", False);
         self._setPropIfNotDefault(prefix + "IncludeExtractedDates", kwargs, "includeExtractedDates", False);
+        self._setPropIfNotDefault(prefix + "IncludeNewsfeedId", kwargs, "includeNewsfeedId", False);
+        
 
     # parse the info that should be returned about a story
     def _parseStoryFlags(self, prefix, **kwargs):
@@ -297,7 +304,7 @@ class QueryArticles(Query):
 
 # class for finding all available info for one or more articles in the event registry 
 class QueryArticle(Query):
-    def __init__(self, articleUriOrList, **kwargs):
+    def __init__(self, articleUriOrList):
         super(QueryArticle, self).__init__();
         self.queryParams["articleUri"] = articleUriOrList;      # a single article uri or a list of article uris
         self.queryParams["action"] = "getArticle";
@@ -727,16 +734,33 @@ class EventRegistry(object):
     def __init__(self, host = "http://eventregistry.org", logging = False):
         self.Host = host
         self._lastException = None
-        self._logRequests = logging;
+        self._logRequests = logging
+        self._erUsername = None
+        self._erPassword = None
 
     def setLogging(val):
-        self._logRequests = val;
+        self._logRequests = val
 
     def getLastException(self):
-        return self._lastException;
+        return self._lastException
+
+    # login the user. without logging in, the user is limited to 10.000 queries per day. 
+    # if you have a registered account, the number of allowed requests per day can be higher, depending on your subscription plan
+    def login(self, username, password):
+        self._erUsername = username
+        self._erPassword = password
+        req = urllib2.Request(self.Host + "/login", urllib.urlencode({ "email": username, "pass": password }))
+        respInfo = urllib2.urlopen(req).read()
+        respInfo = json.loads(respInfo);
+        return respInfo;
 
     def _jsonRequest(self, methodUrl, paramDict):
-        self._lastException = None;
+        self._lastException = None
+        # add user credentials if specified
+        if self._erUsername != None and self._erPassword != None:
+            paramDict["erUsername"] = self._erUsername
+            paramDict["erPassword"] = self._erPassword
+        
         try:
             params = urllib.urlencode(paramDict, True)
             if self._logRequests:
@@ -754,7 +778,7 @@ class EventRegistry(object):
     def execQuery(self, query, convertToDict = True):
         self._lastException = None;
         try:
-            params = query._encode()
+            params = query._encode(self._erUsername, self._erPassword)
             if self._logRequests:
                 with open("requests_log.txt", "a") as log:
                     log.write(self.Host + query._getPath() + "?" + params + "\n")
