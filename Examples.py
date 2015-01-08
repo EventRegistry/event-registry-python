@@ -10,6 +10,7 @@ q.addRequestedResult(RequestEventsUriList())            # return uris of all eve
 q.addRequestedResult(RequestEventsInfo(page = 0, count = 30, sortBy = "size", sortByAsc = True, conceptLang = "deu", conceptTypes = "person"))   # return event details for first 30 events
 q.addRequestedResult(RequestEventsConceptAggr(conceptCount = 5, conceptTypes = ["org", "loc"]))        # compute concept aggregate on the events
 res = er.execQuery(q)
+obj = createStructFromDict(res)
 
 q = QueryEvents();
 q.addLocation(er.getLocationUri("Berlin"))
@@ -76,5 +77,11 @@ res = er.execQuery(q)
 
 recentEvents = er.getRecentEvents()
 recentArticles = er.getRecentArticles()
+
+q = QueryArticles();
+q.addConcept("topic-page-3")
+q.setDateLimit("2014-09-20", "2014-09-29")
+q.addRequestedResult(RequestArticlesInfo(page=0, count=10));
+res = er.execQuery(q);
 
 print er.getRecentStats()
