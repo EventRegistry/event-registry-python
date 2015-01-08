@@ -349,7 +349,7 @@ class RequestEventArticles(RequestEvent):
         self.articlesConceptLang = conceptLang      # in which language should be the labels of concepts in the articles
         self.articlesConceptType = conceptTypes     # which types of concepts to return for each article
 
-        self._parseArticleFlags("article", **kwargs);
+        self._parseArticleFlags("articles", **kwargs);
         self.resultType = "articles"
 
 # return a list of article uris
@@ -793,8 +793,9 @@ class EventRegistry(object):
 
     # return a list of concepts that contain the given prefix
     # valid sources: concepts, entities, person, loc, org, wiki
-    def suggestConcepts(self, prefix, sources = ["concepts"], lang = "eng", labelLang = "eng", page = 0, count = 20):      
-        return self._jsonRequest("/json/suggestConcepts", { "prefix": prefix, "source": sources, "lang": lang, "labelLang": labelLang, "page": page, "count": count })
+    # fullLocInfo determines if you wish to see as label "city, country" or just "city"
+    def suggestConcepts(self, prefix, sources = ["concepts"], lang = "eng", labelLang = "eng", page = 0, count = 20, fullLocInfo = False):      
+        return self._jsonRequest("/json/suggestConcepts", { "prefix": prefix, "source": sources, "lang": lang, "labelLang": labelLang, "page": page, "count": count, "fullLocInfo": fullLocInfo })
         
     # return a list of news sources that match the prefix
     def suggestNewsSources(self, prefix, page = 0, count = 20):
@@ -817,9 +818,9 @@ class EventRegistry(object):
 
     # return a location uri that is the best match for the given location label
     def getLocationUri(self, locationLabel, lang = "eng"):
-        matches = self.suggestLocations(locationLabel, lang = lang);
-        if matches != None and len(matches) > 0 and matches[0].has_key("wikiUri"):
-            return matches[0]["wikiUri"]
+        matches = self.suggestConcepts(locationLabel, sources = ["loc"], lang = lang, fullLocInfo = True);
+        if matches != None and len(matches) > 0 and matches[0].has_key("uri"):
+            return matches[0]["uri"]
         return None;
 
     # return a category uri that is the best match for the given label
