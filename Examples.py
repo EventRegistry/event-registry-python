@@ -20,6 +20,11 @@ q.addRequestedResult(RequestEventsCategoryAggr())
 q.addRequestedResult(RequestEventsInfo())
 res = er.execQuery(q)
 
+q = QueryEvents();
+q.addConcept(er.getConceptUri("Obama"))                 # get events related to obama
+q.addRequestedResult(RequestEventsConceptGraph(200, linkCount = 500, eventsSampleSize = 2000))
+res = er.execQuery(q)
+
 # get info about event with uri "123"
 q = QueryEvent("997019");
 q.addRequestedResult(RequestEventInfo(["eng", "spa", "slv"]))
@@ -36,7 +41,7 @@ if (eventRes.has_key("articles") and len(eventRes["articles"]) > 0):
     #qa.addRequestedResult(RequestArticleDuplicatedArticles())   # get info about duplicated articles for the specified two articles
     articleRes = er.execQuery(qa);
             
-q = QueryArticle("http://www.kentucky.com/2014/07/17/3340248/official-malaysian-plane-shot.html");
+q = QueryArticle("247634888");
 q.addRequestedResult(RequestArticleInfo())                 # get all info about the specified article
 res = er.execQuery(q);
 
@@ -50,8 +55,8 @@ res = er.execQuery(q)
 
 obj = createStructFromDict(res);
 uris = [article.uri for article in obj.articles.results[:5]]
-q = QueryArticle(uris, includeConcepts = True, includeCategories = True, includeLocation = True)
-q.addRequestedResult(RequestArticleInfo())
+q = QueryArticle(uris)
+q.addRequestedResult(RequestArticleInfo(includeConcepts = True, includeCategories = True, includeLocation = True))
 q.addRequestedResult(RequestArticleOriginalArticle())
 q.addRequestedResult(RequestArticleDuplicatedArticles())
 res = er.execQuery(q);
