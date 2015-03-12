@@ -41,9 +41,16 @@ if (eventRes.has_key("articles") and len(eventRes["articles"]) > 0):
     #qa.addRequestedResult(RequestArticleDuplicatedArticles())   # get info about duplicated articles for the specified two articles
     articleRes = er.execQuery(qa);
             
+# search article by uri
 q = QueryArticle("247634888");
 q.addRequestedResult(RequestArticleInfo())                 # get all info about the specified article
 res = er.execQuery(q);
+
+# search article by url
+q = QueryArticle.queryByUrl("http://www.bbc.co.uk/news/world-europe-31763789#sa-ns_mchannel%3Drss%26ns_source%3DPublicRSS20-sa");
+q.addRequestedResult(RequestArticleInfo())                 # get all info about the specified article
+res = er.execQuery(q);
+
 
 q = QueryArticles();
 q.setDateLimit(datetime.date(2014, 4, 16), datetime.date(2014, 4, 28))

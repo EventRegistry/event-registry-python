@@ -1,12 +1,18 @@
 """
 classes responsible for obtaining results from the Event Registry
 """
-import os, sys, urllib2, urllib, json, datetime, time;
+import os, sys, urllib2, urllib, json, datetime, time, re;
 from cookielib import CookieJar
 
 mainLangs = ["eng", "deu", "zho", "slv", "spa"]
 allLangs = [ "eng", "deu", "spa", "cat", "por", "ita", "fra", "rus", "ara", "tur", "zho", "slv", "hrv", "srp" ]
 conceptTypes = ["loc", "person", "org", "keyword", "wiki", "concept-class", "topic-page"]
+
+
+invalidCharRe = re.compile(r"[\x00-\x08]|\x0b|\x0c|\x0e|\x0f|[\x10-\x19]|[\x1a-\x1f]", re.IGNORECASE)
+def removeInvalidChars(text):
+    return invalidCharRe.sub("", text);
+
 
 # general class for converting dict to a native python object
 # instead of a["b"]["c"] we can write a.b.c
@@ -45,11 +51,15 @@ class AdminRequest(object):
     def _setProp(self, propName, val):
         if isinstance(val, unicode):
             val = val.encode("utf8")
+        if isinstance(val, str):
+            val = removeInvalidChars(val)
         self.queryParams[propName] = val
 
     def _addArrayVal(self, propName, val):
         if isinstance(val, unicode):
             val = val.encode("utf8")
+        if isinstance(val, str):
+            val = removeInvalidChars(val)
         if not self.queryParams.has_key(propName):
             self.queryParams[propName] = []
         self.queryParams[propName].append(val);
@@ -333,11 +343,23 @@ class QueryArticles(Query):
 
 # class for finding all available info for one or more articles in the event registry 
 class QueryArticle(Query):
-    def __init__(self, articleUriOrList):
+    def __init__(self, articleUriOrUriList):
         super(QueryArticle, self).__init__();
-        self.queryParams["articleUri"] = articleUriOrList;      # a single article uri or a list of article uris
+        self.queryParams["articleUri"] = articleUriOrUriList;      # a single article uri or a list of article uris
         self.queryParams["action"] = "getArticle";
-                
+       
+    @staticmethod
+    def queryById(articleIdOrIdList):
+        q = QueryArticle([])
+        q.queryParams["articleId"] = articleIdOrIdList
+        return q
+
+    @staticmethod
+    def queryByUrl(articleUrlOrUrlList):
+        q = QueryArticle([])
+        q.queryParams["articleUrl"] = articleUrlOrUrlList
+        return q
+
     def _getPath(self):
         return "/json/article";   
 
@@ -928,6 +950,10 @@ class EventRegistry(object):
     # return a list of dmoz categories that contain the prefix
     def suggestCategories(self, prefix, page = 0, count = 20):
         return self.jsonRequest("/json/suggestCategories", { "prefix": prefix, "page": page, "count": count })
+
+    # return a list of dmoz categories that contain the prefix
+    def suggestConceptClasses(self, prefix, lang = "eng", labelLang = "eng", page = 0, count = 20):
+        return self.jsonRequest("/json/suggestConceptClasses", { "prefix": prefix, "lang": lang, "labelLang": labelLang, "page": page, "count": count })
         
     # return a concept uri that is the best match for the given concept label
     def getConceptUri(self, conceptLabel, lang = "eng"):
@@ -956,7 +982,14 @@ class EventRegistry(object):
         if matches != None and len(matches) > 0 and matches[0].has_key("uri"):
             return matches[0]["uri"]
         return None;
-        
+    
+    # return a uri of the concept class that is the best match for the given label
+    def getConceptClass(self, classLabel, lang = "eng"):
+        matches = self.suggestConceptClasses(classLabel, lang = lang)
+        if matches != None and len(matches) > 0 and matches[0].has_key("uri"):
+            return matches[0]["uri"]
+        return None    
+
     ### return info about recently modified events
     # maxEventCount determines the maximum number of events to return in a single call (max 250)
     # maxMinsBack sets how much in the history are we interested to look
