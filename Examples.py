@@ -15,7 +15,7 @@ obj = createStructFromDict(res)
 q = QueryEvents();
 q.addLocation(er.getLocationUri("Berlin"))
 q.setDateLimit(datetime.date(2014, 4, 16), datetime.date(2014, 4, 28))
-q.addRequestedResult(RequestEventsTrendingConcepts(40, conceptTypes=["person"]))
+q.addRequestedResult(RequestEventsConceptTrends(40, conceptTypes=["person"]))
 q.addRequestedResult(RequestEventsCategoryAggr())
 q.addRequestedResult(RequestEventsInfo())
 res = er.execQuery(q)
@@ -96,4 +96,11 @@ q.setDateLimit("2014-09-20", "2014-09-29")
 q.addRequestedResult(RequestArticlesInfo(page=0, count=10));
 res = er.execQuery(q);
 
+# obtain in one call information about events with uris 234, 212 and 423
+q = QueryEvent([234, 212, 423]);
+q.addRequestedResult(RequestEventArticles(0,200))
+res = er.execQuery(q)
+obj = createStructFromDict(res)
+
 print er.getRecentStats()
+

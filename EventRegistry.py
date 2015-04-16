@@ -14,10 +14,11 @@ def removeInvalidChars(text):
     return invalidCharRe.sub("", text);
 
 
-# general class for converting dict to a native python object
-# instead of a["b"]["c"] we can write a.b.c
 class Struct(object):
-    """Comment removed"""
+    """
+    general class for converting dict to a native python object
+    instead of a["b"]["c"] we can write a.b.c
+    """
     def __init__(self, data):
         for name, value in data.iteritems():
             setattr(self, name, self._wrap(value))
@@ -28,43 +29,14 @@ class Struct(object):
         else:
             return Struct(value) if isinstance(value, dict) else value
 
-# convert a list or dict to a native python object
 def createStructFromDict(data):
+    """
+    method to convert a list or dict to a native python object
+    """
     if isinstance(data, list):
         return type(data)([createStructFromDict(v) for v in data])
     else:
         return Struct(data)
-
-# base class for admin requests
-class AdminRequest(object):
-    def __init__(self):
-        self.queryParams = {};
-
-    # encode the request. if the username and pass are also provided then add also them to the request parameters
-    def _encode(self, erUsername = None, erPassword = None):
-        if erUsername != None and erPassword != None:
-            self.queryParams["erUsername"] = erUsername;
-            self.queryParams["erPassword"] = erPassword;
-        return urllib.urlencode(self.queryParams, True);
-
-    # general way to set a propery
-    def _setProp(self, propName, val):
-        if isinstance(val, unicode):
-            val = val.encode("utf8")
-        if isinstance(val, str):
-            val = removeInvalidChars(val)
-        self.queryParams[propName] = val
-
-    def _addArrayVal(self, propName, val):
-        if isinstance(val, unicode):
-            val = val.encode("utf8")
-        if isinstance(val, str):
-            val = removeInvalidChars(val)
-        if not self.queryParams.has_key(propName):
-            self.queryParams[propName] = []
-        self.queryParams[propName].append(val);
-    
-
 
 class Query(object):
     def __init__(self):
@@ -101,6 +73,7 @@ class Query(object):
             self.queryParams.update(request.__dict__);
         self.queryParams["resultType"] = [request.__dict__["resultType"] for request in self.resultTypeList];
 
+
 class RequestBase(object):
     def __init__(self, **kwargs):
         self.__dict__.update(**kwargs)
@@ -110,45 +83,64 @@ class RequestBase(object):
         val = dict.pop(dictKey, defVal)
         if val != defVal:
             self.__dict__[propName] = val
-
-    # parse the info that should be returned about an event
-    def _parseEventFlags(self, prefix, **kwargs):
-        self._setPropIfNotDefault(prefix + "IncludeArticleCounts", kwargs, "includeArticleCounts", True);
-        self._setPropIfNotDefault(prefix + "IncludeConcepts", kwargs, "includeConcepts", True);
-        self._setPropIfNotDefault(prefix + "IncludeMultiLingInfo", kwargs, "includeMultiLingInfo", True);
-        self._setPropIfNotDefault(prefix + "IncludeCategories", kwargs, "includeCategories", True);
-        self._setPropIfNotDefault(prefix + "IncludeLocation", kwargs, "includeLocation", True);
-        self._setPropIfNotDefault(prefix + "IncludeStories", kwargs, "includeStories", False);
-        self._setPropIfNotDefault(prefix + "IncludeImages", kwargs, "includeImages", False);
     
     # parse the info that should be returned about an article    
     def _parseArticleFlags(self, prefix, **kwargs):
-        self._setPropIfNotDefault(prefix + "IncludeBasicInfo", kwargs, "includeBasicInfo", True);
-        self._setPropIfNotDefault(prefix + "IncludeBody", kwargs, "includeBody", True);
-        self._setPropIfNotDefault(prefix + "IncludeTitle", kwargs, "includeTitle", True);
-        self._setPropIfNotDefault(prefix + "IncludeConcepts", kwargs, "includeConcepts", False);
-        self._setPropIfNotDefault(prefix + "IncludeSourceInfo", kwargs, "includeSourceInfo", True);
-        self._setPropIfNotDefault(prefix + "IncludeEventUri", kwargs, "includeEventUri", True);
-        self._setPropIfNotDefault(prefix + "IncludeStoryUri", kwargs, "includeStoryUri", False);
-        self._setPropIfNotDefault(prefix + "IncludeDuplicateList", kwargs, "includeDuplicateList", False);
-        self._setPropIfNotDefault(prefix + "IncludeOriginalArticleInfo", kwargs, "includeOriginalArticleInfo", False);
-        self._setPropIfNotDefault(prefix + "IncludeCategories", kwargs, "includeCategories", False);
-        self._setPropIfNotDefault(prefix + "IncludeLocation", kwargs, "includeLocation", False);
-        self._setPropIfNotDefault(prefix + "IncludeImage", kwargs, "includeImage", False);
-        self._setPropIfNotDefault(prefix + "IncludeExtractedDates", kwargs, "includeExtractedDates", False);
-        self._setPropIfNotDefault(prefix + "IncludeNewsfeedId", kwargs, "includeNewsfeedId", False);        
+        self._setPropIfNotDefault(prefix + "IncludeArticleBasicInfo", kwargs, "includeArticleBasicInfo", True);
+        self._setPropIfNotDefault(prefix + "IncludeArticleBody", kwargs, "includeArticleBody", True);
+        self._setPropIfNotDefault(prefix + "IncludeArticleTitle", kwargs, "includeArticleTitle", True);
+        self._setPropIfNotDefault(prefix + "IncludeArticleConcepts", kwargs, "includeArticleConcepts", False);
+        self._setPropIfNotDefault(prefix + "IncludeArticleSourceInfo", kwargs, "includeArticleSourceInfo", True);
+        self._setPropIfNotDefault(prefix + "IncludeArticleEventUri", kwargs, "includeArticleEventUri", True);
+        self._setPropIfNotDefault(prefix + "IncludeArticleStoryUri", kwargs, "includeArticleStoryUri", False);
+        self._setPropIfNotDefault(prefix + "IncludeArticleDuplicateList", kwargs, "includeArticleDuplicateList", False);
+        self._setPropIfNotDefault(prefix + "IncludeArticleOriginalArticleInfo", kwargs, "includeArticleOriginalArticleInfo", False);
+        self._setPropIfNotDefault(prefix + "IncludeArticleCategories", kwargs, "includeArticleCategories", False);
+        self._setPropIfNotDefault(prefix + "IncludeArticleLocation", kwargs, "includeArticleLocation", False);
+        self._setPropIfNotDefault(prefix + "IncludeArticleImage", kwargs, "includeArticleImage", False);
+        self._setPropIfNotDefault(prefix + "IncludeArticleExtractedDates", kwargs, "includeArticleExtractedDates", False);
+        self._setPropIfNotDefault(prefix + "IncludeArticleDetails", kwargs, "includeArticleDetails", False);
 
+    # parse the info that should be returned about the concepts
+    def _parseConceptFlags(self, prefix, **kwargs):
+        self._setPropIfNotDefault(prefix + "IncludeConceptImage", kwargs, "includeConceptImage", False);
+        self._setPropIfNotDefault(prefix + "IncludeConceptDescription", kwargs, "includeConceptDescription", False);
+        self._setPropIfNotDefault(prefix + "IncludeConceptTrends", kwargs, "includeConceptTrends", False);
+        self._setPropIfNotDefault(prefix + "IncludeConceptLocationInfo", kwargs, "includeConceptLocationInfo", False);
+        self._setPropIfNotDefault(prefix + "IncludeConceptDetails", kwargs, "includeConceptDetails", False);
+        
+    # parse the info that should be returned about a news source    
+    def _parseSourceFlags(self, prefix, **kwargs):
+        self._setPropIfNotDefault(prefix + "IncludeSourceTitle", kwargs, "includeSourceTitle", True);
+        self._setPropIfNotDefault(prefix + "IncludeSourceDescription", kwargs, "includeSourceDescription", False);
+        self._setPropIfNotDefault(prefix + "IncludeSourceTags", kwargs, "includeSourceTags", False);
+        self._setPropIfNotDefault(prefix + "IncludeSourceLocation", kwargs, "includeSourceLocation", False);
+        self._setPropIfNotDefault(prefix + "IncludeSourceImportance", kwargs, "includeSourceImportance", False);
+        self._setPropIfNotDefault(prefix + "IncludeSourceArticleCount", kwargs, "includeSourceArticleCount", False);
+        self._setPropIfNotDefault(prefix + "IncludeSourceDetails", kwargs, "includeSourceDetails", False);
+
+    # parse the info that should be returned about an event
+    def _parseEventFlags(self, prefix, **kwargs):
+        self._setPropIfNotDefault(prefix + "IncludeEventArticleCounts", kwargs, "includeEventArticleCounts", True);
+        self._setPropIfNotDefault(prefix + "IncludeEventConcepts", kwargs, "includeEventConcepts", True);
+        self._setPropIfNotDefault(prefix + "IncludeEventMultiLingInfo", kwargs, "includeEventMultiLingInfo", True);
+        self._setPropIfNotDefault(prefix + "IncludeEventCategories", kwargs, "includeEventCategories", True);
+        self._setPropIfNotDefault(prefix + "IncludeEventLocation", kwargs, "includeEventLocation", True);
+        self._setPropIfNotDefault(prefix + "IncludeEventStories", kwargs, "includeEventStories", False);
+        self._setPropIfNotDefault(prefix + "IncludeEventImages", kwargs, "includeEventImages", False);
+        
     # parse the info that should be returned about a story
     def _parseStoryFlags(self, prefix, **kwargs):
-        self._setPropIfNotDefault(prefix + "IncludeBasicStats", kwargs, "includeBasicStats", True);
-        self._setPropIfNotDefault(prefix + "IncludeCategory", kwargs, "includeCategory", True);
-        self._setPropIfNotDefault(prefix + "IncludeLocation", kwargs, "includeLocation", True);
+        self._setPropIfNotDefault(prefix + "IncludeStoryBasicStats", kwargs, "includeStoryBasicStats", True);
+        self._setPropIfNotDefault(prefix + "IncludeStoryCategory", kwargs, "includeStoryCategory", True);
+        self._setPropIfNotDefault(prefix + "IncludeStoryLocation", kwargs, "includeStoryLocation", True);
         self._setPropIfNotDefault(prefix + "IncludeStoryDate", kwargs, "includeStoryDate", True);
-        self._setPropIfNotDefault(prefix + "IncludeConcepts", kwargs, "includeConcepts", False);
-        self._setPropIfNotDefault(prefix + "IncludeTitle", kwargs, "includeTitle", False);
-        self._setPropIfNotDefault(prefix + "IncludeSummary", kwargs, "includeSummary", False);
-        self._setPropIfNotDefault(prefix + "IncludeMedoidArticle", kwargs, "includeMedoidArticle", False);
-        self._setPropIfNotDefault(prefix + "IncludeExtractedDates", kwargs, "includeExtractedDates", False);
+        self._setPropIfNotDefault(prefix + "IncludeStoryConcepts", kwargs, "includeStoryConcepts", False);
+        self._setPropIfNotDefault(prefix + "IncludeStoryTitle", kwargs, "includeStoryTitle", False);
+        self._setPropIfNotDefault(prefix + "IncludeStorySummary", kwargs, "includeStorySummary", False);
+        self._setPropIfNotDefault(prefix + "IncludeStoryMedoidArticle", kwargs, "includeStoryMedoidArticle", False);
+        self._setPropIfNotDefault(prefix + "IncludeStoryExtractedDates", kwargs, "includeStoryExtractedDates", False);
+
 
 # query class for searching for events in the event registry 
 class QueryEvents(Query):
@@ -159,7 +151,7 @@ class QueryEvents(Query):
 
         self._setQueryParamIfNotDefault("keywords", kwargs, "");          # e.g. "bla bla"
         self._setQueryParamIfNotDefault("conceptUri", kwargs, []);      # e.g. ["http://en.wikipedia.org/wiki/Barack_Obama"]
-        self._setQueryParamIfNotDefault("lang", kwargs, []);                  # eng, deu, spa, zho, slv
+        self._setQueryParamIfNotDefault("lang", kwargs, []);                  # eng, deu, spa, zho, slv, ...
         self._setQueryParamIfNotDefault("publisherUri", kwargs, []);    # ["www.bbc.co.uk"]
         self._setQueryParamIfNotDefault("locationUri", kwargs, []);    # ["http://en.wikipedia.org/wiki/Ljubljana"]
         self._setQueryParamIfNotDefault("categoryUri", kwargs, []);    # ["http://www.dmoz.org/Science/Astronomy"]
@@ -250,6 +242,7 @@ class QueryEvent(Query):
             raise AssertionError("QueryEvent class can only accept result requests that are of type RequestEvent");
         self.resultTypeList.append(requestEvent);
 
+
 # query class for searching for articles in the event registry 
 class QueryArticles(Query):
     def __init__(self,  **kwargs):
@@ -338,8 +331,7 @@ class QueryArticles(Query):
     # set a custom list of article ids. the results will be then computed on this list - no query will be done
     def setArticleIdList(self, idList):
         self.queryParams = { "action": "getArticles", "articleIdList": ",".join([str(val) for val in idList])};
-
-               
+                       
 
 # class for finding all available info for one or more articles in the event registry 
 class QueryArticle(Query):
@@ -369,6 +361,7 @@ class QueryArticle(Query):
             raise AssertionError("QueryArticle class can only accept result requests that are of type RequestArticle");
         self.resultTypeList.append(requestArticle);
 
+
 # #####################################
 # #####################################
 class RequestEvent(RequestBase):
@@ -384,6 +377,8 @@ class RequestEventInfo(RequestEvent):
         self.infoConceptType = conceptTypes     # which types of concepts to return for the event
 
         self._parseEventFlags("info", **kwargs);
+        self._parseStoryFlags("info", **kwargs);
+        self._parseConceptFlags("info", **kwargs);
                 
         self.resultType = "info"
 
@@ -402,6 +397,9 @@ class RequestEventArticles(RequestEvent):
         self.articlesConceptType = conceptTypes     # which types of concepts to return for each article
 
         self._parseArticleFlags("articles", **kwargs);
+        self._parseConceptFlags("articles", **kwargs);
+        self._parseSourceFlags("articles", **kwargs);
+
         self.resultType = "articles"
 
 # return a list of article uris
@@ -440,6 +438,8 @@ class RequestEventArticleTrend(RequestEvent):
         self.articleTrendConceptType = conceptTypes     # which types of concepts to return for each article
         
         self._parseArticleFlags("articleTrend", **kwargs);
+        self._parseConceptFlags("articleTrend", **kwargs);
+        self._parseSourceFlags("articleTrend", **kwargs);
 
         self.resultType = "articleTrend"
 
@@ -461,6 +461,8 @@ class RequestEventSimilarEvents(RequestEvent):
         self.similarEventsIncludeSelf = includeSelf                     # should the info about the event itself be included among the results
 
         self._parseEventFlags("similarEvents", **kwargs);
+        self._parseStoryFlags("similarEvents", **kwargs);
+        self._parseConceptFlags("similarEvents", **kwargs);
 
         self.resultType = "similarEvents"
 
@@ -478,6 +480,7 @@ class RequestEventSimilarStories(RequestEvent):
         self.similarStoriesMaxDayDiff = maxDayDiff       # what is the maximum time difference between the similar stories and this one
 
         self._parseStoryFlags("similarStories", **kwargs);
+        self._parseConceptFlags("similarStories", **kwargs);
 
         self.resultType = "similarEvents"
 
@@ -497,18 +500,21 @@ class RequestArticleInfo(RequestArticle):
         self.infoConceptType = conceptTypes     # which types of concepts to return for the article
                 
         self._parseArticleFlags("info", **kwargs);
+        self._parseConceptFlags("info", **kwargs);
+        self._parseSourceFlags("info", **kwargs);
                         
         self.resultType = "info"
 
 
 # return a list of similar articles based on the CCA
 class RequestArticleSimilarArticles(RequestArticle):
-    def __init__(self, page = 0, count = 20, lang = ["eng"], bodyLen = -1, sortBy = "cosSim", sortByAsc = False, conceptLang = ["eng"], conceptTypes = ["person", "org", "loc", "wiki"], 
+    def __init__(self, page = 0, count = 20, lang = ["eng"], limitPerLang = -1, bodyLen = -1, sortBy = "cosSim", sortByAsc = False, conceptLang = ["eng"], conceptTypes = ["person", "org", "loc", "wiki"], 
                  # what info about the article to include:
                  **kwargs):
         assert count <= 200
         self.similarArticlesPage = page                 # page of the articles
         self.similarArticlesCount = count               # number of articles to return
+        self.similarArticlesLimitPerLang = limitPerLang # max number of articles per language to return (-1 for no limit)
         self.similarArticlesLang = lang                 # in which language(s) should be the similar articles
         self.similarArticlesSortBy = sortBy             # how are the event articles sorted (date, id, cosSim, fq)
         self.similarArticlesSortByAsc = sortByAsc      
@@ -518,6 +524,8 @@ class RequestArticleSimilarArticles(RequestArticle):
         self.similarArticlesConceptType = conceptTypes     # which types of concepts to return for each article
 
         self._parseArticleFlags("similarArticles", **kwargs);
+        self._parseConceptFlags("similarArticles", **kwargs);
+        self._parseSourceFlags("similarArticles", **kwargs);
         
         self.resultType = "similarArticles"
         
@@ -537,6 +545,8 @@ class RequestArticleDuplicatedArticles(RequestArticle):
         self.duplicatedArticlesConceptType = conceptTypes     # which types of concepts to return for each article
 
         self._parseArticleFlags("duplicatedArticles", **kwargs);
+        self._parseConceptFlags("duplicatedArticles", **kwargs);
+        self._parseSourceFlags("duplicatedArticles", **kwargs);
         
         self.resultType = "duplicatedArticles"
 
@@ -547,6 +557,8 @@ class RequestArticleOriginalArticle(RequestArticle):
                  # what info about the article to include:
                  **kwargs):
         self._parseArticleFlags("originalArticle", **kwargs);
+        self._parseConceptFlags("originalArticle", **kwargs);
+        self._parseSourceFlags("originalArticle", **kwargs);
 
         self.resultType = "originalArticle"
 
@@ -571,8 +583,16 @@ class RequestEventsInfo(RequestEvents):
         self.eventsConceptType = conceptTypes
 
         self._parseEventFlags("events", **kwargs);
+        self._parseStoryFlags("events", **kwargs);
+        self._parseConceptFlags("events", **kwargs);
         
         self.resultType = "events"
+
+    def setPage(self, page):
+        self.eventsPage = page
+
+    def setCount(self, count):
+        self.eventsCount = count
 
 # return a list of event uris
 class RequestEventsUriList(RequestEvents):
@@ -617,6 +637,9 @@ class RequestEventsConceptAggr(RequestEvents):
         self.conceptAggrConceptType = conceptTypes
         self.conceptAggrConceptCount = conceptCount
         self.conceptAggrConceptLang = conceptLangs
+        
+        self._parseConceptFlags("conceptAggr", **kwargs)
+        
         self.resultType = "conceptAggr"
 
 # get a graph of concepts - connect concepts that are frequently in the same events
@@ -630,6 +653,9 @@ class RequestEventsConceptGraph(RequestEvents):
         self.conceptGraphConceptLang = conceptLangs
         self.conceptGraphLinkCount = linkCount
         self.conceptGraphSampleSize = eventsSampleSize
+        
+        self._parseConceptFlags("conceptGraph", **kwargs)
+
         self.resultType = "conceptGraph"
 
 # get a matrix of concepts and their dependencies
@@ -642,16 +668,22 @@ class RequestEventsConceptMatrix(RequestEvents):
         self.conceptMatrixConceptLang = conceptLangs
         self.conceptMatrixMeasure = measure
         self.conceptMatrixSampleSize = eventsSampleSize
+
+        self._parseConceptFlags("conceptMatrix", **kwargs)
+
         self.resultType = "conceptMatrix"
 
 # get a list of top trending concepts and their daily trends over time
-class RequestEventsTrendingConcepts(RequestEvents):
+class RequestEventsConceptTrends(RequestEvents):
     def __init__(self, conceptCount = 10, conceptTypes = ["person", "org", "loc", "wiki"], conceptLangs = ["eng"]):
         assert conceptCount <= 50
         self.trendingConceptsConceptType = conceptTypes
         self.trendingConceptsConceptCount = conceptCount
         self.trendingConceptsConceptLang = conceptLangs
-        self.resultType = "trendingConcepts"
+
+        self._parseConceptFlags("conceptTrends", **kwargs)
+
+        self.resultType = "conceptTrends"
 
 # get events and the dates they mention
 class RequestEventsDateMentionAggr(RequestEvents):
@@ -686,6 +718,11 @@ class RequestEventsRecentActivity(RequestEvents):
         self.eventsRecentActivityEventsWithLocationOnly = eventsWithLocationOnly    # return only events for which we've recognized their location
         self.eventsRecentActivityEventsWithLangOnly = eventsWithLangOnly            # return only event that have a cluster at least in the lang language
         self.eventsRecentActivityMinAvgCosSim = minAvgCosSim                        # the minimum avg cos sim of the events to be returned (events with lower quality should not be included)
+
+        self._parseEventFlags("events", **kwargs);
+        self._parseStoryFlags("events", **kwargs);
+        self._parseConceptFlags("events", **kwargs);
+
         self.resultType = "recentActivity"
 
 
@@ -711,8 +748,16 @@ class RequestArticlesInfo(RequestArticles):
         self.articlesConceptTypes = conceptTypes
         
         self._parseArticleFlags("articles", **kwargs);
+        self._parseConceptFlags("articles", **kwargs);
+        self._parseSourceFlags("articles", **kwargs);
                 
         self.resultType = "articles"
+
+    def setPage(self, page):
+        self.articlesPage = page
+
+    def setCount(self, count):
+        self.articlesCount = count
         
 # return a list of article uris
 class RequestArticlesUriList(RequestArticles):
@@ -744,12 +789,16 @@ class RequestArticlesConceptAggr(RequestArticles):
         self.conceptAggrConceptLang = conceptLang
         self.conceptAggrConceptType = conceptTypes
         self.conceptAggrConceptCount = conceptCount
-        self.conceptAggrSampleSize = articlesSampleSize        
+        self.conceptAggrSampleSize = articlesSampleSize  
+        
+        self._parseConceptFlags("conceptAggr", **kwargs);
+              
         self.resultType = "conceptAggr"
 
 # get aggreate of sources of resulting articles
 class RequestArticlesSourceAggr(RequestArticles):
     def __init__(self):
+        self._parseSourceFlags("sourceAggr", **kwargs);
         self.resultType = "sourceAggr"
 
 # get aggreate of sources of resulting articles
@@ -769,6 +818,9 @@ class RequestArticlesConceptMatrix(RequestArticles):
         self.conceptMatrixConceptType = conceptTypes
         self.conceptMatrixSampleSize = sampleSize
         self.conceptMatrixMeasure = measure             # pmi (pointwise mutual information), pairTfIdf (pair frequence * IDF of individual concepts), chiSquare
+
+        self._parseConceptFlags("conceptMatrix", **kwargs);
+
         self.resultType = "conceptMatrix"
 
 # get concept graph of resulting articles
@@ -782,15 +834,21 @@ class RequestArticlesConceptGraph(RequestArticles):
         self.conceptGraphConceptType = conceptTypes
         self.conceptGraphSampleSize = sampleSize
         self.conceptGraphLinkCount = linkCount
+
+        self._parseConceptFlags("conceptGraph", **kwargs);
+
         self.resultType = "conceptGraph"
 
 # get trending of concepts in the resulting articles
-class RequestArticlesTrendingConcepts(RequestArticles):
+class RequestArticlesConceptTrends(RequestArticles):
     def __init__(self, count = 25, conceptLang = ["eng"]):
         assert count <= 50
         self.trendingConceptsConceptCount = count
         self.trendingConceptsConceptLang = conceptLang
-        self.resultType = "trendingConcepts"
+
+        self._parseConceptFlags("conceptTrends", **kwargs);
+
+        self.resultType = "conceptTrends"
 
 # get mentioned dates in the articles
 class RequestArticlesDateMentionAggr(RequestArticles):
@@ -805,6 +863,11 @@ class RequestArticlesRecentActivity(RequestArticles):
         self.articleRecentActivityMaxMinsBack = maxMinsBack
         self.articleRecentActivityLastArticleActivityId  = lastArticleActivityId
         self.articleRecentActivityArticlesWithLocationOnly  = articlesWithLocationOnly
+
+        self._parseArticleFlags("recentActivity", **kwargs);
+        self._parseConceptFlags("recentActivity", **kwargs);
+        self._parseSourceFlags("recentActivity", **kwargs);
+
         self.resultType = "recentActivity"
         
 # #####################################
@@ -826,6 +889,12 @@ class EventRegistry(object):
 
         cj = CookieJar()
         self._reqOpener = urllib2.build_opener(urllib2.HTTPCookieProcessor(cj))
+
+        # if there is a settings.json file in the directory then try using it to login to ER
+        currPath = os.path.split(__file__)[0]
+        if os.path.join(currPath, "settings.json"):
+            settings = json.load(open(os.path.join(currPath, "settings.json")))
+            self.login(settings.get("username", ""), settings.get("password", ""), False)
         
     # ensure that queries are not made too fast
     def _sleepIfNecessary(self):
@@ -835,12 +904,12 @@ class EventRegistry(object):
         self._lastQueryTime = t
 
      # make the request - repeat it _repeatFailedRequestCount times, if they fail (indefinitely if _repeatFailedRequestCount = -1)
-    def _getUrlResponse(self, url):
+    def _getUrlResponse(self, url, data = None):
         tryCount = 0
         while self._repeatFailedRequestCount < 0 or tryCount < self._repeatFailedRequestCount:
             tryCount += 1
             try:
-                req = urllib2.Request(url)
+                req = urllib2.Request(url, data)
                 respInfo = self._reqOpener.open(req).read()
                 return respInfo
             except Exception as ex:
@@ -867,6 +936,7 @@ class EventRegistry(object):
             raise Exception(respInfo["error"]);
         return respInfo;
 
+    # make a get request
     def jsonRequest(self, methodUrl, paramDict):
         self._sleepIfNecessary();
         self._lastException = None
@@ -890,6 +960,31 @@ class EventRegistry(object):
         except Exception as ex:
             self._lastException = ex;
             return None
+
+    # make a post request where all parameters are encoded in the body - use for requests with many parameters
+    def jsonPostRequest(self, methodUrl, paramDict):
+        self._sleepIfNecessary();
+        self._lastException = None
+
+        # add user credentials if specified
+        if self._erUsername != None and self._erPassword != None:
+            paramDict["erUsername"] = self._erUsername
+            paramDict["erPassword"] = self._erPassword
+        
+        try:
+            params = urllib.urlencode(paramDict, True)
+            url = self.Host + methodUrl
+            if self._logRequests:
+                with open("requests_log.txt", "a") as log:
+                    log.write(url + "\n")
+            # make the request
+            respInfo = self._getUrlResponse(url, params)
+            if respInfo != None:
+                respInfo = json.loads(respInfo)
+            return respInfo
+        except Exception as ex:
+            self._lastException = ex;
+            return None
             
     # main method for executing the search queries. 
     def execQuery(self, query, convertToDict = True):
@@ -899,28 +994,6 @@ class EventRegistry(object):
         try:
             params = query._encode(self._erUsername, self._erPassword)
             url = self.Host + query._getPath() + "?" + params
-            if self._logRequests:
-                with open("requests_log.txt", "a") as log:
-                    log.write(url + "\n")
-            # make the request
-            respInfo = self._getUrlResponse(url)
-            if respInfo != None and convertToDict:
-                respInfo = json.loads(respInfo)
-            return respInfo
-        except Exception as ex:
-            self._lastException = ex
-            return None
-
-    # use for administrative requests
-    def execAdminRequest(self, request, convertToDict = True):
-        self._sleepIfNecessary();
-        self._lastException = None
-
-        try:
-            if not isinstance(request, AdminRequest):
-                raise Exception("Expected to get a request of AdminRequest type")
-            params = request._encode(self._erUsername, self._erPassword)
-            url = self.Host + request._getPath() + "?" + params
             if self._logRequests:
                 with open("requests_log.txt", "a") as log:
                     log.write(url + "\n")
@@ -1012,6 +1085,8 @@ class EventRegistry(object):
 
         req = RequestBase(**params)
         req._parseEventFlags("recentActivityEvents", **kwargs);
+        req._parseStoryFlags("recentActivityEvents", **kwargs);
+        req._parseConceptFlags("recentActivityEvents", **kwargs);
         
         return self.jsonRequest("/json/overview", req.__dict__)
 
@@ -1034,7 +1109,8 @@ class EventRegistry(object):
 
         req = RequestBase(**params)
         req._parseArticleFlags("recentActivityArticles", **kwargs);
-
+        req._parseSourceFlags("recentActivityArticles", **kwargs);
+        
         return self.jsonRequest("/json/overview", req.__dict__)
 
     # get some stats about recently imported articles and events
