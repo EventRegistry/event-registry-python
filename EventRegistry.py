@@ -632,7 +632,7 @@ class RequestEventsTopPublisherAggr(RequestEvents):
 
 # get aggregated list of concepts - top concepts that appear in events 
 class RequestEventsConceptAggr(RequestEvents):
-    def __init__(self, conceptCount = 20, conceptTypes = ["person", "org", "loc", "wiki"], conceptLangs = ["eng"]):
+    def __init__(self, conceptCount = 20, conceptTypes = ["person", "org", "loc", "wiki"], conceptLangs = ["eng"], **kwargs):
         assert conceptCount <= 200
         self.conceptAggrConceptType = conceptTypes
         self.conceptAggrConceptCount = conceptCount
@@ -644,7 +644,7 @@ class RequestEventsConceptAggr(RequestEvents):
 
 # get a graph of concepts - connect concepts that are frequently in the same events
 class RequestEventsConceptGraph(RequestEvents):
-    def __init__(self, conceptCount = 25, conceptTypes = ["person", "org", "loc", "wiki"], conceptLangs = ["eng"], linkCount = 50, eventsSampleSize = 500):
+    def __init__(self, conceptCount = 25, conceptTypes = ["person", "org", "loc", "wiki"], conceptLangs = ["eng"], linkCount = 50, eventsSampleSize = 500, **kwargs):
         assert conceptCount <= 1000
         assert linkCount <= 2000
         assert eventsSampleSize <= 20000
@@ -660,7 +660,7 @@ class RequestEventsConceptGraph(RequestEvents):
 
 # get a matrix of concepts and their dependencies
 class RequestEventsConceptMatrix(RequestEvents):
-    def __init__(self, conceptCount = 25, conceptTypes = ["person", "org", "loc", "wiki"], conceptLangs = ["eng"], measure = "pmi", eventsSampleSize = 500):
+    def __init__(self, conceptCount = 25, conceptTypes = ["person", "org", "loc", "wiki"], conceptLangs = ["eng"], measure = "pmi", eventsSampleSize = 500, **kwargs):
         assert conceptCount <= 200
         assert eventsSampleSize <= 10000
         self.conceptMatrixConceptType = conceptTypes
@@ -675,7 +675,7 @@ class RequestEventsConceptMatrix(RequestEvents):
 
 # get a list of top trending concepts and their daily trends over time
 class RequestEventsConceptTrends(RequestEvents):
-    def __init__(self, conceptCount = 10, conceptTypes = ["person", "org", "loc", "wiki"], conceptLangs = ["eng"]):
+    def __init__(self, conceptCount = 10, conceptTypes = ["person", "org", "loc", "wiki"], conceptLangs = ["eng"], **kwargs):
         assert conceptCount <= 50
         self.trendingConceptsConceptType = conceptTypes
         self.trendingConceptsConceptCount = conceptCount
@@ -709,7 +709,7 @@ class RequestEventsCategoryAggr(RequestEvents):
 
 # get list of recently changed events
 class RequestEventsRecentActivity(RequestEvents):
-    def __init__(self, maxEventCount = 60, maxMinsBack = 10 * 60, lastEventActivityId = 0, lang = "eng", eventsWithLocationOnly = True, eventsWithLangOnly = False, minAvgCosSim = 0):
+    def __init__(self, maxEventCount = 60, maxMinsBack = 10 * 60, lastEventActivityId = 0, lang = "eng", eventsWithLocationOnly = True, eventsWithLangOnly = False, minAvgCosSim = 0, **kwargs):
         assert maxEventCount <= 1000
         self.eventsRecentActivityMaxEventCount = maxEventCount
         self.eventsRecentActivityMaxMinsBack = maxMinsBack
@@ -783,7 +783,7 @@ class RequestArticlesCategoryAggr(RequestArticles):
 
 # get aggreate of concepts of resulting articles
 class RequestArticlesConceptAggr(RequestArticles):
-    def __init__(self, conceptLang = ["eng"], conceptTypes = ["person", "org", "loc", "wiki"], conceptCount = 25, articlesSampleSize = 1000):
+    def __init__(self, conceptLang = ["eng"], conceptTypes = ["person", "org", "loc", "wiki"], conceptCount = 25, articlesSampleSize = 1000, **kwargs):
         assert conceptCount <= 500
         assert articlesSampleSize <= 10000
         self.conceptAggrConceptLang = conceptLang
@@ -797,7 +797,7 @@ class RequestArticlesConceptAggr(RequestArticles):
 
 # get aggreate of sources of resulting articles
 class RequestArticlesSourceAggr(RequestArticles):
-    def __init__(self):
+    def __init__(self, **kwargs):
         self._parseSourceFlags("sourceAggr", **kwargs);
         self.resultType = "sourceAggr"
 
@@ -810,7 +810,7 @@ class RequestArticlesKeywordAggr(RequestArticles):
         
 # get aggreate of sources of resulting articles
 class RequestArticlesConceptMatrix(RequestArticles):
-    def __init__(self, count = 25, conceptTypes = ["person", "org", "loc", "wiki"], conceptLang = ["eng"], measure = "pmi", sampleSize = 500):
+    def __init__(self, count = 25, conceptTypes = ["person", "org", "loc", "wiki"], conceptLang = ["eng"], measure = "pmi", sampleSize = 500, **kwargs):
         assert count <= 200
         assert sampleSize <= 10000
         self.conceptMatrixConceptCount = count
@@ -825,7 +825,7 @@ class RequestArticlesConceptMatrix(RequestArticles):
 
 # get concept graph of resulting articles
 class RequestArticlesConceptGraph(RequestArticles):
-    def __init__(self, count = 25, conceptTypes = ["person", "org", "loc", "wiki"], conceptLang = ["eng"], linkCount = 50, sampleSize = 500):
+    def __init__(self, count = 25, conceptTypes = ["person", "org", "loc", "wiki"], conceptLang = ["eng"], linkCount = 50, sampleSize = 500, **kwargs):
         assert count <= 1000
         assert linkCount <= 2000
         assert sampleSize <= 20000
@@ -857,7 +857,7 @@ class RequestArticlesDateMentionAggr(RequestArticles):
 
 # get the list of articles that were added recently
 class RequestArticlesRecentActivity(RequestArticles):
-    def __init__(self, maxArticleCount = 60, maxMinsBack = 10 * 60, lastArticleActivityId = 0, articlesWithLocationOnly = True):
+    def __init__(self, maxArticleCount = 60, maxMinsBack = 10 * 60, lastArticleActivityId = 0, articlesWithLocationOnly = True, **kwargs):
         assert maxArticleCount <= 1000
         self.articleRecentActivityMaxArticleCount  = maxArticleCount
         self.articleRecentActivityMaxMinsBack = maxMinsBack
@@ -923,6 +923,9 @@ class EventRegistry(object):
 
     def getLastException(self):
         return self._lastException
+
+    def printLastException(self):
+        print str(self._lastException)
 
     # login the user. without logging in, the user is limited to 10.000 queries per day. 
     # if you have a registered account, the number of allowed requests per day can be higher, depending on your subscription plan
@@ -1029,8 +1032,8 @@ class EventRegistry(object):
         return self.jsonRequest("/json/suggestConceptClasses", { "prefix": prefix, "lang": lang, "labelLang": labelLang, "page": page, "count": count })
         
     # return a concept uri that is the best match for the given concept label
-    def getConceptUri(self, conceptLabel, lang = "eng"):
-        matches = self.suggestConcepts(conceptLabel, lang = lang)
+    def getConceptUri(self, conceptLabel, lang = "eng", sources = ["concepts"]):
+        matches = self.suggestConcepts(conceptLabel, lang = lang, sources = sources)
         if matches != None and len(matches) > 0 and matches[0].has_key("uri"):
             return matches[0]["uri"]
         return None

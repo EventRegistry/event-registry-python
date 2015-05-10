@@ -57,13 +57,13 @@ q.setDateLimit(datetime.date(2014, 4, 16), datetime.date(2014, 4, 28))
 #q.addKeyword("apple")
 #q.addKeyword("iphone")
 q.addConcept(er.getConceptUri("Apple"));
-q.addRequestedResult(RequestArticlesInfo(page=0, count = 30, includeDuplicateList = True, includeConcepts = True, includeCategories = True, includeLocation = True, includeImage = True));
+q.addRequestedResult(RequestArticlesInfo(page=0, count = 30, includeArticleDuplicateList = True, includeArticleConcepts = True, includeArticleCategories = True, includeArticleLocation = True, includeArticleImage = True));
 res = er.execQuery(q)
 
 obj = createStructFromDict(res);
 uris = [article.uri for article in obj.articles.results[:5]]
 q = QueryArticle(uris)
-q.addRequestedResult(RequestArticleInfo(includeConcepts = True, includeCategories = True, includeLocation = True))
+q.addRequestedResult(RequestArticleInfo(includeArticleConcepts = True, includeArticleCategories = True, includeArticleLocation = True))
 q.addRequestedResult(RequestArticleOriginalArticle())
 q.addRequestedResult(RequestArticleDuplicatedArticles())
 res = er.execQuery(q);
