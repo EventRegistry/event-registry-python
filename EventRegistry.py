@@ -877,7 +877,8 @@ class RequestArticlesRecentActivity(RequestArticles):
 class EventRegistry(object):
     def __init__(self, host = "http://eventregistry.org", logging = False, 
                  minDelayBetweenRequests = 0.5,     # the minimum number of seconds between individual api calls
-                 repeatFailedRequestCount = -1):    # if a request fails (for example, because ER is down), what is the max number of times the request should be repeated (-1 for indefinitely)
+                 repeatFailedRequestCount = -1,    # if a request fails (for example, because ER is down), what is the max number of times the request should be repeated (-1 for indefinitely)
+                 verboseOutput = False):            # if true, additional info about query times etc will be printed to console
         self.Host = host
         self._lastException = None
         self._logRequests = logging
@@ -885,6 +886,7 @@ class EventRegistry(object):
         self._erPassword = None
         self._minDelayBetweenRequests = minDelayBetweenRequests
         self._repeatFailedRequestCount = repeatFailedRequestCount
+        self._verboseOutput = verboseOutput
         self._lastQueryTime = time.time()
 
         cj = CookieJar()
@@ -892,7 +894,7 @@ class EventRegistry(object):
 
         # if there is a settings.json file in the directory then try using it to login to ER
         currPath = os.path.split(__file__)[0]
-        if os.path.join(currPath, "settings.json"):
+        if os.path.exists(os.path.join(currPath, "settings.json")):
             settings = json.load(open(os.path.join(currPath, "settings.json")))
             self.login(settings.get("username", ""), settings.get("password", ""), False)
         
@@ -909,12 +911,16 @@ class EventRegistry(object):
         while self._repeatFailedRequestCount < 0 or tryCount < self._repeatFailedRequestCount:
             tryCount += 1
             try:
+                startT = datetime.datetime.now()
                 req = urllib2.Request(url, data)
                 respInfo = self._reqOpener.open(req).read()
+                endT = datetime.datetime.now()
+                if self._verboseOutput:
+                    self.printConsole("request took %.3f sec" % ((endT-startT).total_seconds()))
                 return respInfo
             except Exception as ex:
                 self._lastException = ex
-                print(ex)
+                self.printLastException()
                 time.sleep(5)   # sleep for 5 seconds on error
         return None
 
@@ -926,6 +932,10 @@ class EventRegistry(object):
 
     def printLastException(self):
         print str(self._lastException)
+
+    # print time prefix + text
+    def printConsole(self, text):
+        print time.strftime("%H:%M:%S") + " " + str(text)
 
     # login the user. without logging in, the user is limited to 10.000 queries per day. 
     # if you have a registered account, the number of allowed requests per day can be higher, depending on your subscription plan
