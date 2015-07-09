@@ -121,6 +121,8 @@ class RequestBase(object):
 
     # parse the info that should be returned about an event
     def _parseEventFlags(self, prefix, **kwargs):
+        self._setPropIfNotDefault(prefix + "IncludeEventTitle", kwargs, "includeEventTitle", True);
+        self._setPropIfNotDefault(prefix + "IncludeEventSummary", kwargs, "includeEventSummary", True);
         self._setPropIfNotDefault(prefix + "IncludeEventArticleCounts", kwargs, "includeEventArticleCounts", True);
         self._setPropIfNotDefault(prefix + "IncludeEventConcepts", kwargs, "includeEventConcepts", True);
         self._setPropIfNotDefault(prefix + "IncludeEventMultiLingInfo", kwargs, "includeEventMultiLingInfo", True);
@@ -384,7 +386,9 @@ class RequestEventInfo(RequestEvent):
 
 # return a list of articles
 class RequestEventArticles(RequestEvent):
-    def __init__(self, page = 0, count = 20, lang = mainLangs, bodyLen = 200, sortBy = "cosSim", sortByAsc = False, conceptLang = ["eng"], conceptTypes = ["person", "org", "loc", "wiki"],      # what info about the articles to include:
+    def __init__(self, page = 0, count = 20, lang = mainLangs, bodyLen = 200, 
+                 sortBy = "cosSim", sortByAsc = False,                                        # id, date, cosSim, fq, socialScore, facebookShares, twitterShares
+                 conceptLang = ["eng"], conceptTypes = ["person", "org", "loc", "wiki"],      # what info about the articles to include:
             **kwargs):
         assert count <= 200
         self.articlesLang = lang                # return articles in specified language(s)
@@ -406,7 +410,7 @@ class RequestEventArticles(RequestEvent):
 class RequestEventArticleUris(RequestEvent):
     def __init__(self, lang = mainLangs, sortBy = "cosSim", sortByAsc = False):
         self.articleUrisLang = lang
-        self.articleUrisSortBy = sortBy          # none, id, date, cosSim, fq
+        self.articleUrisSortBy = sortBy          # id, date, cosSim, fq, socialScore, facebookShares, twitterShares
         self.articleUrisSortByAsc = sortByAsc
         self.resultType = "articleUris"
 
@@ -445,7 +449,7 @@ class RequestEventArticleTrend(RequestEvent):
 
 # get information about similar events
 class RequestEventSimilarEvents(RequestEvent):
-    def __init__(self, count = 20, source = "concept", maxDayDiff = sys.maxint, conceptLang = ["eng"], conceptTypes = ["person", "org", "loc", "wiki"], addArticleTrendInfo = False, similarEventsAggrHours = 6, includeSelf = False,
+    def __init__(self, count = 20, source = "concept", maxDayDiff = sys.maxint, conceptLang = ["eng"], conceptTypes = ["person", "org", "loc", "wiki"], addArticleTrendInfo = False, aggrHours = 6, includeSelf = False,
                  # which info about events to include:
                  **kwargs):
         assert count <= 200
@@ -508,8 +512,9 @@ class RequestArticleInfo(RequestArticle):
 
 # return a list of similar articles based on the CCA
 class RequestArticleSimilarArticles(RequestArticle):
-    def __init__(self, page = 0, count = 20, lang = ["eng"], limitPerLang = -1, bodyLen = -1, sortBy = "cosSim", sortByAsc = False, conceptLang = ["eng"], conceptTypes = ["person", "org", "loc", "wiki"], 
-                 # what info about the article to include:
+    def __init__(self, page = 0, count = 20, lang = ["eng"], limitPerLang = -1, bodyLen = -1, 
+                 sortBy = "cosSim", sortByAsc = False,      # id, date, cosSim, fq, socialScore, facebookShares, twitterShares
+                 conceptLang = ["eng"], conceptTypes = ["person", "org", "loc", "wiki"], 
                  **kwargs):
         assert count <= 200
         self.similarArticlesPage = page                 # page of the articles
@@ -571,7 +576,9 @@ class RequestEvents(RequestBase):
 
 # return a list of event details
 class RequestEventsInfo(RequestEvents):
-    def __init__(self, page = 0, count = 20, sortBy = "date", sortByAsc = False, conceptLang = ["eng"], conceptTypes = ["person", "org", "loc", "wiki"], 
+    def __init__(self, page = 0, count = 20, 
+                 sortBy = "date", sortByAsc = False,    # date, size, socialScore
+                 conceptLang = ["eng"], conceptTypes = ["person", "org", "loc", "wiki"], 
                  # what info about events to include:
                  **kwargs):
         assert count <= 200
@@ -735,7 +742,9 @@ class RequestArticles(RequestBase):
 # return a list of event details
 class RequestArticlesInfo(RequestArticles):
     # possible sorting values: date, id, cosSim, fq
-    def __init__(self, page = 0, count = 20, sortBy = "date", sortByAsc = False, conceptLang = ["eng"], conceptTypes = ["person", "org", "loc", "wiki"], bodyLen = 300, 
+    def __init__(self, page = 0, count = 20, 
+                 sortBy = "date", sortByAsc = False,    # id, date, cosSim, fq, socialScore, facebookShares, twitterShares
+                 conceptLang = ["eng"], conceptTypes = ["person", "org", "loc", "wiki"], bodyLen = 300, 
                  # what info about articles to return:
                  **kwargs):
         assert count <= 200
@@ -894,8 +903,9 @@ class EventRegistry(object):
 
         # if there is a settings.json file in the directory then try using it to login to ER
         currPath = os.path.split(__file__)[0]
-        if os.path.exists(os.path.join(currPath, "settings.json")):
-            settings = json.load(open(os.path.join(currPath, "settings.json")))
+        settPath = os.path.join(currPath, "settings.json")
+        if os.path.exists(settPath):
+            settings = json.load(open(settPath))
             self.login(settings.get("username", ""), settings.get("password", ""), False)
         
     # ensure that queries are not made too fast
