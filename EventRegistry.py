@@ -29,6 +29,10 @@ class Struct(object):
         else:
             return Struct(value) if isinstance(value, dict) else value
 
+    # does the object have the key
+    def has(self, key):
+        return hasattr(self, key)
+
 def createStructFromDict(data):
     """
     method to convert a list or dict to a native python object
@@ -89,9 +93,10 @@ class RequestBase(object):
         self._setPropIfNotDefault(prefix + "IncludeArticleBasicInfo", kwargs, "includeArticleBasicInfo", True);
         self._setPropIfNotDefault(prefix + "IncludeArticleBody", kwargs, "includeArticleBody", True);
         self._setPropIfNotDefault(prefix + "IncludeArticleTitle", kwargs, "includeArticleTitle", True);
-        self._setPropIfNotDefault(prefix + "IncludeArticleConcepts", kwargs, "includeArticleConcepts", False);
         self._setPropIfNotDefault(prefix + "IncludeArticleSourceInfo", kwargs, "includeArticleSourceInfo", True);
         self._setPropIfNotDefault(prefix + "IncludeArticleEventUri", kwargs, "includeArticleEventUri", True);
+
+        self._setPropIfNotDefault(prefix + "IncludeArticleConcepts", kwargs, "includeArticleConcepts", False);
         self._setPropIfNotDefault(prefix + "IncludeArticleStoryUri", kwargs, "includeArticleStoryUri", False);
         self._setPropIfNotDefault(prefix + "IncludeArticleDuplicateList", kwargs, "includeArticleDuplicateList", False);
         self._setPropIfNotDefault(prefix + "IncludeArticleOriginalArticleInfo", kwargs, "includeArticleOriginalArticleInfo", False);
@@ -112,6 +117,7 @@ class RequestBase(object):
     # parse the info that should be returned about a news source    
     def _parseSourceFlags(self, prefix, **kwargs):
         self._setPropIfNotDefault(prefix + "IncludeSourceTitle", kwargs, "includeSourceTitle", True);
+
         self._setPropIfNotDefault(prefix + "IncludeSourceDescription", kwargs, "includeSourceDescription", False);
         self._setPropIfNotDefault(prefix + "IncludeSourceTags", kwargs, "includeSourceTags", False);
         self._setPropIfNotDefault(prefix + "IncludeSourceLocation", kwargs, "includeSourceLocation", False);
@@ -128,6 +134,7 @@ class RequestBase(object):
         self._setPropIfNotDefault(prefix + "IncludeEventMultiLingInfo", kwargs, "includeEventMultiLingInfo", True);
         self._setPropIfNotDefault(prefix + "IncludeEventCategories", kwargs, "includeEventCategories", True);
         self._setPropIfNotDefault(prefix + "IncludeEventLocation", kwargs, "includeEventLocation", True);
+
         self._setPropIfNotDefault(prefix + "IncludeEventStories", kwargs, "includeEventStories", False);
         self._setPropIfNotDefault(prefix + "IncludeEventImages", kwargs, "includeEventImages", False);
         
@@ -137,6 +144,7 @@ class RequestBase(object):
         self._setPropIfNotDefault(prefix + "IncludeStoryCategory", kwargs, "includeStoryCategory", True);
         self._setPropIfNotDefault(prefix + "IncludeStoryLocation", kwargs, "includeStoryLocation", True);
         self._setPropIfNotDefault(prefix + "IncludeStoryDate", kwargs, "includeStoryDate", True);
+
         self._setPropIfNotDefault(prefix + "IncludeStoryConcepts", kwargs, "includeStoryConcepts", False);
         self._setPropIfNotDefault(prefix + "IncludeStoryTitle", kwargs, "includeStoryTitle", False);
         self._setPropIfNotDefault(prefix + "IncludeStorySummary", kwargs, "includeStorySummary", False);
@@ -879,6 +887,123 @@ class RequestArticlesRecentActivity(RequestArticles):
 
         self.resultType = "recentActivity"
         
+
+# #####################################
+# #####################################
+
+"""
+trending information is computed by comparing how frequently are individual concepts/categories
+mentioned in the articles. By default trends are computed by comparing the total number of mentions of a concept/category
+in the last two days compared to the number of mentions in the two weeks before. The trend for each concept/category
+is computed as the Pearson residual. The returned concepts/categories are the ones that have the highest residual.
+"""
+class TrendsBase(RequestBase):
+    def _getPath(self):
+        return "/json/trends"
+
+# get currently top trending concepts
+class GetTrendingConcepts(TrendsBase):
+    def __init__(self, 
+                 source = "news", # source information from which to compute top trends. Possible values: "news", "social"
+                 count = 20):     # number of top trends to return
+        self._setProp("action", "getTrendingConcepts")
+        self._setProp("source", source)
+        self._setProp("conceptCount", count)
+
+
+# get currently top trending categories
+class GetTrendingCategories(TrendsBase):
+    def __init__(self, 
+                 source = "news",   # source information from which to compute top trends. Possible values: "news", "social"
+                 count = 20):       # number of top trends to return
+        self._setProp("action", "getTrendingCategories")
+        self._setProp("source", source)
+        self._setProp("categoryCount", count)
+
+# get currently top trending items for which the users provided the data
+# this data can be stock prices, energy prices, etc...
+class GetTrendingCustomItems(TrendsBase):
+    def __init__(self, source = "news", count = 20):
+        self._setProp("action", "getTrendingCustom")
+        self._setProp("source", source)
+        self._setProp("conceptCount", count)
+
+# get currently top trending groups of concepts
+# a group can be identified by the concept type or by a concept class uri
+class GetTrendingConceptGroups(TrendsBase):
+    def __init__(self, 
+                 source = "news",   # source information from which to compute top trends. Possible values: "news", "social"
+                 count = 20,        # number of top trends to return
+                 **kwds):     
+        self._setProp("action", "getConceptTrendGroups")
+        self._setProp("source", source)
+        self._setProp("conceptCount", count)
+
+        self._parseConceptFlags("concept", **kwargs);
+
+    # request trending of concepts of specified types
+    def getConceptTypeGroups(types = ["person", "org", "loc", "wiki"]):
+        self._setProp("conceptType", types)
+
+    # request trending of concepts assigned to the specified concept classes
+    def getConceptClassUris(conceptClassUris):
+        self._setProp("conceptClassUri", conceptClassUris)
+
+
+# #####################################
+# #####################################
+
+"""
+Using the bottom classes you can obtain information about articles and events that 
+were shared the most on social media (Twitter and Facebook) on a particular day.
+Given a date, articles published on that date are checked and top shared ones are returned. For an event,
+events on that day are checked and top shared ones are returned.
+Social score for an article is computed as the sum of shares on facebook and twitter.
+Social score for an event is computed by checking 30 top shared articles in the event and averaging their social scores.
+"""
+
+class DailySharesBase(RequestBase):
+    def _getPath(self):
+        return "/json/topDailyShares"
+
+# get top shared articles for today or any other day
+class GetTopSharedArticles(DailySharesBase):
+    def __init__(self, 
+                 date = None,     # specify the date (either in YYYY-MM-DD or datetime.date format) for which to return top shared articles. If None then today is used
+                 count = 20):     # number of top shared articles to return
+        self._setProp("action", "getArticles")
+        self._setProp("count", count)
+        
+        if date == None:
+            date = datetime.date.today();
+        
+        if isinstance(date, datetime.date):
+            self._setProp("date", date.isoformat())
+        # if string, format should be YYYY-MM-DD
+        elif isinstance(date, (str, unicode)):
+            assert re.match("\d{4}-\d{2}-\d{2}", date) != None
+            self._setProp("date", date)
+
+        
+# get top shared events for today or any other day
+class GetTopSharedEvents(DailySharesBase):
+    def __init__(self, 
+                 date = None,     # specify the date (either in YYYY-MM-DD or datetime.date format) for which to return top shared articles. If None then today is used
+                 count = 20):     # number of top shared articles to return
+        self._setProp("action", "getEvents")
+        self._setProp("count", count)
+        
+        if date == None:
+            date = datetime.date.today();
+        
+        if isinstance(date, datetime.date):
+            self._setProp("date", date.isoformat())
+        # if string, format should be YYYY-MM-DD
+        elif isinstance(date, (str, unicode)):
+            assert re.match("\d{4}-\d{2}-\d{2}", date) != None
+            self._setProp("date", date)
+
+
 # #####################################
 # #####################################
 
@@ -1040,7 +1165,7 @@ class EventRegistry(object):
         return self.jsonRequest("/json/suggestSources", { "prefix": prefix, "page": page, "count": count })
         
     # return a list of locations (cities or countries) that contain the prefix
-    def suggestLocations(self, prefix, count = 20, lang = "eng", source = ["city", "country"]):
+    def suggestLocations(self, prefix, count = 20, lang = "eng", source = ["place", "country"]):
         return self.jsonRequest("/json/suggestLocations", { "prefix": prefix, "count": count, "source": source, "lang": lang })
         
     # return a list of dmoz categories that contain the prefix

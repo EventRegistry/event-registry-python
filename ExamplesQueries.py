@@ -2,6 +2,7 @@ from EventRegistry import *
 
 er = EventRegistry(host = "http://eventregistry.org", logging = True)
 
+# query for events related to Barack obama
 q = QueryEvents()
 q.addConcept(er.getConceptUri("Obama"))                 # get events related to obama
 #q.addCategory(er.getCategoryUri("society issues"))      # and are related to issues in society
@@ -12,6 +13,11 @@ q.addRequestedResult(RequestEventsConceptAggr(conceptCount = 5, conceptTypes = [
 res = er.execQuery(q)
 obj = createStructFromDict(res)
 
+# find events that occured in Berlin between 2014-04-16 and 2014-04-28
+# from the resulting events produce
+# - the trending information about the top people involved in these events
+# - info about the categories of these events
+# - general information about the 20 most recent events in that time span
 q = QueryEvents();
 q.addLocation(er.getLocationUri("Berlin"))
 q.setDateLimit(datetime.date(2014, 4, 16), datetime.date(2014, 4, 28))
@@ -69,7 +75,7 @@ q.addRequestedResult(RequestArticleDuplicatedArticles())
 res = er.execQuery(q);
 obj = createStructFromDict(res)
 
-# recent activity
+# get recent events related to Obama
 q = QueryEvents()
 q.addConcept(er.getConceptUri("Obama"))
 q.addRequestedResult(RequestEventsRecentActivity())     # get most recently updated events related to obama
@@ -77,19 +83,19 @@ res = er.execQuery(q)
 obj = createStructFromDict(res)
 
 # let's say now that a minute has passed
+# now repeat the query and get only the events about Obama that were updated since the last query
 q.clearRequestedResults()
 q.addRequestedResult(RequestEventsRecentActivity(lastEventActivityId = obj.recentActivity.events.lastActivityId))
 res = er.execQuery(q)
 obj2 = createStructFromDict(res)
 
+# get recent articles about Obama
 q = QueryArticles()
 q.addConcept(er.getConceptUri("Obama"))
 q.addRequestedResult(RequestArticlesRecentActivity())     # get most recently added articles related to obama
 res = er.execQuery(q)
 
-recentEvents = er.getRecentEvents()
-recentArticles = er.getRecentArticles()
-
+# get articles that match a particular topic page
 q = QueryArticles();
 q.addConcept("topic-page-3")
 q.setDateLimit("2014-09-20", "2014-09-29")
@@ -102,5 +108,4 @@ q.addRequestedResult(RequestEventArticles(0,200))
 res = er.execQuery(q)
 obj = createStructFromDict(res)
 
-print er.getRecentStats()
 
