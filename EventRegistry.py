@@ -1,81 +1,97 @@
-"""
+﻿"""
 classes responsible for obtaining results from the Event Registry
 """
 import os, sys, urllib2, urllib, json, datetime, time, re;
 from cookielib import CookieJar
+from ERUtils import *
 
 mainLangs = ["eng", "deu", "zho", "slv", "spa"]
 allLangs = [ "eng", "deu", "spa", "cat", "por", "ita", "fra", "rus", "ara", "tur", "zho", "slv", "hrv", "srp" ]
 conceptTypes = ["loc", "person", "org", "keyword", "wiki", "concept-class", "topic-page"]
 
 
-invalidCharRe = re.compile(r"[\x00-\x08]|\x0b|\x0c|\x0e|\x0f|[\x10-\x19]|[\x1a-\x1f]", re.IGNORECASE)
-def removeInvalidChars(text):
-    return invalidCharRe.sub("", text);
-
-
-class Struct(object):
-    """
-    general class for converting dict to a native python object
-    instead of a["b"]["c"] we can write a.b.c
-    """
-    def __init__(self, data):
-        for name, value in data.iteritems():
-            setattr(self, name, self._wrap(value))
-
-    def _wrap(self, value):
-        if isinstance(value, (tuple, list, set, frozenset)): 
-            return type(value)([self._wrap(v) for v in value])
-        else:
-            return Struct(value) if isinstance(value, dict) else value
-
-    # does the object have the key
-    def has(self, key):
-        return hasattr(self, key)
-
-def createStructFromDict(data):
-    """
-    method to convert a list or dict to a native python object
-    """
-    if isinstance(data, list):
-        return type(data)([createStructFromDict(v) for v in data])
-    else:
-        return Struct(data)
-
-class Query(object):
+"""
+Base class for Query and AdminQuery
+used for storing parameters for a query. Parameter values can either be
+simple values (set by _setVal()) or an array of values (set by multiple
+calls to _addArrayVal() method)
+"""
+class ParamsBase(object):
     def __init__(self):
-        self.queryParams = {};
-        self.resultTypeList = [];
-       
+        self.queryParams = {}
+
+     # set a value of a property in the query
+    def _setVal(self, propName, val):
+        if isinstance(val, unicode):
+            val = val.encode("utf8")
+        if isinstance(val, str):
+            val = removeInvalidChars(val)
+        self.queryParams[propName] = val
+ 
     # set the objects property propName if the propName key exists in dict and it is not the same as default value defVal         
-    def _setQueryParamIfNotDefault(self, propName, dict, defVal):
+    def _setValIfNotDefault(self, propName, dict, defVal):
         val = dict.pop(propName, defVal)
         if val != defVal:
             self.queryParams[propName] = val
 
-    # add value value to key propName in queryParams dict - if key does not exist yet in the dict, create it first
-    def _addQueryParamArray(self, propName, value):
+    def _setDateVal(self, propName, val):
+        if isinstance(val, datetime.date):
+            self._setVal(propName, endDate.isoformat())
+        elif isinstance(val, datetime.datetime):
+            self._setVal(propName, endDate.date().isoformat())
+        elif isinstance(val, (str, unicode)):
+            assert re.match("\d{4}-\d{2}-\d{2}", val)
+            self._setVal(propName, val)
+        else:
+            raise AssertionError("date was not in the expected format")
+
+    # add a value to an array of values for a property
+    def _addArrayVal(self, propName, val):
+        if isinstance(val, unicode):
+            val = val.encode("utf8")
+        if isinstance(val, str):
+            val = removeInvalidChars(val)
         if not self.queryParams.has_key(propName):
             self.queryParams[propName] = []
-        self.queryParams[propName].append(value)
+        self.queryParams[propName].append(val)
 
+    # encode the parameters. if the username and pass are also provided then add also them to the request parameters
+    def _encode(self, erUsername = None, erPassword = None):
+        allParams = {}
+        allParams.update(self.queryParams)
+        if erUsername != None and erPassword != None:
+            allParams["erUsername"] = erUsername;
+            allParams["erPassword"] = erPassword;
+        return urllib.urlencode(allParams, True);
+
+
+class Query(ParamsBase):
+    def __init__(self):
+        ParamsBase.__init__(self)
+        self.resultTypeList = [];
+      
     def clearRequestedResults(self):
         self.resultTypeList = [];
 
     # encode the request. if the username and pass are also provided then add also them to the request parameters
     def _encode(self, erUsername = None, erPassword = None):
-        self._updateQueryParamsWithResultTypes();
+        allParams = self._getQueryParamsWithResultTypes();
         if erUsername != None and erPassword != None:
-            self.queryParams["erUsername"] = erUsername;
-            self.queryParams["erPassword"] = erPassword;
-        return urllib.urlencode(self.queryParams, True);
+            allParams["erUsername"] = erUsername;
+            allParams["erPassword"] = erPassword;
+        return urllib.urlencode(allParams, True);
 
-    def _updateQueryParamsWithResultTypes(self):
+    def _getQueryParamsWithResultTypes(self):
+        allParams = {}
         if len(self.resultTypeList) == 0:
             raise ValueError("The query does not have any result type specified. No sense in performing such a query");
+        allParams.update(self.queryParams)
         for request in self.resultTypeList:
-            self.queryParams.update(request.__dict__);
-        self.queryParams["resultType"] = [request.__dict__["resultType"] for request in self.resultTypeList];
+            allParams.update(request.__dict__);
+        # all requests in resultTypeList have "resultType" so each call to .update() overrides the previous one
+        # since we want to store them all we have to add them here:
+        allParams["resultType"] = [request.__dict__["resultType"] for request in self.resultTypeList];
+        return allParams
 
 
 class RequestBase(object):
@@ -110,7 +126,8 @@ class RequestBase(object):
     def _parseConceptFlags(self, prefix, **kwargs):
         self._setPropIfNotDefault(prefix + "IncludeConceptImage", kwargs, "includeConceptImage", False);
         self._setPropIfNotDefault(prefix + "IncludeConceptDescription", kwargs, "includeConceptDescription", False);
-        self._setPropIfNotDefault(prefix + "IncludeConceptTrends", kwargs, "includeConceptTrends", False);
+        self._setPropIfNotDefault(prefix + "IncludeConceptTrendingScore", kwargs, "includeConceptTrendingScore", False);
+        self._setPropIfNotDefault(prefix + "IncludeConceptTrendingHistory", kwargs, "includeConceptTrendingHistory", False);
         self._setPropIfNotDefault(prefix + "IncludeConceptLocationInfo", kwargs, "includeConceptLocationInfo", False);
         self._setPropIfNotDefault(prefix + "IncludeConceptDetails", kwargs, "includeConceptDetails", False);
         
@@ -131,7 +148,6 @@ class RequestBase(object):
         self._setPropIfNotDefault(prefix + "IncludeEventSummary", kwargs, "includeEventSummary", True);
         self._setPropIfNotDefault(prefix + "IncludeEventArticleCounts", kwargs, "includeEventArticleCounts", True);
         self._setPropIfNotDefault(prefix + "IncludeEventConcepts", kwargs, "includeEventConcepts", True);
-        self._setPropIfNotDefault(prefix + "IncludeEventMultiLingInfo", kwargs, "includeEventMultiLingInfo", True);
         self._setPropIfNotDefault(prefix + "IncludeEventCategories", kwargs, "includeEventCategories", True);
         self._setPropIfNotDefault(prefix + "IncludeEventLocation", kwargs, "includeEventLocation", True);
 
@@ -151,55 +167,72 @@ class RequestBase(object):
         self._setPropIfNotDefault(prefix + "IncludeStoryMedoidArticle", kwargs, "includeStoryMedoidArticle", False);
         self._setPropIfNotDefault(prefix + "IncludeStoryExtractedDates", kwargs, "includeStoryExtractedDates", False);
 
+    # parse the info that should be returned about a location
+    def _parseLocationFlags(self, prefix, **kwargs):
+        self._setPropIfNotDefault(prefix + "IncludeCountryGeoNamesId", kwargs, "includeCountryGeoNamesId", True);
+        self._setPropIfNotDefault(prefix + "IncludeCountryWikiUri", kwargs, "includeCountryWikiUri", True);
+        self._setPropIfNotDefault(prefix + "IncludeCountryArea", kwargs, "includeCountryArea", False);
+        self._setPropIfNotDefault(prefix + "IncludeCountryPopulation", kwargs, "includeCountryPopulation", True);
+        self._setPropIfNotDefault(prefix + "IncludeCountryLocation", kwargs, "includeCountryLocation", True);
+        self._setPropIfNotDefault(prefix + "IncludeCountryDetails", kwargs, "includeCountryDetails", False);
+        self._setPropIfNotDefault(prefix + "IncludeCountryContinent", kwargs, "includeCountryContinent", False);
+        self._setPropIfNotDefault(prefix + "IncludeCountryLabel", kwargs, "includeCountryLabel", True);
+
+        self._setPropIfNotDefault(prefix + "IncludePlaceGeoNamesId", kwargs, "includePlaceGeoNamesId", True);
+        self._setPropIfNotDefault(prefix + "IncludePlaceWikiUri", kwargs, "includePlaceWikiUri", True);
+        self._setPropIfNotDefault(prefix + "IncludePlacePopulation", kwargs, "includePlacePopulation", True);
+        self._setPropIfNotDefault(prefix + "IncludePlaceFeatureCode", kwargs, "includePlaceFeatureCode", False);
+        self._setPropIfNotDefault(prefix + "IncludePlaceLocation", kwargs, "includePlaceLocation", True);
+        self._setPropIfNotDefault(prefix + "IncludePlaceLabel", kwargs, "includePlaceLabel", True);
 
 # query class for searching for events in the event registry 
 class QueryEvents(Query):
     def __init__(self,  **kwargs):
         super(QueryEvents, self).__init__();
         
-        self.queryParams["action"] = "getEvents";
+        self._setVal("action", "getEvents");
 
-        self._setQueryParamIfNotDefault("keywords", kwargs, "");          # e.g. "bla bla"
-        self._setQueryParamIfNotDefault("conceptUri", kwargs, []);      # e.g. ["http://en.wikipedia.org/wiki/Barack_Obama"]
-        self._setQueryParamIfNotDefault("lang", kwargs, []);                  # eng, deu, spa, zho, slv, ...
-        self._setQueryParamIfNotDefault("publisherUri", kwargs, []);    # ["www.bbc.co.uk"]
-        self._setQueryParamIfNotDefault("locationUri", kwargs, []);    # ["http://en.wikipedia.org/wiki/Ljubljana"]
-        self._setQueryParamIfNotDefault("categoryUri", kwargs, []);    # ["http://www.dmoz.org/Science/Astronomy"]
-        self._setQueryParamIfNotDefault("categoryIncludeSub", kwargs, True);
-        self._setQueryParamIfNotDefault("dateStart", kwargs, "");    # 2014-05-02
-        self._setQueryParamIfNotDefault("dateEnd", kwargs, "");        # 2014-05-02
+        self._setValIfNotDefault("keywords", kwargs, "");          # e.g. "bla bla"
+        self._setValIfNotDefault("conceptUri", kwargs, []);      # e.g. ["http://en.wikipedia.org/wiki/Barack_Obama"]
+        self._setValIfNotDefault("lang", kwargs, []);                  # eng, deu, spa, zho, slv, ...
+        self._setValIfNotDefault("publisherUri", kwargs, []);    # ["www.bbc.co.uk"]
+        self._setValIfNotDefault("locationUri", kwargs, []);    # ["http://en.wikipedia.org/wiki/Ljubljana"]
+        self._setValIfNotDefault("categoryUri", kwargs, []);    # ["http://www.dmoz.org/Science/Astronomy"]
+        self._setValIfNotDefault("categoryIncludeSub", kwargs, True);
+        self._setValIfNotDefault("dateStart", kwargs, "");    # 2014-05-02
+        self._setValIfNotDefault("dateEnd", kwargs, "");        # 2014-05-02
         if kwargs.has_key("minArticlesInEvent"):
-            self.queryParams["minArticlesInEvent"] = kwargs["minArticlesInEvent"];
+            self._setVal("minArticlesInEvent", kwargs["minArticlesInEvent"]);
         if kwargs.has_key("maxArticlesInEvent"):
-            self.queryParams["maxArticlesInEvent"] = kwargs["maxArticlesInEvent"];
+            self._setVal("maxArticlesInEvent", kwargs["maxArticlesInEvent"]);
         if kwargs.has_key("dateMentionStart"):
-            self.queryParams["dateMentionStart"] = kwargs["dateMentionStart"];  # 2014-05-02
+            self._setVal("dateMentionStart", kwargs["dateMentionStart"]);    # e.g. 2014-05-02
         if kwargs.has_key("dateMentionEnd"):
-            self.queryParams["dateMentionEnd"] = kwargs["dateMentionEnd"];      # 2014-05-02
+            self._setVal("dateMentionEnd", kwargs["dateMentionEnd"]);        # e.g. 2014-05-02
 
-        self._setQueryParamIfNotDefault("ignoreKeywords", kwargs, "");
-        self._setQueryParamIfNotDefault("ignoreConceptUri", kwargs, []);
-        self._setQueryParamIfNotDefault("ignoreLang", kwargs, []);
-        self._setQueryParamIfNotDefault("ignoreLocationUri", kwargs, []);
-        self._setQueryParamIfNotDefault("ignorePublisherUri", kwargs, []);
-        self._setQueryParamIfNotDefault("ignoreCategoryUri", kwargs, []);
-        self._setQueryParamIfNotDefault("ignoreCategoryIncludeSub", kwargs, True);
+        self._setValIfNotDefault("ignoreKeywords", kwargs, "");
+        self._setValIfNotDefault("ignoreConceptUri", kwargs, []);
+        self._setValIfNotDefault("ignoreLang", kwargs, []);
+        self._setValIfNotDefault("ignoreLocationUri", kwargs, []);
+        self._setValIfNotDefault("ignorePublisherUri", kwargs, []);
+        self._setValIfNotDefault("ignoreCategoryUri", kwargs, []);
+        self._setValIfNotDefault("ignoreCategoryIncludeSub", kwargs, True);
         
 
     def _getPath(self):
         return "/json/event";
 
     def addConcept(self, conceptUri):
-        self._addQueryParamArray("conceptUri", conceptUri);
+        self._addArrayVal("conceptUri", conceptUri);
 
     def addLocation(self, locationUri):
-        self._addQueryParamArray("locationUri", locationUri);
+        self._addArrayVal("locationUri", locationUri);
         
     def addCategory(self, categoryUri):
-        self._addQueryParamArray("categoryUri", categoryUri)
+        self._addArrayVal("categoryUri", categoryUri)
 
     def addNewsSource(self, newsSourceUri):
-        self._addQueryParamArray("publisherUri", newsSourceUri)
+        self._addArrayVal("publisherUri", newsSourceUri)
 
     def addKeyword(self, keyword):
         self.queryParams["keywords"] = self.queryParams.pop("keywords", "") + " " + keyword;
@@ -209,24 +242,9 @@ class QueryEvents(Query):
         self.queryParams = { "action": "getEvents", "eventUriList": ",".join(uriList) };
 
     def setDateLimit(self, startDate, endDate):
-        if isinstance(startDate, datetime.date):
-            self.queryParams["dateStart"] = startDate.isoformat()
-        elif isinstance(startDate, datetime.datetime):
-            self.queryParams["dateStart"] = startDate.date().isoformat()
-        elif isinstance(startDate, str):
-            self.queryParams["dateStart"] = startDate
-        elif self.queryParams.has_key("dateStart"):
-            del self.queryParams["dateStart"]
-
-        if isinstance(endDate, datetime.date):
-            self.queryParams["dateEnd"] = endDate.isoformat()
-        elif isinstance(endDate, datetime.datetime):
-            self.queryParams["dateEnd"] = endDate.date().isoformat()
-        elif isinstance(endDate, str):
-            self.queryParams["dateEnd"] = endDate
-        elif self.queryParams.has_key("dateEnd"):
-            del self.queryParams["dateEnd"]
-            
+        self._setDateVal("dateStart", startDate);
+        self._setDateVal("dateEnd", endDate);
+                    
     # what info does one want to get as a result of the query
     def addRequestedResult(self, requestEvents):
         if not isinstance(requestEvents, RequestEvents):
@@ -239,9 +257,8 @@ class QueryEvent(Query):
     def __init__(self, eventUriOrList, **kwargs):
         super(QueryEvent, self).__init__();
         
-        self.queryParams["action"] = "getEvent";
-
-        self.queryParams["eventUri"] = eventUriOrList;                      # a single event uri or a list of event uris
+        self._setVal("action", "getEvent");
+        self._setVal("eventUri", eventUriOrList);    # a single event uri or a list of event uris
         
     def _getPath(self):
         return "/json/event";   
@@ -257,80 +274,50 @@ class QueryEvent(Query):
 class QueryArticles(Query):
     def __init__(self,  **kwargs):
         super(QueryArticles, self).__init__();
-        self.queryParams["action"] = "getArticles";
+        self._setVal("action", "getArticles");
 
-        self._setQueryParamIfNotDefault("keywords", kwargs, "");          # e.g. "bla bla"
-        self._setQueryParamIfNotDefault("conceptUri", kwargs, []);      # a single concept uri or a list (e.g. ["http://en.wikipedia.org/wiki/Barack_Obama"])
-        self._setQueryParamIfNotDefault("lang", kwargs, []);                  # a single lang or list (possible: eng, deu, spa, zho, slv)
-        self._setQueryParamIfNotDefault("publisherUri", kwargs, []);    # a single source uri or a list (e.g. ["www.bbc.co.uk"])
-        self._setQueryParamIfNotDefault("locationUri", kwargs, []);    # a single location uri or a list (e.g. ["http://en.wikipedia.org/wiki/Ljubljana"])
-        self._setQueryParamIfNotDefault("categoryUri", kwargs, []);    # a single category uri or a list (e.g. ["http://www.dmoz.org/Science/Astronomy"])
-        self._setQueryParamIfNotDefault("categoryIncludeSub", kwargs, True);    # also include the subcategories for the given categories
-        self._setQueryParamIfNotDefault("dateStart", kwargs, "");                # starting date of the published articles (e.g. 2014-05-02)
-        self._setQueryParamIfNotDefault("dateEnd", kwargs, "");                    # ending date of the published articles (e.g. 2014-05-02)
-        self._setQueryParamIfNotDefault("dateMentionStart", kwargs, "");  # first valid mentioned date detected in articles (e.g. 2014-05-02)
-        self._setQueryParamIfNotDefault("dateMentionEnd", kwargs, "");      # last valid mentioned date detected in articles (e.g. 2014-05-02)
+        self._setValIfNotDefault("keywords", kwargs, "");          # e.g. "bla bla"
+        self._setValIfNotDefault("conceptUri", kwargs, []);      # a single concept uri or a list (e.g. ["http://en.wikipedia.org/wiki/Barack_Obama"])
+        self._setValIfNotDefault("lang", kwargs, []);                  # a single lang or list (possible: eng, deu, spa, zho, slv)
+        self._setValIfNotDefault("publisherUri", kwargs, []);    # a single source uri or a list (e.g. ["www.bbc.co.uk"])
+        self._setValIfNotDefault("locationUri", kwargs, []);    # a single location uri or a list (e.g. ["http://en.wikipedia.org/wiki/Ljubljana"])
+        self._setValIfNotDefault("categoryUri", kwargs, []);    # a single category uri or a list (e.g. ["http://www.dmoz.org/Science/Astronomy"])
+        self._setValIfNotDefault("categoryIncludeSub", kwargs, True);    # also include the subcategories for the given categories
+        self._setValIfNotDefault("dateStart", kwargs, "");                # starting date of the published articles (e.g. 2014-05-02)
+        self._setValIfNotDefault("dateEnd", kwargs, "");                    # ending date of the published articles (e.g. 2014-05-02)
+        self._setValIfNotDefault("dateMentionStart", kwargs, "");  # first valid mentioned date detected in articles (e.g. 2014-05-02)
+        self._setValIfNotDefault("dateMentionEnd", kwargs, "");      # last valid mentioned date detected in articles (e.g. 2014-05-02)
 
-        self._setQueryParamIfNotDefault("ignoreKeywords", kwargs, "");
-        self._setQueryParamIfNotDefault("ignoreConceptUri", kwargs, []);
-        self._setQueryParamIfNotDefault("ignoreLang", kwargs, []);
-        self._setQueryParamIfNotDefault("ignoreLocationUri", kwargs, []);
-        self._setQueryParamIfNotDefault("ignorePublisherUri", kwargs, []);
-        self._setQueryParamIfNotDefault("ignoreCategoryUri", kwargs, []);
-        self._setQueryParamIfNotDefault("ignoreCategoryIncludeSub", kwargs, True);
+        self._setValIfNotDefault("ignoreKeywords", kwargs, "");
+        self._setValIfNotDefault("ignoreConceptUri", kwargs, []);
+        self._setValIfNotDefault("ignoreLang", kwargs, []);
+        self._setValIfNotDefault("ignoreLocationUri", kwargs, []);
+        self._setValIfNotDefault("ignorePublisherUri", kwargs, []);
+        self._setValIfNotDefault("ignoreCategoryUri", kwargs, []);
+        self._setValIfNotDefault("ignoreCategoryIncludeSub", kwargs, True);
         
     def _getPath(self):
         return "/json/article";
     
     def addConcept(self, conceptUri):
-        self._addQueryParamArray("conceptUri", conceptUri);
+        self._addArrayVal("conceptUri", conceptUri);
 
     def addLocation(self, locationUri):
-        self._addQueryParamArray("locationUri", locationUri);
+        self._addArrayVal("locationUri", locationUri);
 
     def addCategory(self, categoryUri):
-        self._addQueryParamArray("categoryUri", categoryUri)
+        self._addArrayVal("categoryUri", categoryUri)
 
     def addKeyword(self, keyword):
         self.queryParams["keywords"] = self.queryParams.pop("keywords", "") + " " + keyword;
 
     def setDateLimit(self, startDate, endDate):
-        if isinstance(startDate, datetime.date):
-            self.queryParams["dateStart"] = startDate.isoformat()
-        elif isinstance(startDate, datetime.datetime):
-            self.queryParams["dateStart"] = startDate.date().isoformat()
-        elif isinstance(startDate, str):
-            self.queryParams["dateStart"] = startDate
-        elif self.queryParams.has_key("dateStart"):
-            del self.queryParams["dateStart"]
-
-        if isinstance(endDate, datetime.date):
-            self.queryParams["dateEnd"] = endDate.isoformat()
-        elif isinstance(endDate, datetime.datetime):
-            self.queryParams["dateEnd"] = endDate.date().isoformat()
-        elif isinstance(endDate, str):
-            self.queryParams["dateEnd"] = endDate
-        elif self.queryParams.has_key("dateEnd"):
-            del self.queryParams["dateEnd"]
+        self._setDateVal("dateStart", startDate);
+        self._setDateVal("dateEnd", endDate);
 
     def setDateMentionLimit(self, startDate, endDate):
-        if isinstance(startDate, datetime.date):
-            self.queryParams["dateMentionStart"] = startDate.isoformat()
-        elif isinstance(startDate, datetime.datetime):
-            self.queryParams["dateMentionStart"] = startDate.date().isoformat()
-        elif isinstance(startDate, str):
-            self.queryParams["dateMentionStart"] = startDate
-        elif self.queryParams.has_key("dateMentionStart"):
-            del self.queryParams["dateMentionStart"]
-
-        if isinstance(endDate, datetime.date):
-            self.queryParams["dateMentionEnd"] = endDate.isoformat()
-        elif isinstance(endDate, datetime.datetime):
-            self.queryParams["dateMentionEnd"] = endDate.date().isoformat()
-        elif isinstance(endDate, str):
-            self.queryParams["dateMentionEnd"] = endDate
-        elif self.queryParams.has_key("dateMentionEnd"):
-            del self.queryParams["dateMentionEnd"]
+        self._setDateVal("dateMentionStart", startDate);
+        self._setDateVal("dateMentionEnd", endDate);          
 
     # what info does one want to get as a result of the query
     def addRequestedResult(self, requestArticles):
@@ -347,8 +334,8 @@ class QueryArticles(Query):
 class QueryArticle(Query):
     def __init__(self, articleUriOrUriList):
         super(QueryArticle, self).__init__();
-        self.queryParams["articleUri"] = articleUriOrUriList;      # a single article uri or a list of article uris
-        self.queryParams["action"] = "getArticle";
+        self._setVal("articleUri", articleUriOrUriList);      # a single article uri or a list of article uris
+        self._setVal("action", "getArticle");
        
     @staticmethod
     def queryById(articleIdOrIdList):
@@ -585,14 +572,14 @@ class RequestEvents(RequestBase):
 # return a list of event details
 class RequestEventsInfo(RequestEvents):
     def __init__(self, page = 0, count = 20, 
-                 sortBy = "date", sortByAsc = False,    # date, size, socialScore
+                 sortBy = "date", sortByAsc = False,    # date, rel, size, socialScore
                  conceptLang = ["eng"], conceptTypes = ["person", "org", "loc", "wiki"], 
                  # what info about events to include:
                  **kwargs):
         assert count <= 200
         self.eventsPage = page
         self.eventsCount = count
-        self.eventsSortBy = sortBy          # date, size, rel
+        self.eventsSortBy = sortBy          # date, rel, size, socialScore
         self.eventsSortByAsc = sortByAsc
         self.eventsConceptLang = conceptLang
         self.eventsConceptType = conceptTypes
@@ -692,9 +679,9 @@ class RequestEventsConceptMatrix(RequestEvents):
 class RequestEventsConceptTrends(RequestEvents):
     def __init__(self, conceptCount = 10, conceptTypes = ["person", "org", "loc", "wiki"], conceptLangs = ["eng"], **kwargs):
         assert conceptCount <= 50
-        self.trendingConceptsConceptType = conceptTypes
-        self.trendingConceptsConceptCount = conceptCount
-        self.trendingConceptsConceptLang = conceptLangs
+        self.conceptTrendsConceptType = conceptTypes
+        self.conceptTrendsConceptCount = conceptCount
+        self.conceptTrendsConceptLang = conceptLangs
 
         self._parseConceptFlags("conceptTrends", **kwargs)
 
@@ -897,7 +884,7 @@ mentioned in the articles. By default trends are computed by comparing the total
 in the last two days compared to the number of mentions in the two weeks before. The trend for each concept/category
 is computed as the Pearson residual. The returned concepts/categories are the ones that have the highest residual.
 """
-class TrendsBase(RequestBase):
+class TrendsBase(ParamsBase):
     def _getPath(self):
         return "/json/trends"
 
@@ -906,9 +893,10 @@ class GetTrendingConcepts(TrendsBase):
     def __init__(self, 
                  source = "news", # source information from which to compute top trends. Possible values: "news", "social"
                  count = 20):     # number of top trends to return
-        self._setProp("action", "getTrendingConcepts")
-        self._setProp("source", source)
-        self._setProp("conceptCount", count)
+        ParamsBase.__init__(self)
+        self._setVal("action", "getTrendingConcepts")
+        self._setVal("source", source)
+        self._setVal("conceptCount", count)
 
 
 # get currently top trending categories
@@ -916,17 +904,19 @@ class GetTrendingCategories(TrendsBase):
     def __init__(self, 
                  source = "news",   # source information from which to compute top trends. Possible values: "news", "social"
                  count = 20):       # number of top trends to return
-        self._setProp("action", "getTrendingCategories")
-        self._setProp("source", source)
-        self._setProp("categoryCount", count)
+        ParamsBase.__init__(self)
+        self._setVal("action", "getTrendingCategories")
+        self._setVal("source", source)
+        self._setVal("categoryCount", count)
 
 # get currently top trending items for which the users provided the data
 # this data can be stock prices, energy prices, etc...
 class GetTrendingCustomItems(TrendsBase):
     def __init__(self, source = "news", count = 20):
-        self._setProp("action", "getTrendingCustom")
-        self._setProp("source", source)
-        self._setProp("conceptCount", count)
+        ParamsBase.__init__(self)
+        self._setVal("action", "getTrendingCustom")
+        self._setVal("source", source)
+        self._setVal("conceptCount", count)
 
 # get currently top trending groups of concepts
 # a group can be identified by the concept type or by a concept class uri
@@ -935,19 +925,20 @@ class GetTrendingConceptGroups(TrendsBase):
                  source = "news",   # source information from which to compute top trends. Possible values: "news", "social"
                  count = 20,        # number of top trends to return
                  **kwds):     
-        self._setProp("action", "getConceptTrendGroups")
-        self._setProp("source", source)
-        self._setProp("conceptCount", count)
+        ParamsBase.__init__(self)
+        self._setVal("action", "getConceptTrendGroups")
+        self._setVal("source", source)
+        self._setVal("conceptCount", count)
 
         self._parseConceptFlags("concept", **kwargs);
 
     # request trending of concepts of specified types
     def getConceptTypeGroups(types = ["person", "org", "loc", "wiki"]):
-        self._setProp("conceptType", types)
+        self._setVal("conceptType", types)
 
     # request trending of concepts assigned to the specified concept classes
     def getConceptClassUris(conceptClassUris):
-        self._setProp("conceptClassUri", conceptClassUris)
+        self._setVal("conceptClassUri", conceptClassUris)
 
 
 # #####################################
@@ -962,7 +953,7 @@ Social score for an article is computed as the sum of shares on facebook and twi
 Social score for an event is computed by checking 30 top shared articles in the event and averaging their social scores.
 """
 
-class DailySharesBase(RequestBase):
+class DailySharesBase(ParamsBase):
     def _getPath(self):
         return "/json/topDailyShares"
 
@@ -971,38 +962,28 @@ class GetTopSharedArticles(DailySharesBase):
     def __init__(self, 
                  date = None,     # specify the date (either in YYYY-MM-DD or datetime.date format) for which to return top shared articles. If None then today is used
                  count = 20):     # number of top shared articles to return
-        self._setProp("action", "getArticles")
-        self._setProp("count", count)
+        ParamsBase.__init__(self)
+        self._setVal("action", "getArticles")
+        self._setVal("count", count)
         
         if date == None:
             date = datetime.date.today();
+        self._setDateVal("date", date)
         
-        if isinstance(date, datetime.date):
-            self._setProp("date", date.isoformat())
-        # if string, format should be YYYY-MM-DD
-        elif isinstance(date, (str, unicode)):
-            assert re.match("\d{4}-\d{2}-\d{2}", date) != None
-            self._setProp("date", date)
-
         
 # get top shared events for today or any other day
 class GetTopSharedEvents(DailySharesBase):
     def __init__(self, 
                  date = None,     # specify the date (either in YYYY-MM-DD or datetime.date format) for which to return top shared articles. If None then today is used
                  count = 20):     # number of top shared articles to return
+        ParamsBase.__init__(self)
         self._setProp("action", "getEvents")
         self._setProp("count", count)
         
         if date == None:
             date = datetime.date.today();
+        self._setDateVal("date", date)
         
-        if isinstance(date, datetime.date):
-            self._setProp("date", date.isoformat())
-        # if string, format should be YYYY-MM-DD
-        elif isinstance(date, (str, unicode)):
-            assert re.match("\d{4}-\d{2}-\d{2}", date) != None
-            self._setProp("date", date)
-
 
 # #####################################
 # #####################################
