@@ -169,21 +169,23 @@ class RequestBase(object):
 
     # parse the info that should be returned about a location
     def _parseLocationFlags(self, prefix, **kwargs):
-        self._setPropIfNotDefault(prefix + "IncludeCountryGeoNamesId", kwargs, "includeCountryGeoNamesId", True);
+        self._setPropIfNotDefault(prefix + "IncludeCountryLabel", kwargs, "includeCountryLabel", True);
         self._setPropIfNotDefault(prefix + "IncludeCountryWikiUri", kwargs, "includeCountryWikiUri", True);
-        self._setPropIfNotDefault(prefix + "IncludeCountryArea", kwargs, "includeCountryArea", False);
-        self._setPropIfNotDefault(prefix + "IncludeCountryPopulation", kwargs, "includeCountryPopulation", True);
+        self._setPropIfNotDefault(prefix + "IncludeCountryGeoNamesId", kwargs, "includeCountryGeoNamesId", False);
         self._setPropIfNotDefault(prefix + "IncludeCountryLocation", kwargs, "includeCountryLocation", True);
+        self._setPropIfNotDefault(prefix + "IncludeCountryArea", kwargs, "includeCountryArea", False);
+        self._setPropIfNotDefault(prefix + "IncludeCountryPopulation", kwargs, "includeCountryPopulation", False);
         self._setPropIfNotDefault(prefix + "IncludeCountryDetails", kwargs, "includeCountryDetails", False);
         self._setPropIfNotDefault(prefix + "IncludeCountryContinent", kwargs, "includeCountryContinent", False);
-        self._setPropIfNotDefault(prefix + "IncludeCountryLabel", kwargs, "includeCountryLabel", True);
-
-        self._setPropIfNotDefault(prefix + "IncludePlaceGeoNamesId", kwargs, "includePlaceGeoNamesId", True);
-        self._setPropIfNotDefault(prefix + "IncludePlaceWikiUri", kwargs, "includePlaceWikiUri", True);
-        self._setPropIfNotDefault(prefix + "IncludePlacePopulation", kwargs, "includePlacePopulation", True);
-        self._setPropIfNotDefault(prefix + "IncludePlaceFeatureCode", kwargs, "includePlaceFeatureCode", False);
-        self._setPropIfNotDefault(prefix + "IncludePlaceLocation", kwargs, "includePlaceLocation", True);
+        
         self._setPropIfNotDefault(prefix + "IncludePlaceLabel", kwargs, "includePlaceLabel", True);
+        self._setPropIfNotDefault(prefix + "IncludePlaceCountry", kwargs, "includePlaceCountry", True);
+        self._setPropIfNotDefault(prefix + "IncludePlaceWikiUri", kwargs, "includePlaceWikiUri", True);
+        self._setPropIfNotDefault(prefix + "IncludePlaceLocation", kwargs, "includePlaceLocation", True);
+        self._setPropIfNotDefault(prefix + "IncludePlaceGeoNamesId", kwargs, "includePlaceGeoNamesId", False);
+        self._setPropIfNotDefault(prefix + "IncludePlacePopulation", kwargs, "includePlacePopulation", False);
+        self._setPropIfNotDefault(prefix + "IncludePlaceFeatureCode", kwargs, "includePlaceFeatureCode", False);
+                
 
 # query class for searching for events in the event registry 
 class QueryEvents(Query):
@@ -1137,15 +1139,14 @@ class EventRegistry(object):
 
     # return a list of concepts that contain the given prefix
     # valid sources: person, loc, org, wiki, entities (== person + loc + org), concepts (== entities + wiki), conceptClass, conceptFolder
-    # fullLocInfo determines if you wish to see as label "city, country" or just "city"
-    def suggestConcepts(self, prefix, sources = ["concepts"], lang = "eng", labelLang = "eng", page = 0, count = 20, fullLocInfo = False):      
-        return self.jsonRequest("/json/suggestConcepts", { "prefix": prefix, "source": sources, "lang": lang, "labelLang": labelLang, "page": page, "count": count, "fullLocInfo": fullLocInfo })
+    def suggestConcepts(self, prefix, sources = ["concepts"], lang = "eng", labelLang = "eng", page = 0, count = 20):      
+        return self.jsonRequest("/json/suggestConcepts", { "prefix": prefix, "source": sources, "lang": lang, "labelLang": labelLang, "page": page, "count": count})
         
     # return a list of news sources that match the prefix
     def suggestNewsSources(self, prefix, page = 0, count = 20):
         return self.jsonRequest("/json/suggestSources", { "prefix": prefix, "page": page, "count": count })
         
-    # return a list of locations (cities or countries) that contain the prefix
+    # return a list of geo locations (cities or countries) that contain the prefix
     def suggestLocations(self, prefix, count = 20, lang = "eng", source = ["place", "country"]):
         return self.jsonRequest("/json/suggestLocations", { "prefix": prefix, "count": count, "source": source, "lang": lang })
         
@@ -1165,10 +1166,10 @@ class EventRegistry(object):
         return None
 
     # return a location uri that is the best match for the given location label
-    def getLocationUri(self, locationLabel, lang = "eng"):
-        matches = self.suggestConcepts(locationLabel, sources = ["loc"], lang = lang, fullLocInfo = True);
-        if matches != None and len(matches) > 0 and matches[0].has_key("uri"):
-            return matches[0]["uri"]
+    def getLocationUri(self, locationLabel, lang = "eng", source = ["place", "country"]):
+        matches = self.suggestLocations(locationLabel, lang = lang, source = source);
+        if matches != None and len(matches) > 0 and matches[0].has_key("wikiUri"):
+            return matches[0]["wikiUri"]
         return None;
 
     # return a category uri that is the best match for the given label

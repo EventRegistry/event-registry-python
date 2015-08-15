@@ -1,8 +1,8 @@
-"""
+﻿"""
 utility classes for Event Registry
 """
 
-import warnings, os, sys
+import warnings, os, sys, re
 
 def deprecated(func):
     """This is a decorator which can be used to mark functions
