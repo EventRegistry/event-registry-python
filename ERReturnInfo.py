@@ -27,7 +27,7 @@ class ArticleInfoFlags(ReturnInfoFlagsBase):
                  concepts = False,
                  storyUri = False,
                  duplicateList = False,
-                 originalArticleInfo = False,
+                 originalArticle = False,
                  categories = False,
                  location = False,
                  image = False,
@@ -41,7 +41,7 @@ class ArticleInfoFlags(ReturnInfoFlagsBase):
         self._setProp("IncludeArticleConcepts", concepts, False)
         self._setProp("IncludeArticleStoryUri", storyUri, False)
         self._setProp("IncludeArticleDuplicateList", duplicateList, False)
-        self._setProp("IncludeArticleOriginalArticleInfo", originalArticleInfo, False)
+        self._setProp("IncludeArticleOriginalArticle", originalArticle, False)
         self._setProp("IncludeArticleCategories", categories, False)
         self._setProp("IncludeArticleLocation", location, False)
         self._setProp("IncludeArticleImage", image, False)

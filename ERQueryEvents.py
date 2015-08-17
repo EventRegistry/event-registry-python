@@ -11,7 +11,7 @@ class QueryEvents(Query):
         self._setValIfNotDefault("keywords", kwargs, "");          # e.g. "bla bla"
         self._setValIfNotDefault("conceptUri", kwargs, []);      # e.g. ["http://en.wikipedia.org/wiki/Barack_Obama"]
         self._setValIfNotDefault("lang", kwargs, []);                  # eng, deu, spa, zho, slv, ...
-        self._setValIfNotDefault("publisherUri", kwargs, []);    # ["www.bbc.co.uk"]
+        self._setValIfNotDefault("sourceUri", kwargs, []);    # ["www.bbc.co.uk"]
         self._setValIfNotDefault("locationUri", kwargs, []);    # ["http://en.wikipedia.org/wiki/Ljubljana"]
         self._setValIfNotDefault("categoryUri", kwargs, []);    # ["http://www.dmoz.org/Science/Astronomy"]
         self._setValIfNotDefault("categoryIncludeSub", kwargs, True);
@@ -30,7 +30,7 @@ class QueryEvents(Query):
         self._setValIfNotDefault("ignoreConceptUri", kwargs, []);
         self._setValIfNotDefault("ignoreLang", kwargs, []);
         self._setValIfNotDefault("ignoreLocationUri", kwargs, []);
-        self._setValIfNotDefault("ignorePublisherUri", kwargs, []);
+        self._setValIfNotDefault("ignoreSourceUri", kwargs, []);
         self._setValIfNotDefault("ignoreCategoryUri", kwargs, []);
         self._setValIfNotDefault("ignoreCategoryIncludeSub", kwargs, True);
         
@@ -48,7 +48,7 @@ class QueryEvents(Query):
         self._addArrayVal("categoryUri", categoryUri)
 
     def addNewsSource(self, newsSourceUri):
-        self._addArrayVal("publisherUri", newsSourceUri)
+        self._addArrayVal("sourceUri", newsSourceUri)
 
     def addKeyword(self, keyword):
         self.queryParams["keywords"] = self.queryParams.pop("keywords", "") + " " + keyword;
@@ -122,15 +122,15 @@ class RequestEventsLocTimeAggr(RequestEvents):
         self.resultType = "locTimeAggr"
         self.__dict__.update(returnInfo.getParams("locTimeAggr"))
 
-# list of top publishers that report about events that are among the results
-class RequestEventsTopPublisherAggr(RequestEvents):
+# list of top news sources that report about events that are among the results
+class RequestEventsTopSourceAggr(RequestEvents):
     def __init__(self, 
-                 topPublisherCount = 20, 
+                 topSourceCount = 20, 
                  returnInfo = ReturnInfo()):
-        assert topPublisherCount <= 200
-        self.resultType = "topPublisherAggr"
-        self.topPublisherAggrTopPublisherCount = topPublisherCount
-        self.__dict__.update(returnInfo.getParams("topPublisherAggr"))
+        assert topSourceCount <= 200
+        self.resultType = "topSourceAggr"
+        self.topSourceAggrTopSourceCount = topSourceCount
+        self.__dict__.update(returnInfo.getParams("topSourceAggr"))
 
 # get aggregated list of concepts - top concepts that appear in events 
 class RequestEventsConceptAggr(RequestEvents):

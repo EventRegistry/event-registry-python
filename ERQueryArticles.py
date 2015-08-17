@@ -10,7 +10,7 @@ class QueryArticles(Query):
         self._setValIfNotDefault("keywords", kwargs, "");           # e.g. "bla bla"
         self._setValIfNotDefault("conceptUri", kwargs, []);         # a single concept uri or a list (e.g. ["http://en.wikipedia.org/wiki/Barack_Obama"])
         self._setValIfNotDefault("lang", kwargs, []);               # a single lang or list (possible: eng, deu, spa, zho, slv)
-        self._setValIfNotDefault("publisherUri", kwargs, []);       # a single source uri or a list (e.g. ["www.bbc.co.uk"])
+        self._setValIfNotDefault("sourceUri", kwargs, []);          # a single source uri or a list (e.g. ["www.bbc.co.uk"])
         self._setValIfNotDefault("locationUri", kwargs, []);        # a single location uri or a list (e.g. ["http://en.wikipedia.org/wiki/Ljubljana"])
         self._setValIfNotDefault("categoryUri", kwargs, []);        # a single category uri or a list (e.g. ["http://www.dmoz.org/Science/Astronomy"])
         self._setValIfNotDefault("categoryIncludeSub", kwargs, True);       # also include the subcategories for the given categories
@@ -23,7 +23,7 @@ class QueryArticles(Query):
         self._setValIfNotDefault("ignoreConceptUri", kwargs, []);
         self._setValIfNotDefault("ignoreLang", kwargs, []);
         self._setValIfNotDefault("ignoreLocationUri", kwargs, []);
-        self._setValIfNotDefault("ignorePublisherUri", kwargs, []);
+        self._setValIfNotDefault("ignoreSourceUri", kwargs, []);
         self._setValIfNotDefault("ignoreCategoryUri", kwargs, []);
         self._setValIfNotDefault("ignoreCategoryIncludeSub", kwargs, True);
         

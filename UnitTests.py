@@ -92,7 +92,7 @@ res = er.execQuery(q)
 eventUri = "131"
 q = QueryEvent(eventUri);
 q.addRequestedResult(RequestEventInfo(["eng", "spa", "slv"], conceptTypes = "wiki", includeEventConcepts = True, includeEventArticleCounts = True, includeEventTitle = True, includeEventSummary = True, includeEventCategories =  True, includeEventLocation = True, includeEventStories = True, includeEventImages = True))
-q.addRequestedResult(RequestEventArticles(0, 50, sortyBy = "cosSim", sortByAsc = True, includeArticleConcepts = True, conceptLang = "spa", conceptTypes = "wiki", includeArticleStoryUri = True, includeArticleDuplicateList = True, includeArticleOriginalArticleInfo = True, includeArticleCategories = True, includeArticleLocation = True, includeArticleExtractedDates = True))        # get 10 articles about the event (any language is ok) that are closest to the center of the event
+q.addRequestedResult(RequestEventArticles(0, 50, sortyBy = "cosSim", sortByAsc = True, includeArticleConcepts = True, conceptLang = "spa", conceptTypes = "wiki", includeArticleStoryUri = True, includeArticleDuplicateList = True, includeArticleOriginalArticle = True, includeArticleCategories = True, includeArticleLocation = True, includeArticleExtractedDates = True))        # get 10 articles about the event (any language is ok) that are closest to the center of the event
 q.addRequestedResult(RequestEventArticleTrend())
 q.addRequestedResult(RequestEventKeywordAggr())
 eventRes = er.execQuery(q);

@@ -88,9 +88,9 @@ class ParamsBase(object):
 
     def _setDateVal(self, propName, val):
         if isinstance(val, datetime.date):
-            self._setVal(propName, endDate.isoformat())
+            self._setVal(propName, val.isoformat())
         elif isinstance(val, datetime.datetime):
-            self._setVal(propName, endDate.date().isoformat())
+            self._setVal(propName, val.date().isoformat())
         elif isinstance(val, (str, unicode)):
             assert re.match("\d{4}-\d{2}-\d{2}", val)
             self._setVal(propName, val)
