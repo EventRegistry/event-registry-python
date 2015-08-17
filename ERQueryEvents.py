@@ -1,48 +1,105 @@
-from ERBase import *
+﻿from ERBase import *
 from ERReturnInfo import *
 
-# query class for searching for events in the event registry 
+
 class QueryEvents(Query):
-    def __init__(self,  **kwargs):
-        super(QueryEvents, self).__init__();
+    """
+    Query class for searching for events in the Event Registry.
+    The resulting events have to match all specified conditions. If a parameter value equals "" or [], then it is ignored.
+    In order for query to be valid, it has to have at least one positive condition (condition that does not start with ignore*).
+     
+    @param keywords: find events where articles mention all the specified keywords. 
+        In case of multiple keywords, separate them with space. Example: "apple iphone".
+    @param conceptUri: find events where the concept with concept uri is important. 
+        A single concept uri can be provided as a string, multiple concept uris can be provided as a list of strings.
+        If multiple concept uris are provided, resulting events have to be about *all* of them.
+        To obtain a concept uri using a concept label use EventRegistry.getConceptUri().
+    @param sourceUri: find events that contain one or more articles that have been written by a news source sourceUri.
+        If multiple sources are provided, resulting events have to be contain articles from *all* provided sources.
+        Source uri for a given news source name can be obtained using EventRegistry.getNewsSourceUri().
+    @param locationUri: find events that occured at a particular location. Location uri can either be a city or a country. 
+        If multiple locations are provided, resulting events have to match *any* of the locations.
+        Location uri for a given name can be obtained using EventRegistry.getLocationUri().
+    @param categoryUri: find events that are assigned into a particular category.
+        If multiple categories are provided, resulting events have to be assigned to *any* of the categories.
+        A category uri can be obtained from a category name using EventRegistry.getCategoryUri().
+    @param lang: find events for which we found articles in the specified language. 
+        If more than one language is specified, resulting events has to be reported in *any* of the languages. 
+    @param dateStart: find events that occured on or after dateStart. Date should be provided in YYYY-MM-DD format, datetime.time or datetime.datetime.
+    @param dateEnd: find events that occured before or on dateEnd. Date should be provided in YYYY-MM-DD format, datetime.time or datetime.datetime.
+    @param minArticlesInEvent: find events that have been reported in at least minArticlesInEvent articles (regardless of language)
+    @param maxArticlesInEvent: find events that have not been reported in more than maxArticlesInEvent articles (regardless of language)
+    @param dateMentionStart: find events where articles explicitely mention a date that is equal or greater than dateMentionStart.
+    @param dateMentionEnd: find events where articles explicitely mention a date that is lower or equal to dateMentionEnd.
+    @param ignoreKeywords: ignore events where articles about the event mention all provided keywords
+    @param ignoreConceptUri: ignore events that are about all provided concepts
+    @param ignoreLang: ignore events that are reported in any of the provided languages
+    @param ignoreLocationUri: ignore events that occured in any of the provided locations. A location can be a city or a place
+    @param ignoreSourceUri: ignore events that have have articles which have been written by all specified news sources
+    @param categoryIncludeSub: when a category is specified using categoryUri, should also all subcategories be included?
+    @param ignoreCategoryIncludeSub: when a category is specified using ignoreCategoryUri, should also all subcategories be included?
+    """
+    def __init__(self, 
+                 keywords = "",
+                 conceptUri = [],
+                 sourceUri = [],
+                 locationUri = [],
+                 categoryUri = [],
+                 lang = [],
+                 dateStart = "",
+                 dateEnd = "",
+                 minArticlesInEvent = 0,
+                 maxArticlesInEvent = sys.maxint,
+                 dateMentionStart = "",
+                 dateMentionEnd = "",
+                 ignoreKeywords = "",
+                 ignoreConceptUri = [],
+                 ignoreLocationUri = [],
+                 ignoreSourceUri = [],
+                 ignoreCategoryUri = [],
+                 ignoreLang = [],
+                 categoryIncludeSub = True,
+                 ignoreCategoryIncludeSub = True):
+        super(QueryEvents, self).__init__()
         
-        self._setVal("action", "getEvents");
+        self._setVal("action", "getEvents")
 
-        self._setValIfNotDefault("keywords", kwargs, "");          # e.g. "bla bla"
-        self._setValIfNotDefault("conceptUri", kwargs, []);      # e.g. ["http://en.wikipedia.org/wiki/Barack_Obama"]
-        self._setValIfNotDefault("lang", kwargs, []);                  # eng, deu, spa, zho, slv, ...
-        self._setValIfNotDefault("sourceUri", kwargs, []);    # ["www.bbc.co.uk"]
-        self._setValIfNotDefault("locationUri", kwargs, []);    # ["http://en.wikipedia.org/wiki/Ljubljana"]
-        self._setValIfNotDefault("categoryUri", kwargs, []);    # ["http://www.dmoz.org/Science/Astronomy"]
-        self._setValIfNotDefault("categoryIncludeSub", kwargs, True);
-        self._setValIfNotDefault("dateStart", kwargs, "");    # 2014-05-02
-        self._setValIfNotDefault("dateEnd", kwargs, "");        # 2014-05-02
-        if kwargs.has_key("minArticlesInEvent"):
-            self._setVal("minArticlesInEvent", kwargs["minArticlesInEvent"]);
-        if kwargs.has_key("maxArticlesInEvent"):
-            self._setVal("maxArticlesInEvent", kwargs["maxArticlesInEvent"]);
-        if kwargs.has_key("dateMentionStart"):
-            self._setVal("dateMentionStart", kwargs["dateMentionStart"]);    # e.g. 2014-05-02
-        if kwargs.has_key("dateMentionEnd"):
-            self._setVal("dateMentionEnd", kwargs["dateMentionEnd"]);        # e.g. 2014-05-02
+        self._setValIfNotDefault("keywords", keywords, "")         # e.g. "bla bla"
+        self._setValIfNotDefault("conceptUri", conceptUri, [])     # e.g. ["http://en.wikipedia.org/wiki/Barack_Obama"]
+        self._setValIfNotDefault("sourceUri", sourceUri, [])       # ["www.bbc.co.uk"]
+        self._setValIfNotDefault("locationUri", locationUri, [])   # ["http://en.wikipedia.org/wiki/Ljubljana"]
+        self._setValIfNotDefault("categoryUri", categoryUri, [])   # ["http://www.dmoz.org/Science/Astronomy"]
+        self._setValIfNotDefault("lang", lang, [])                 # eng, deu, spa, zho, slv, ...
+        if (dateStart != ""):
+            self._setDateVal("dateStart", dateStart)   # 2014-05-02
+        if (dateEnd != ""):
+            self._setDateVal("dateEnd", dateEnd)       # 2014-05-02
+        self._setValIfNotDefault("minArticlesInEvent", minArticlesInEvent, 0)
+        self._setValIfNotDefault("maxArticlesInEvent", maxArticlesInEvent, sys.maxint)
+        if (dateMentionStart != ""):
+            self._setDateVal("dateMentionStart", dateMentionStart)    # e.g. 2014-05-02
+        if (dateMentionEnd != ""):
+            self._setDateVal("dateMentionEnd", dateMentionEnd)        # e.g. 2014-05-02
 
-        self._setValIfNotDefault("ignoreKeywords", kwargs, "");
-        self._setValIfNotDefault("ignoreConceptUri", kwargs, []);
-        self._setValIfNotDefault("ignoreLang", kwargs, []);
-        self._setValIfNotDefault("ignoreLocationUri", kwargs, []);
-        self._setValIfNotDefault("ignoreSourceUri", kwargs, []);
-        self._setValIfNotDefault("ignoreCategoryUri", kwargs, []);
-        self._setValIfNotDefault("ignoreCategoryIncludeSub", kwargs, True);
+        self._setValIfNotDefault("ignoreKeywords", ignoreKeywords, "")
+        self._setValIfNotDefault("ignoreConceptUri", ignoreConceptUri, [])
+        self._setValIfNotDefault("ignoreLocationUri", ignoreLocationUri, [])
+        self._setValIfNotDefault("ignoreSourceUri", ignoreSourceUri, [])
+        self._setValIfNotDefault("ignoreCategoryUri", ignoreCategoryUri, [])
+        self._setValIfNotDefault("ignoreLang", ignoreLang, [])
+
+        self._setValIfNotDefault("categoryIncludeSub", categoryIncludeSub, True)
+        self._setValIfNotDefault("ignoreCategoryIncludeSub", ignoreCategoryIncludeSub, True)
         
 
     def _getPath(self):
-        return "/json/event";
+        return "/json/event"
 
     def addConcept(self, conceptUri):
-        self._addArrayVal("conceptUri", conceptUri);
+        self._addArrayVal("conceptUri", conceptUri)
 
     def addLocation(self, locationUri):
-        self._addArrayVal("locationUri", locationUri);
+        self._addArrayVal("locationUri", locationUri)
         
     def addCategory(self, categoryUri):
         self._addArrayVal("categoryUri", categoryUri)
@@ -51,40 +108,47 @@ class QueryEvents(Query):
         self._addArrayVal("sourceUri", newsSourceUri)
 
     def addKeyword(self, keyword):
-        self.queryParams["keywords"] = self.queryParams.pop("keywords", "") + " " + keyword;
+        self.queryParams["keywords"] = self.queryParams.pop("keywords", "") + " " + keyword
 
-    # set a custom list of event uris. the results will be then computed on this list - no query will be done
     def setEventUriList(self, uriList):
-        self.queryParams = { "action": "getEvents", "eventUriList": ",".join(uriList) };
+        """
+        Set a custom list of event uris. The results will be then computed on this list - no query 
+        will be done (all conditions will be ignored).
+        """
+        assert isinstance(uriList, list), "uriList has to be a list of strings that represent event uris"
+        self.queryParams = { "action": "getEvents", "eventUriList": ",".join(uriList) }
 
     def setDateLimit(self, startDate, endDate):
-        self._setDateVal("dateStart", startDate);
-        self._setDateVal("dateEnd", endDate);
+        self._setDateVal("dateStart", startDate)
+        self._setDateVal("dateEnd", endDate)
                     
-    # what info does one want to get as a result of the query
     def addRequestedResult(self, requestEvents):
-        if not isinstance(requestEvents, RequestEvents):
-            raise AssertionError("QueryEvents class can only accept result requests that are of type RequestEvents");
-        self.resultTypeList.append(requestEvents);
+        """
+        Add a result type that you would like to be returned.
+        In one QueryEvents you can ask for multiple result types.
+        Result types can be the classes that extend RequestEvents base class (see classes below).
+        """
+        assert isinstance(requestEvents, RequestEvents), "QueryEvents class can only accept result requests that are of type RequestEvents"
+        self.resultTypeList.append(requestEvents)
 
 
-
-# #####################################
-# #####################################
 class RequestEvents:
     def __init__(self):
-        self.resultType = None;
+        self.resultType = None
 
-# return a list of event details
 class RequestEventsInfo(RequestEvents):
-    def __init__(self, page = 0, count = 20, 
-                 sortBy = "date", sortByAsc = False,    # date, rel, size, socialScore
+    """
+    return event details for resulting events
+    """
+    def __init__(self, page = 0, 
+                 count = 20, 
+                 sortBy = "date", sortByAsc = False,    # how should the resulting events be sorted. Options: date (by event date), rel (relevance to the query), size (number of articles), socialScore (amount of shares in social media)
                  returnInfo = ReturnInfo()):
         assert count <= 200
         self.resultType = "events"
         self.eventsPage = page
         self.eventsCount = count
-        self.eventsSortBy = sortBy          # date, rel, size, socialScore
+        self.eventsSortBy = sortBy
         self.eventsSortByAsc = sortByAsc
         self.__dict__.update(returnInfo.getParams("events"))
 
@@ -94,36 +158,48 @@ class RequestEventsInfo(RequestEvents):
     def setCount(self, count):
         self.eventsCount = count
 
-# return a list of event uris
 class RequestEventsUriList(RequestEvents):
+    """
+    return a simple list of event uris for resulting events
+    """
     def __init__(self):
         self.resultType = "uriList"
 
-        # get time distribution of resulting events
 class RequestEventsTimeAggr(RequestEvents):
+    """
+    return time distribution of resulting events
+    """
     def __init__(self):
         self.resultType = "timeAggr"
 
-# get keyword aggregate of resulting events
 class RequestEventsKeywordAggr(RequestEvents):
+    """
+    return keyword aggregate (tag cloud) of resulting events
+    """
     def __init__(self, lang = "eng"):
         self.resultType = "keywordAggr"
-        self.keywordAggrLang = lang;
+        self.keywordAggrLang = lang
 
-# get aggreate of locations of resulting events
 class RequestEventsLocAggr(RequestEvents):
+    """
+    return aggreate of locations of resulting events
+    """
     def __init__(self, returnInfo = ReturnInfo()):
         self.resultType = "locAggr"
         self.__dict__.update(returnInfo.getParams("locAggr"))
 
-# get aggreate of locations and times of resulting events
 class RequestEventsLocTimeAggr(RequestEvents):
+    """
+    return aggreate of locations and times of resulting events
+    """
     def __init__(self, returnInfo = ReturnInfo()):
         self.resultType = "locTimeAggr"
         self.__dict__.update(returnInfo.getParams("locTimeAggr"))
 
-# list of top news sources that report about events that are among the results
 class RequestEventsTopSourceAggr(RequestEvents):
+    """
+    return a list of top news sources that report about events that are among the results
+    """
     def __init__(self, 
                  topSourceCount = 20, 
                  returnInfo = ReturnInfo()):
@@ -132,8 +208,10 @@ class RequestEventsTopSourceAggr(RequestEvents):
         self.topSourceAggrTopSourceCount = topSourceCount
         self.__dict__.update(returnInfo.getParams("topSourceAggr"))
 
-# get aggregated list of concepts - top concepts that appear in events 
 class RequestEventsConceptAggr(RequestEvents):
+    """
+    get aggregated list of concepts - top concepts that appear in events 
+    """
     def __init__(self, 
                  conceptCount = 20, 
                  returnInfo = ReturnInfo()):
@@ -142,8 +220,10 @@ class RequestEventsConceptAggr(RequestEvents):
         self.conceptAggrConceptCount = conceptCount
         self.__dict__.update(returnInfo.getParams("conceptAggr"))
 
-# get a graph of concepts - connect concepts that are frequently in the same events
 class RequestEventsConceptGraph(RequestEvents):
+    """
+    return a graph of concepts - connect concepts that are frequently occuring in the same events
+    """
     def __init__(self, 
                  conceptCount = 25, 
                  linkCount = 50, 
@@ -158,8 +238,12 @@ class RequestEventsConceptGraph(RequestEvents):
         self.conceptGraphSampleSize = eventsSampleSize
         self.__dict__.update(returnInfo.getParams("conceptGraph"))
 
-# get a matrix of concepts and their dependencies
 class RequestEventsConceptMatrix(RequestEvents):
+    """
+    get a matrix of concepts and their dependencies. For individual concept pairs 
+    return how frequently they co-occur in the resulting events and
+    how "surprising" this is, based on the frequency of individual concepts
+    """
     def __init__(self, 
                  conceptCount = 25, 
                  measure = "pmi", 
@@ -173,8 +257,10 @@ class RequestEventsConceptMatrix(RequestEvents):
         self.conceptMatrixSampleSize = eventsSampleSize
         self.__dict__.update(returnInfo.getParams("conceptMatrix"))
 
-# get a list of top trending concepts and their daily trends over time
 class RequestEventsConceptTrends(RequestEvents):
+    """
+    return a list of top trending concepts and their daily trending info over time
+    """
     def __init__(self, 
                  conceptCount = 10, 
                  returnInfo = ReturnInfo()):
@@ -183,8 +269,10 @@ class RequestEventsConceptTrends(RequestEvents):
         self.conceptTrendsConceptCount = conceptCount
         self.__dict__.update(returnInfo.getParams("conceptTrends"))
 
-# get events and the dates they mention
 class RequestEventsDateMentionAggr(RequestEvents):
+    """
+    return events and the dates that are mentioned in articles about these events
+    """
     def __init__(self, 
                  minDaysApart = 0, 
                  minDateMentionCount = 5):
@@ -192,8 +280,11 @@ class RequestEventsDateMentionAggr(RequestEvents):
         self.dateMentionAggrMinDateMentionCount = minDateMentionCount
         self.dateMentionAggrMinDaysApart = minDaysApart
 
-# get hierarchical clustering of events into smaller clusters.
 class RequestEventsEventClusters(RequestEvents):
+    """
+    return hierarchical clustering of events into smaller clusters
+    2-means clustering is applied on each node in the tree
+    """
     def __init__(self, 
                  keywordCount = 30, 
                  maxEventsToCluster = 10000,
@@ -205,13 +296,17 @@ class RequestEventsEventClusters(RequestEvents):
         self.eventClustersMaxEventsToCluster = maxEventsToCluster
         self.__dict__.update(returnInfo.getParams("eventClusters"))
 
-# get distribution of events into dmoz categories
 class RequestEventsCategoryAggr(RequestEvents):
+    """
+    return distribution of events into dmoz categories
+    """
     def __init__(self):
         self.resultType = "categoryAggr"
 
-# get list of recently changed events
 class RequestEventsRecentActivity(RequestEvents):
+    """
+    return a list of recently changed events that match search conditions
+    """
     def __init__(self, 
                  maxEventCount = 60, 
                  maxMinsBack = 10 * 60, 

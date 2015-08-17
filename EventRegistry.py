@@ -1,7 +1,7 @@
 ﻿"""
 classes responsible for obtaining results from the Event Registry
 """
-import os, sys, urllib2, urllib, json, re;
+import os, sys, urllib2, urllib, json, re
 from cookielib import CookieJar
 from ERBase import *
 from ERReturnInfo import *
@@ -66,7 +66,7 @@ class GetTrendingConceptGroups(TrendsBase):
         self._setVal("source", source)
         self._setVal("conceptCount", count)
 
-        self._parseConceptFlags("concept", **kwargs);
+        self._parseConceptFlags("concept", **kwargs)
 
     # request trending of concepts of specified types
     def getConceptTypeGroups(types = ["person", "org", "loc", "wiki"]):
@@ -103,7 +103,7 @@ class GetTopSharedArticles(DailySharesBase):
         self._setVal("count", count)
         
         if date == None:
-            date = datetime.date.today();
+            date = datetime.date.today()
         self._setDateVal("date", date)
         
         
@@ -117,7 +117,7 @@ class GetTopSharedEvents(DailySharesBase):
         self._setProp("count", count)
         
         if date == None:
-            date = datetime.date.today();
+            date = datetime.date.today()
         self._setDateVal("date", date)
         
 
@@ -152,7 +152,7 @@ class EventRegistry(object):
         
     # ensure that queries are not made too fast
     def _sleepIfNecessary(self):
-        t = time.time();
+        t = time.time()
         if t - self._lastQueryTime < self._minDelayBetweenRequests:
             time.sleep(self._minDelayBetweenRequests - (t - self._lastQueryTime))
         self._lastQueryTime = t
@@ -196,14 +196,14 @@ class EventRegistry(object):
         self._erPassword = password
         req = urllib2.Request(self.Host + "/login", urllib.urlencode({ "email": username, "pass": password }))
         respInfo = self._reqOpener.open(req).read()
-        respInfo = json.loads(respInfo);
+        respInfo = json.loads(respInfo)
         if throwExceptOnFailure and respInfo.has_key("error"):
-            raise Exception(respInfo["error"]);
-        return respInfo;
+            raise Exception(respInfo["error"])
+        return respInfo
 
     # make a get request
     def jsonRequest(self, methodUrl, paramDict):
-        self._sleepIfNecessary();
+        self._sleepIfNecessary()
         self._lastException = None
 
         # add user credentials if specified
@@ -223,12 +223,12 @@ class EventRegistry(object):
                 respInfo = json.loads(respInfo)
             return respInfo
         except Exception as ex:
-            self._lastException = ex;
+            self._lastException = ex
             return None
 
     # make a post request where all parameters are encoded in the body - use for requests with many parameters
     def jsonPostRequest(self, methodUrl, paramDict):
-        self._sleepIfNecessary();
+        self._sleepIfNecessary()
         self._lastException = None
 
         # add user credentials if specified
@@ -248,12 +248,12 @@ class EventRegistry(object):
                 respInfo = json.loads(respInfo)
             return respInfo
         except Exception as ex:
-            self._lastException = ex;
+            self._lastException = ex
             return None
             
     # main method for executing the search queries. 
     def execQuery(self, query, convertToDict = True):
-        self._sleepIfNecessary();
+        self._sleepIfNecessary()
         self._lastException = None
 
         try:
@@ -301,24 +301,24 @@ class EventRegistry(object):
 
     # return a location uri that is the best match for the given location label
     def getLocationUri(self, locationLabel, lang = "eng", source = ["place", "country"]):
-        matches = self.suggestLocations(locationLabel, lang = lang, source = source);
+        matches = self.suggestLocations(locationLabel, lang = lang, source = source)
         if matches != None and len(matches) > 0 and matches[0].has_key("wikiUri"):
             return matches[0]["wikiUri"]
-        return None;
+        return None
 
     # return a category uri that is the best match for the given label
     def getCategoryUri(self, categoryLabel):
-        matches = self.suggestCategories(categoryLabel);
+        matches = self.suggestCategories(categoryLabel)
         if matches != None and len(matches) > 0 and matches[0].has_key("uri"):
             return matches[0]["uri"]
-        return None;
+        return None
 
     # return the news source that best matches the source name
     def getNewsSourceUri(self, sourceName):
-        matches = self.suggestNewsSources(sourceName);
+        matches = self.suggestNewsSources(sourceName)
         if matches != None and len(matches) > 0 and matches[0].has_key("uri"):
             return matches[0]["uri"]
-        return None;
+        return None
     
     # return a uri of the concept class that is the best match for the given label
     def getConceptClass(self, classLabel, lang = "eng"):
@@ -351,7 +351,7 @@ class EventRegistry(object):
                   }
         # return only events that have at least a story in the specified language
         if mandatoryLang != None:
-            params["recentActivityEventsMandatoryLang"] = mandatoryLang;
+            params["recentActivityEventsMandatoryLang"] = mandatoryLang
 
         returnParams = returnInfo.getParams("recentActivityEvents")
         params.update(returnParams)

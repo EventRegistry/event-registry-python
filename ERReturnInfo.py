@@ -1,4 +1,4 @@
-"""
+﻿"""
 the classes here represent all the types of information that can be returned
 from event registry requests
 
@@ -16,7 +16,7 @@ class ReturnInfoFlagsBase(object):
         dict = {}
         for key in self.__dict__.keys():
             dict[prefix + key] = self.__dict__[key]
-        return dict;
+        return dict
 
 class ArticleInfoFlags(ReturnInfoFlagsBase):
     def __init__(self,
@@ -53,9 +53,9 @@ class ArticleInfoFlags(ReturnInfoFlagsBase):
 class StoryInfoFlags(ReturnInfoFlagsBase):
     def __init__(self,
                  basicStats = True,
-                 categories = True,
                  location = True,
-                 date = True,
+                 categories = False,
+                 date = False,
                  concepts = False,
                  title = False,
                  summary = False,
@@ -64,10 +64,10 @@ class StoryInfoFlags(ReturnInfoFlagsBase):
                  shareInfo = False,
                  images = False):
         self._setProp("IncludeStoryBasicStats", basicStats, True)
-        self._setProp("IncludeStoryCategories", categories, True)
         self._setProp("IncludeStoryLocation", location, True)
-        self._setProp("IncludeStoryDate", date, True)
-
+        
+        self._setProp("IncludeStoryCategories", categories, False)
+        self._setProp("IncludeStoryDate", date, False)
         self._setProp("IncludeStoryConcepts", concepts, False)
         self._setProp("IncludeStoryTitle", title, False)
         self._setProp("IncludeStorySummary", summary, False)
@@ -219,8 +219,8 @@ class ConceptFolderInfoFlags(ReturnInfoFlagsBase):
 
 class ReturnInfo:
     def __init__(self,
-                 articleMaxBodyLen = 300,
-                 conceptTypes = ["concepts"],
+                 articleBodyLen = 300,
+                 conceptType = ["concepts"],
                  conceptLang = ["eng"],
                  storyImageCount = 1,
                  eventImageCount = 1,
@@ -233,9 +233,14 @@ class ReturnInfo:
                  locationInfo = LocationInfoFlags(),
                  conceptClassInfo = ConceptInfoFlags(),
                  conceptFolderInfo = ConceptFolderInfoFlags()):
-        
-        self.articleMaxBodyLen = articleMaxBodyLen
-        self.conceptTypes = conceptTypes
+        """
+        ReturnInfo specifies what content should be returned for each possible returned type
+
+        @type articleBodyLen: int
+        @param articleBodyLen: max length of the article body (use -1 for full body, 0 for empty)
+        """
+        self.articleBodyLen = articleBodyLen
+        self.conceptType = conceptType
         self.conceptLang = conceptLang
         self.storyImageCount = storyImageCount
         self.eventImageCount = eventImageCount
@@ -251,8 +256,8 @@ class ReturnInfo:
 
     def getParams(self, prefix = ""):
         dict = {}
-        dict[prefix == "" and "articleBodyLen" or prefix + "BodyLen"] = self.articleMaxBodyLen
-        dict[prefix == "" and "conceptType" or prefix + "ConceptType"] = self.conceptTypes
+        dict[prefix == "" and "articleBodyLen" or prefix + "BodyLen"] = self.articleBodyLen
+        dict[prefix == "" and "conceptType" or prefix + "ConceptType"] = self.conceptType
         dict[prefix == "" and "conceptLang" or prefix + "ConceptLang"] = self.conceptLang
         dict[prefix == "" and "storyImageCount" or prefix + "StoryImageCount"] = self.storyImageCount
         dict[prefix == "" and "eventImageCount" or prefix + "EventImageCount"] = self.eventImageCount
@@ -265,5 +270,5 @@ class ReturnInfo:
         dict.update(self.locationInfo.getParams(prefix == "" and "location" or prefix))
         dict.update(self.conceptClassInfo.getParams(prefix == "" and "conceptClass" or prefix))
         dict.update(self.conceptFolderInfo.getParams(prefix == "" and "conceptFolder" or prefix))
-        return dict;
+        return dict
 

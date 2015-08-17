@@ -1,93 +1,118 @@
-from ERBase import *
+﻿from ERBase import *
 from ERReturnInfo import *
 
-# query class for searching for events in the event registry 
 class QueryEvent(Query):
+    """
+    Class for obtaining available info for one or more events in the Event Registry 
+
+    @param eventUriOrUriList: a single event uri or a list of event uris
+    """
     def __init__(self, eventUriOrList, **kwargs):
-        super(QueryEvent, self).__init__();
-        self._setVal("action", "getEvent");
-        self._setVal("eventUri", eventUriOrList);    # a single event uri or a list of event uris
+        super(QueryEvent, self).__init__()
+        self._setVal("action", "getEvent")
+        self._setVal("eventUri", eventUriOrList)
         
     def _getPath(self):
-        return "/json/event";   
+        return "/json/event"   
 
-    # what info does one want to get as a result of the query
     def addRequestedResult(self, requestEvent):
-        if not isinstance(requestEvent, RequestEvent):
-            raise AssertionError("QueryEvent class can only accept result requests that are of type RequestEvent");
-        self.resultTypeList.append(requestEvent);
+        """
+        Add a result type that you would like to be returned.
+        In one QueryEvent you can ask for multiple result types.
+        Result types can be the classes that extend RequestEvent base class (see classes below).
+        """
+        assert isinstance(requestEvent, RequestEvent), "QueryEvent class can only accept result requests that are of type RequestEvent"
+        self.resultTypeList.append(requestEvent)
                    
 
-# #####################################
-# #####################################
 class RequestEvent:
     def __init__(self):
-        self.resultType = None;
+        self.resultType = None
         
-# return a list of event details
 class RequestEventInfo(RequestEvent):
+    """
+    return details about an event
+    """
     def __init__(self, returnInfo = ReturnInfo()):
         self.resultType = "info"
         self.__dict__.update(returnInfo.getParams("info"))
 
-# return a list of articles
 class RequestEventArticles(RequestEvent):
-    def __init__(self, page = 0, count = 20, 
-                 lang = mainLangs, 
-                 sortBy = "cosSim", sortByAsc = False,              # id, date, cosSim, fq, socialScore, facebookShares, twitterShares
-                 returnInfo = ReturnInfo(articleMaxBodyLen = 200)):
+    """
+    return articles about the event
+    """
+    def __init__(self, 
+                 page = 0,              # page of the articles
+                 count = 20,            # number of articles to return
+                 lang = mainLangs,      # return articles in specified language(s)
+                 sortBy = "cosSim", sortByAsc = False,              # order in which event articles are sorted. Options: id (internal id), date (published date), cosSim (closeness to event centroid), socialScore (total shares in social media), facebookShares (shares on fb), twitterShares (shares on twitter)
+                 returnInfo = ReturnInfo(articleBodyLen = 200)):
         assert count <= 200
         self.resultType = "articles"
-        self.articlesPage = page                # page of the articles
-        self.articlesCount = count              # number of articles to return
-        self.articlesLang = lang                # return articles in specified language(s)
-        self.articlesSortBy = sortBy            # how are the event articles sorted (date, id, cosSim, fq)
-        self.articlesSortByAsc = sortByAsc      
+        self.articlesPage = page
+        self.articlesCount = count
+        self.articlesLang = lang
+        self.articlesSortBy = sortBy
+        self.articlesSortByAsc = sortByAsc
         self.__dict__.update(returnInfo.getParams("articles"))
         
-# return a list of article uris
 class RequestEventArticleUris(RequestEvent):
+    """
+    return a list of article uris
+    """
     def __init__(self, 
                  lang = mainLangs, 
-                 sortBy = "cosSim", sortByAsc = False):
+                 sortBy = "cosSim", sortByAsc = False  # order in which event articles are sorted. Options: id (internal id), date (published date), cosSim (closeness to event centroid), socialScore (total shares in social media), facebookShares (shares on fb), twitterShares (shares on twitter)
+                 ):
         self.articleUrisLang = lang
-        self.articleUrisSortBy = sortBy          # id, date, cosSim, fq, socialScore, facebookShares, twitterShares
+        self.articleUrisSortBy = sortBy          
         self.articleUrisSortByAsc = sortByAsc
         self.resultType = "articleUris"
 
-# get keyword aggregate of articles in the event
 class RequestEventKeywordAggr(RequestEvent):
+    """
+    return keyword aggregate (tag-cloud) from articles in the event
+    """
     def __init__(self, eventSampleSize = 500):
         assert eventSampleSize <= 1000
         self.resultType = "keywordAggr"
         self.keywordAggrSampleSize = eventSampleSize
         
-# get source distribution of articles in the event
 class RequestEventSourceAggr(RequestEvent):
+    """
+    get news source distribution of articles in the event
+    """
     def __init__(self):
         self.resultType = "sourceAggr"
 
-# get distribution of date mentions found in the event articles
 class RequestEventDateMentionAggr(RequestEvent):
+    """
+    get date that we found mentioned in the event articles
+    """
     def __init__(self):
         self.resultType = "dateMentionAggr"
         
-# get trending information for the articles about the event
 class RequestEventArticleTrend(RequestEvent):
+    """
+    return trending information for the articles about the event
+    """
     def __init__(self, 
                  lang = mainLangs, 
                  minArticleCosSim = -1, 
-                 returnInfo = ReturnInfo(articleMaxBodyLen = 0)):
+                 returnInfo = ReturnInfo(articleBodyLen = 0)):
         self.resultType = "articleTrend"
         self.articleTrendLang = lang
-        self.articleTrendMinArticleCosSim = minArticleCosSim;
+        self.articleTrendMinArticleCosSim = minArticleCosSim
         self.__dict__.update(returnInfo.getParams("articleTrend"))
 
-# get information about similar events
+
 class RequestEventSimilarEvents(RequestEvent):
+    """
+    return a list of similar events
+    """
     def __init__(self, 
                  count = 20,                    # number of similar events to return
-                 source = "concept",            # how to compute similarity ("concept", "cca")
+                 source = "concept",            # how to compute similarity. Options: concept cca
                  maxDayDiff = sys.maxint,       # what is the maximum time difference between the similar events and this one
                  addArticleTrendInfo = False,   # add info how the articles in the similar events are distributed over time
                  aggrHours = 6,                 # if similarEventsAddArticleTrendInfo == True then this is the aggregating window
@@ -103,12 +128,14 @@ class RequestEventSimilarEvents(RequestEvent):
         self.similarEventsIncludeSelf = includeSelf                     
         self.__dict__.update(returnInfo.getParams("similarEvents"))
 
-# get information about similar stories (clusters)
 class RequestEventSimilarStories(RequestEvent):
+    """
+    return a list of similar stories (clusters)
+    """
     def __init__(self, 
                  count = 20,                # number of similar stories to return
-                 source = "concept",        # concept, cca - how to compute similarity
-                 lang = ["eng"],            # in which language should be the stories
+                 source = "concept",        # how to compute similarity. Options: concept, cca
+                 lang = ["eng"],            # in which language should be the similar stories
                  maxDayDiff = sys.maxint,   # what is the maximum time difference between the similar stories and this one
                  returnInfo = ReturnInfo()):
         assert count <= 200
