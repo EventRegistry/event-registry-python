@@ -20,7 +20,8 @@ while True:
             uriChunk = uris[i:i+size]
             q = QueryEvent(uriChunk)
             # get the list of articles assigned to event
-            q.addRequestedResult(RequestEventArticles(includeArticleBody = False, includeArticleTitle = False))
+            q.addRequestedResult(RequestEventArticles(
+                returnInfo = ReturnInfo(articleInfo = ArticleInfoFlags(bodyLen = 0, title = False))))
             eventRet = er.execQuery(q)
             if eventRet != None and isinstance(eventRet, dict):
                 print "obtained details about %d events" % len(eventRet)

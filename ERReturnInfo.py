@@ -35,7 +35,9 @@ class ReturnInfoFlagsBase(object):
             # if no prefix then lower the first letter
             if prefix == "": 
                 key = key[:1].lower() + key[1:] if key else ""
-            dict[key] = self.vals[key]
+                dict[key] = self.vals[key]
+            else:
+                dict[prefix + key] = self.vals[key]
         return dict
 
 class ArticleInfoFlags(ReturnInfoFlagsBase):

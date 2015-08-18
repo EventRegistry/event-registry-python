@@ -16,12 +16,13 @@ q.addConcept(er.getConceptUri("Obama"))                 # get events related to 
 #q.addNewsSource(er.getNewsSourceUri("bbc"))             # and have been reported by BBC
 q.addRequestedResult(RequestEventsUriList())            # return uris of all events
 q.addRequestedResult(RequestEventsInfo(page = 0, count = 100, sortBy = "size", sortByAsc = True, 
-                returnInfo = ReturnInfo(
-                   conceptLang = "deu", conceptType = "wiki",
-                   eventInfo = EventInfoFlags(concepts = True, articleCounts = True, title = True, summary = True, categories = True, location = True, stories = True, imageCount = 1)
-                   )))   # return event details for first 100 events
+    returnInfo = ReturnInfo(
+        conceptInfo = ConceptInfoFlags(lang = "deu", type = "wiki"),
+        eventInfo = EventInfoFlags(concepts = True, articleCounts = True, title = True, summary = True, categories = True, location = True, stories = True, imageCount = 1)
+        )))   # return event details for first 100 events
 q.addRequestedResult(RequestEventsConceptAggr(conceptCount = 5,
-                returnInfo = ReturnInfo(conceptType = ["org", "loc"])))        # compute concept aggregate on the events
+    returnInfo = ReturnInfo(
+        conceptInfo = ConceptInfoFlags(type = ["org", "loc"]))))        # compute concept aggregate on the events
 res = er.execQuery(q)
 obj = createStructFromDict(res)
 
@@ -60,11 +61,13 @@ Assert(foundLocation, "None of the results contained a location. Might be a bug"
 q = QueryEvents()
 q.addKeyword("car")  # get events containing word car
 q.addRequestedResult(RequestEventsInfo(page = 1, count = 10, sortBy = "date", sortByAsc = False, 
-                        returnInfo = ReturnInfo(conceptType = "org", 
-                                                eventInfo = EventInfoFlags(concepts = False, articleCounts = False, title = False, summary = False, categories = False, location = False, stories = False, imageCount = 1)
-                                                )))
+    returnInfo = ReturnInfo(
+        conceptInfo = ConceptInfoFlags(type = "org"), 
+        eventInfo = EventInfoFlags(concepts = False, articleCounts = False, title = False, summary = False, categories = False, location = False, stories = False, imageCount = 0)
+        )))
 q.addRequestedResult(RequestEventsConceptTrends(conceptCount = 5, 
-                        returnInfo = ReturnInfo(conceptType = ["org", "loc"], conceptLang = "spa")))
+    returnInfo = ReturnInfo(
+        conceptInfo = ConceptInfoFlags(type = ["org", "loc"], lang = "spa"))))
 res = er.execQuery(q)
 obj = createStructFromDict(res)
 
@@ -92,7 +95,8 @@ for event in obj.events.results:
 q = QueryEvents()
 q.addLocation(er.getLocationUri("Washington"))
 q.addRequestedResult(RequestEventsConceptTrends(40, 
-            returnInfo = ReturnInfo(conceptType= "person")))
+    returnInfo = ReturnInfo(
+        conceptInfo = ConceptInfoFlags(type = "person"))))
 q.addRequestedResult(RequestEventsCategoryAggr())
 q.addRequestedResult(RequestEventsInfo())
 res = er.execQuery(q)
@@ -101,11 +105,13 @@ res = er.execQuery(q)
 eventUri = "131"
 q = QueryEvent(eventUri)
 q.addRequestedResult(RequestEventInfo(
-    returnInfo = ReturnInfo(conceptLang = ["eng", "spa", "slv"], conceptType = "wiki", 
+    returnInfo = ReturnInfo(
+        conceptInfo = ConceptInfoFlags(lang = ["eng", "spa", "slv"], type = "wiki"),
         eventInfo = EventInfoFlags(concepts = True, articleCounts = True, title = True, summary = True, categories = True, location = True, stories = True, imageCount = 1)
     )))
 q.addRequestedResult(RequestEventArticles(page = 0, count = 50, sortBy = "cosSim", sortByAsc = True, 
-    returnInfo = ReturnInfo(conceptLang = "spa", conceptType = "wiki", 
+    returnInfo = ReturnInfo(
+        conceptInfo = ConceptInfoFlags(lang = "spa", type = "wiki"), 
         articleInfo = ArticleInfoFlags(concepts = True, storyUri = True, duplicateList = True, originalArticle = True, categories = True, location = True, extractedDates = True)
     ))) # get 10 articles about the event (any language is ok) that are closest to the center of the event
 q.addRequestedResult(RequestEventArticleTrend())

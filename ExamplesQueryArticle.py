@@ -20,7 +20,7 @@ q = QueryArticles()
 #q.addKeyword("iphone")
 q.addConcept(er.getConceptUri("Apple"))
 q.addRequestedResult(RequestArticlesInfo(page=0, count = 30,
-                                        returnInfo = ReturnInfo(articleInfo = ArticleInfoFlags(duplicateList = True, concepts = True, originalArticle = True, categories = True, location = True, image = True))))
+    returnInfo = ReturnInfo(articleInfo = ArticleInfoFlags(duplicateList = True, concepts = True, originalArticle = True, categories = True, location = True, image = True))))
 res = er.execQuery(q)
 
 # take top 5 articles and for those articles only request detailed information (article info, original article, list of duplicated articles)

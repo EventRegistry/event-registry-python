@@ -52,7 +52,7 @@ class RequestArticleInfo(RequestArticle):
     """
     return details about the article
     """
-    def __init__(self, returnInfo = ReturnInfo(articleBodyLen = -1)):        
+    def __init__(self, returnInfo = ReturnInfo(articleInfo = ArticleInfoFlags(bodyLen = -1))):        
         self.resultType = "info"
         self.__dict__.update(returnInfo.getParams("info"))
         
@@ -65,7 +65,7 @@ class RequestArticleSimilarArticles(RequestArticle):
                  lang = ["eng"],                            # in which language(s) should be the similar articles
                  limitPerLang = -1,                         # max number of articles per language to return (-1 for no limit)
                  sortBy = "cosSim", sortByAsc = False,      # how are the similar articles sorted. Options: id, date, cosSim, fq, socialScore, facebookShares, twitterShares
-                 returnInfo = ReturnInfo(articleBodyLen = -1)):
+                 returnInfo = ReturnInfo(articleInfo = ArticleInfoFlags(bodyLen = -1))):
         assert count <= 200
         self.resultType = "similarArticles"
         self.similarArticlesPage = page                 
@@ -83,7 +83,7 @@ class RequestArticleDuplicatedArticles(RequestArticle):
     def __init__(self, page = 0,        # page of the articles
                  count = 20,            # number of articles to return
                  sortBy = "cosSim", sortByAsc = False,              # how are the articles sorted. Options: id, date, cosSim, fq, socialScore, facebookShares, twitterShares
-                 returnInfo = ReturnInfo(articleBodyLen = -1)):
+                 returnInfo = ReturnInfo(articleInfo = ArticleInfoFlags(bodyLen = -1))):
         self.resultType = "duplicatedArticles"
         self.duplicatedArticlesPage = page
         self.duplicatedArticlesCount = count
@@ -95,7 +95,7 @@ class RequestArticleOriginalArticle(RequestArticle):
     """
     return the article that is the original of the given article (the current article is a duplicate)
     """
-    def __init__(self, returnInfo = ReturnInfo(articleBodyLen = -1)):
+    def __init__(self, returnInfo = ReturnInfo(articleInfo = ArticleInfoFlags(bodyLen = -1))):
         self.resultType = "originalArticle"
         self.__dict__.update(returnInfo.getParams("originalArticle"))
         

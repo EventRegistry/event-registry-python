@@ -10,9 +10,9 @@ q.addConcept(er.getConceptUri("Obama"))                 # get events related to 
 #q.addNewsSource(er.getNewsSourceUri("bbc"))             # and have been reported by BBC
 q.addRequestedResult(RequestEventsUriList())            # return uris of all events
 q.addRequestedResult(RequestEventsInfo(page = 0, count = 30, sortBy = "size", sortByAsc = True, 
-                                       returnInfo = ReturnInfo(conceptLang = "deu", conceptType = ["person", "wiki"])))   # return event details for first 30 events
+    returnInfo = ReturnInfo(conceptInfo = ConceptInfoFlags(lang = "deu", type = ["person", "wiki"]))))   # return event details for first 30 events
 q.addRequestedResult(RequestEventsConceptAggr(conceptCount = 5, 
-                                              returnInfo = ReturnInfo(conceptType = ["org", "loc"])))        # compute concept aggregate on the events
+    returnInfo = ReturnInfo(conceptInfo = ConceptInfoFlags(type = ["org", "loc"]))))        # compute concept aggregate on the events
 res = er.execQuery(q)
 obj = createStructFromDict(res)
 
@@ -25,7 +25,7 @@ q = QueryEvents()
 q.addLocation(er.getLocationUri("Berlin"))
 q.setDateLimit(datetime.date(2014, 4, 16), datetime.date(2014, 4, 28))
 q.addRequestedResult(RequestEventsConceptTrends(conceptCount = 40, 
-                                                returnInfo = ReturnInfo(conceptType=["person"])))
+    returnInfo = ReturnInfo(conceptInfo = ConceptInfoFlags(type = ["person"]))))
 q.addRequestedResult(RequestEventsCategoryAggr())
 q.addRequestedResult(RequestEventsInfo())
 res = er.execQuery(q)

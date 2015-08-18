@@ -46,7 +46,7 @@ class RequestEventArticles(RequestEvent):
                  count = 20,            # number of articles to return
                  lang = mainLangs,      # return articles in specified language(s)
                  sortBy = "cosSim", sortByAsc = False,              # order in which event articles are sorted. Options: id (internal id), date (published date), cosSim (closeness to event centroid), socialScore (total shares in social media), facebookShares (shares on fb), twitterShares (shares on twitter)
-                 returnInfo = ReturnInfo(articleBodyLen = 200)):
+                 returnInfo = ReturnInfo(articleInfo = ArticleInfoFlags(bodyLen = 200))):
         assert count <= 200
         self.resultType = "articles"
         self.articlesPage = page
@@ -99,7 +99,7 @@ class RequestEventArticleTrend(RequestEvent):
     def __init__(self, 
                  lang = mainLangs, 
                  minArticleCosSim = -1, 
-                 returnInfo = ReturnInfo(articleBodyLen = 0)):
+                 returnInfo = ReturnInfo(articleInfo = ArticleInfoFlags(bodyLen = 0))):
         self.resultType = "articleTrend"
         self.articleTrendLang = lang
         self.articleTrendMinArticleCosSim = minArticleCosSim
