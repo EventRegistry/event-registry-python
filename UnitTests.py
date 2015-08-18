@@ -18,7 +18,7 @@ q.addRequestedResult(RequestEventsUriList())            # return uris of all eve
 q.addRequestedResult(RequestEventsInfo(page = 0, count = 100, sortBy = "size", sortByAsc = True, 
                 returnInfo = ReturnInfo(
                    conceptLang = "deu", conceptType = "wiki",
-                   eventInfo = EventInfoFlags(concepts = True, articleCounts = True, title = True, summary = True, categories = True, location = True, stories = True, images = True)
+                   eventInfo = EventInfoFlags(concepts = True, articleCounts = True, title = True, summary = True, categories = True, location = True, stories = True, imageCount = 1)
                    )))   # return event details for first 100 events
 q.addRequestedResult(RequestEventsConceptAggr(conceptCount = 5,
                 returnInfo = ReturnInfo(conceptType = ["org", "loc"])))        # compute concept aggregate on the events
@@ -61,7 +61,7 @@ q = QueryEvents()
 q.addKeyword("car")  # get events containing word car
 q.addRequestedResult(RequestEventsInfo(page = 1, count = 10, sortBy = "date", sortByAsc = False, 
                         returnInfo = ReturnInfo(conceptType = "org", 
-                                                eventInfo = EventInfoFlags(concepts = False, articleCounts = False, title = False, summary = False, categories = False, location = False, stories = False, images = False)
+                                                eventInfo = EventInfoFlags(concepts = False, articleCounts = False, title = False, summary = False, categories = False, location = False, stories = False, imageCount = 1)
                                                 )))
 q.addRequestedResult(RequestEventsConceptTrends(conceptCount = 5, 
                         returnInfo = ReturnInfo(conceptType = ["org", "loc"], conceptLang = "spa")))
@@ -102,7 +102,7 @@ eventUri = "131"
 q = QueryEvent(eventUri)
 q.addRequestedResult(RequestEventInfo(
     returnInfo = ReturnInfo(conceptLang = ["eng", "spa", "slv"], conceptType = "wiki", 
-        eventInfo = EventInfoFlags(concepts = True, articleCounts = True, title = True, summary = True, categories = True, location = True, stories = True, images = True)
+        eventInfo = EventInfoFlags(concepts = True, articleCounts = True, title = True, summary = True, categories = True, location = True, stories = True, imageCount = 1)
     )))
 q.addRequestedResult(RequestEventArticles(page = 0, count = 50, sortBy = "cosSim", sortByAsc = True, 
     returnInfo = ReturnInfo(conceptLang = "spa", conceptType = "wiki", 
@@ -143,7 +143,7 @@ for article in articles.results:
     if (article.isDuplicate):
         Assert(hasattr(article, "originalArticle"), "Article is a duplicate but did not contain original article")
     else:
-        Assert(hasattr(article, "duplicates"), "Article did not contain duplicates list")
+        Assert(hasattr(article, "duplicateList"), "Article did not contain duplicates list")
     for concept in article.concepts:
         Assert(hasattr(concept.label, "spa"), "Concept did not contain label in Spanish langage")
         Assert(concept.type == "wiki", "Concept of wrong type")

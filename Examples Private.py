@@ -3,9 +3,10 @@
 er = EventRegistry(host = "http://beta.eventregistry.org", logging = True)
 #er = EventRegistry(host = "http://localhost:8090", logging = True)
 
-ret = er.getRecentArticles(includeArticleConcepts = True)
+ret = er.getRecentArticles()
 
-ret = er.getRecentEvents(includeEventConcepts = True, includeEventImages = True, includeEventStories = True)
+ret = er.getRecentEvents(
+    returnInfo = ReturnInfo(eventInfo = EventInfoFlags(concepts = True, imageCount = 1, stories = True)))
 
 q = QueryEvents()
 q.addConcept(er.getConceptUri("Obama"))                 # get events related to obama

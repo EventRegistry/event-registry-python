@@ -1,6 +1,6 @@
 ﻿"""
 the classes here represent all the types of information that can be returned
-from event registry requests
+from Event Registry requests
 
 the ReturnInfo class specifies all types of these parameters and is needed as 
 a parameter in all query requests
@@ -8,18 +8,58 @@ a parameter in all query requests
 
 class ReturnInfoFlagsBase(object):
     # set the objects property propName if the dictKey key exists in dict and it is not the same as default value defVal
-    def _setVal(self, name, val, defVal):
+    def _setFlag(self, name, val, defVal):
+        if not hasattr(self, "flags"):
+            self.flags = {}
         if val != defVal:
-            self.__dict__[name] = val
+            self.flags[name] = val
 
-    def getParams(self, prefix):
+    def _getFlags(self, prefix):
+        if not hasattr(self, "flags"):
+            self.flags = {}
         dict = {}
-        for key in self.__dict__.keys():
-            dict[prefix + key] = self.__dict__[key]
+        for key in self.flags.keys():
+            dict[prefix + key] = self.flags[key]
+        return dict
+
+    def _setVal(self, name, val):
+        if not hasattr(self, "vals"):
+            self.vals = {}
+        self.vals[name] = val
+
+    def _getVals(self, prefix):
+        if not hasattr(self, "vals"):
+            self.vals = {}
+        dict = {}
+        for key in self.vals.keys():
+            # if no prefix then lower the first letter
+            if prefix == "": 
+                key = key[:1].lower() + key[1:] if key else ""
+            dict[key] = self.vals[key]
         return dict
 
 class ArticleInfoFlags(ReturnInfoFlagsBase):
+    """"
+    What information about an article should be returned by the API call
+
+    @param bodyLen: max length of the article body (use -1 for full body, 0 for empty)
+    @param basicInfo: core article information -
+    @param title: article title
+    @param body: article body
+    @param eventUri: uri of the event to which the article belongs
+    @param concepts: the list of concepts mentioned in the article
+    @param storyUri: uri of the story (cluster) to which the article belongs
+    @param duplicateList: the list of articles that are a copy of this article
+    @param originalArticle: if the article is a duplicate, this will provide information about the original article
+    @param categories: the list of categories assigned to the article
+    @param location: the geographic location that the event mentioned in the article is about
+    @param image: url to the image associated with the article
+    @param extractedDates: the list of dates found mentioned in the article
+    @param socialScore: information about the number of times the article was shared on facebook and twitter
+    @param details: potential additional details
+    """
     def __init__(self,
+                 bodyLen = 300,
                  basicInfo = True, 
                  title = True,
                  body = True,
@@ -34,23 +74,37 @@ class ArticleInfoFlags(ReturnInfoFlagsBase):
                  extractedDates = False,
                  socialScore = False,
                  details = False):
-        self._setVal("IncludeArticleBasicInfo", basicInfo, True)
-        self._setVal("IncludeArticleTitle", title, True)
-        self._setVal("IncludeArticleBody", body, True)
-        self._setVal("IncludeArticleEventUri", eventUri, True)
-        self._setVal("IncludeArticleConcepts", concepts, False)
-        self._setVal("IncludeArticleStoryUri", storyUri, False)
-        self._setVal("IncludeArticleDuplicateList", duplicateList, False)
-        self._setVal("IncludeArticleOriginalArticle", originalArticle, False)
-        self._setVal("IncludeArticleCategories", categories, False)
-        self._setVal("IncludeArticleLocation", location, False)
-        self._setVal("IncludeArticleImage", image, False)
-        self._setVal("IncludeArticleExtractedDates", extractedDates, False)
-        self._setVal("IncludeArticleSocialScore", socialScore, False)
-        self._setVal("IncludeArticleDetails", details, False)
+        self._setVal("ArticleBodyLen", bodyLen)
+        self._setFlag("IncludeArticleBasicInfo", basicInfo, True)
+        self._setFlag("IncludeArticleTitle", title, True)
+        self._setFlag("IncludeArticleBody", body, True)
+        self._setFlag("IncludeArticleEventUri", eventUri, True)
+        self._setFlag("IncludeArticleConcepts", concepts, False)
+        self._setFlag("IncludeArticleStoryUri", storyUri, False)
+        self._setFlag("IncludeArticleDuplicateList", duplicateList, False)
+        self._setFlag("IncludeArticleOriginalArticle", originalArticle, False)
+        self._setFlag("IncludeArticleCategories", categories, False)
+        self._setFlag("IncludeArticleLocation", location, False)
+        self._setFlag("IncludeArticleImage", image, False)
+        self._setFlag("IncludeArticleExtractedDates", extractedDates, False)
+        self._setFlag("IncludeArticleSocialScore", socialScore, False)
+        self._setFlag("IncludeArticleDetails", details, False)
 
 
 class StoryInfoFlags(ReturnInfoFlagsBase):
+    """
+    What information about a story (cluster of articles) should be returned by the API call
+
+    @param basicStats: core stats about the story
+    @param location: geographic location that the story is about
+    @param categories: categories associated with the story
+    @param title: title of the story
+    @param summary: summary of the story
+    @param medoidArticle: the article that is closest to the center of the cluster of articles assigned to the story
+    @param commonDates: dates that were frequently identified in the articles belonging to the story
+    @param socialScore: score computed based on how frequently the articles in the story were shared on social media
+    @param imageCount: number of images to be returned for a story
+    """
     def __init__(self,
                  basicStats = True,
                  location = True,
@@ -62,22 +116,37 @@ class StoryInfoFlags(ReturnInfoFlagsBase):
                  medoidArticle = False,
                  commonDates = False,
                  socialScore = False,
-                 images = False):
-        self._setVal("IncludeStoryBasicStats", basicStats, True)
-        self._setVal("IncludeStoryLocation", location, True)
+                 imageCount = 0):
+        self._setFlag("IncludeStoryBasicStats", basicStats, True)
+        self._setFlag("IncludeStoryLocation", location, True)
         
-        self._setVal("IncludeStoryCategories", categories, False)
-        self._setVal("IncludeStoryDate", date, False)
-        self._setVal("IncludeStoryConcepts", concepts, False)
-        self._setVal("IncludeStoryTitle", title, False)
-        self._setVal("IncludeStorySummary", summary, False)
-        self._setVal("IncludeStoryMedoidArticle", medoidArticle, False)
-        self._setVal("IncludeStoryCommonDates", commonDates, False)
-        self._setVal("IncludeStorySocialScore", socialScore, False)
-        self._setVal("IncludeStoryImages", images, False)
+        self._setFlag("IncludeStoryCategories", categories, False)
+        self._setFlag("IncludeStoryDate", date, False)
+        self._setFlag("IncludeStoryConcepts", concepts, False)
+        self._setFlag("IncludeStoryTitle", title, False)
+        self._setFlag("IncludeStorySummary", summary, False)
+        self._setFlag("IncludeStoryMedoidArticle", medoidArticle, False)
+        self._setFlag("IncludeStoryCommonDates", commonDates, False)
+        self._setFlag("IncludeStorySocialScore", socialScore, False)
+        self._setVal("StoryImageCount", imageCount)
 
 
 class EventInfoFlags(ReturnInfoFlagsBase):
+    """
+    What information about an event should be returned by the API call
+
+    @param title: return the title of the event
+    @param summary: return the summary of the event
+    @param articleCounts: return the number of articles that are assigned to the event
+    @param concepts: return information about the main concepts related to the event
+    @param categories: return information about the categories related to the event
+    @param location: return the location where the event occured
+    @param date: return information about the date of the event
+    @param commonDates: return the dates that were commonly found in the articles about the event
+    @param stories: return the list of stories (clusters) that are about the event
+    @param socialScore: score computed based on how frequently the articles in the event were shared on social media
+    @param imageCount: number of images to be returned for an event
+    """
     def __init__(self,
                  title = True,
                  summary = True,
@@ -89,22 +158,32 @@ class EventInfoFlags(ReturnInfoFlagsBase):
                  commonDates = False,
                  stories = False,
                  socialScore = False,
-                 images = False):
-        self._setVal("IncludeEventTitle", title, True)
-        self._setVal("IncludeEventSummary", summary, True)
-        self._setVal("IncludeEventArticleCounts", articleCounts, True)
-        self._setVal("IncludeEventConcepts", concepts, True)
-        self._setVal("IncludeEventCategories", categories, True)
-        self._setVal("IncludeEventLocation", location, True)
-        self._setVal("IncludeEventDate", date, True)
+                 imageCount = 0):
+        self._setFlag("IncludeEventTitle", title, True)
+        self._setFlag("IncludeEventSummary", summary, True)
+        self._setFlag("IncludeEventArticleCounts", articleCounts, True)
+        self._setFlag("IncludeEventConcepts", concepts, True)
+        self._setFlag("IncludeEventCategories", categories, True)
+        self._setFlag("IncludeEventLocation", location, True)
+        self._setFlag("IncludeEventDate", date, True)
 
-        self._setVal("IncludeEventCommonDates", commonDates, False)
-        self._setVal("IncludeEventStories", stories, False)
-        self._setVal("IncludeEventSocialScore", socialScore, False)
-        self._setVal("IncludeEventImages", images, False)
+        self._setFlag("IncludeEventCommonDates", commonDates, False)
+        self._setFlag("IncludeEventStories", stories, False)
+        self._setFlag("IncludeEventSocialScore", socialScore, False)
+        self._setVal("EventImageCount", imageCount)
         
 
 class SourceInfoFlags(ReturnInfoFlagsBase):
+    """
+    What information about a news source should be returned by the API call
+
+    @param title: title of the news source
+    @param description: description of the news source
+    @param location: geographic location of the news source
+    @param importance: a score of importance assigned to the news source
+    @param articleCount: the number of articles from this news source that are stored in Event Registry
+    @param tags: custom tags assigned to the news source
+    """
     def __init__(self,
                  title = True,
                  description = False,
@@ -113,30 +192,63 @@ class SourceInfoFlags(ReturnInfoFlagsBase):
                  articleCount = False,
                  tags = False,
                  details = False):
-        self._setVal("IncludeSourceTitle", title, True)
+        self._setFlag("IncludeSourceTitle", title, True)
 
-        self._setVal("IncludeSourceDescription", description, False)
-        self._setVal("IncludeSourceLocation", location, False)
-        self._setVal("IncludeSourceImportance", importance, False)
-        self._setVal("IncludeSourceArticleCount", articleCount, False)
-        self._setVal("IncludeSourceTags", tags, False)
-        self._setVal("IncludeSourceDetails", details, False)
+        self._setFlag("IncludeSourceDescription", description, False)
+        self._setFlag("IncludeSourceLocation", location, False)
+        self._setFlag("IncludeSourceImportance", importance, False)
+        self._setFlag("IncludeSourceArticleCount", articleCount, False)
+        self._setFlag("IncludeSourceTags", tags, False)
+        self._setFlag("IncludeSourceDetails", details, False)
 
 
 class CategoryInfoFlags(ReturnInfoFlagsBase):
+    """
+    What information about a category should be returned by the API call
+
+    @param parentUri: uri of the parent category
+    @param childrenUris: the list of category uris that are children of the category
+    @param trendingScore: information about how the category is currently trending. The score is computed as Pearson residual by comparing the trending of the category in last 2 days compared to last 14 days
+    @param trendingHistory: information about the number of times articles were assigned to the category in last 30 days
+    @param trendingSource: source of information to be used when computing the trending score for a category. Relevant only if CategoryInfoFlags.trendingScore == True or CategoryInfoFlags.trendingHistory == True. Valid options: news, social
+    @type trendingSource: string | list
+    """
     def __init__(self,
                  parentUri = False,
                  childrenUris = False,
                  trendingScore = False,
-                 trendingHistory = False):
-        self._setVal("IncludeCategoryParentUri", parentUri, False)
-        self._setVal("IncludeCategoryChildrenUris", childrenUris, False)
-        self._setVal("IncludeCategoryTrendingScore", trendingScore, False)
-        self._setVal("IncludeCategoryTrendingHistory", trendingHistory, False)
+                 trendingHistory = False,
+                 trendingSource = "news"):
+        self._setFlag("IncludeCategoryParentUri", parentUri, False)
+        self._setFlag("IncludeCategoryChildrenUris", childrenUris, False)
+        self._setFlag("IncludeCategoryTrendingScore", trendingScore, False)
+        self._setFlag("IncludeCategoryTrendingHistory", trendingHistory, False)
+        self._setVal("CategoryTrendingSource", trendingSource)
 
 
 class ConceptInfoFlags(ReturnInfoFlagsBase):
+    """
+    What information about a concept should be returned by the API call
+
+    @param type: which types of concepts should be provided in events, stories, ... Options: person, loc, org, wiki (non-entities), concepts (=person+loc+org+wiki), conceptClass, conceptFolder
+    @param lang: in which languages should be the labels for provided concepts
+    @param label: return label(s) of the concept
+    @param synonyms: return concept synonyms (if any)
+    @param image: provide an image associated with the concept
+    @param description: description of the concept
+    @param conceptClassMembership: provide a list of concept classes where the concept is a member
+    @param conceptClassMembership: provide a list of concept classes and their parents where the concept is a member
+    @param conceptFolderMembership: provide a list of publicly visible concept folders where the concept is a member
+    @param trendingScore: information about how the concept is currently trending. The score is computed as Pearson residual by comparing the trending of the concept in last 2 days compared to last 14 days
+    @param trendingHistory: information about the number of times articles were assigned to the concept in last 30 days
+    @param trendingSource: source of information to be used when computing the trending score for a concept. Relevant only if ConceptInfoFlags.trendingScore == True or ConceptInfoFlags.trendingHistory == True. Valid options: news, social
+    @type conceptType: str | list
+    @type conceptLang: str | list
+    @type trendingSource: string | list
+    """
     def __init__(self,
+                 type = ["concepts"],
+                 lang = ["eng"],
                  label = True,
                  synonyms = False,
                  image = False,
@@ -146,21 +258,43 @@ class ConceptInfoFlags(ReturnInfoFlagsBase):
                  conceptClassMembershipFull = False,
                  conceptFolderMembership = False,
                  trendingScore = False,
-                 trendingHistory = False):
-        self._setVal("IncludeConceptLabel", label, True)
-        
-        self._setVal("IncludeConceptSynonyms", synonyms, False)
-        self._setVal("IncludeConceptImage", image, False)
-        self._setVal("IncludeConceptDescription", description, False)
-        self._setVal("IncludeConceptDetails", details, False)
-        self._setVal("IncludeConceptConceptClassMembership", conceptClassMembership, False)
-        self._setVal("IncludeConceptConceptClassMembershipFull", conceptClassMembershipFull, False)
-        self._setVal("IncludeConceptConceptFolderMembership", conceptFolderMembership, False)
-        self._setVal("IncludeConceptTrendingScore", trendingScore, False)
-        self._setVal("IncludeConceptTrendingHistory", trendingHistory, False)
+                 trendingHistory = False,
+                 trendingSource = "news"):
+        self._setVal("ConceptType", type)
+        self._setVal("ConceptLang", lang)
+        self._setFlag("IncludeConceptLabel", label, True)
+        self._setFlag("IncludeConceptSynonyms", synonyms, False)
+        self._setFlag("IncludeConceptImage", image, False)
+        self._setFlag("IncludeConceptDescription", description, False)
+        self._setFlag("IncludeConceptDetails", details, False)
+        self._setFlag("IncludeConceptConceptClassMembership", conceptClassMembership, False)
+        self._setFlag("IncludeConceptConceptClassMembershipFull", conceptClassMembershipFull, False)
+        self._setFlag("IncludeConceptConceptFolderMembership", conceptFolderMembership, False)
+        self._setFlag("IncludeConceptTrendingScore", trendingScore, False)
+        self._setFlag("IncludeConceptTrendingHistory", trendingHistory, False)
+        self._setVal("ConceptTrendingSource", trendingSource)
 
 
 class LocationInfoFlags(ReturnInfoFlagsBase):
+    """
+    What information about a geographic location should be returned by the API call
+    Locations are sub-types of concepts so this information is always provided as a "location" property in concept information
+    country* flags are taken into account when the locations represent countries. Similarly place* flags are relevant when the location is a place (city, area, ...)
+    @param countryLabel: return label of the country
+    @param countryWikiUri: return wiki url of the country
+    @param countryGeoNamesId: return geonames id for the country
+    @param countryArea: return geographic area of the country
+    @param countryPopulation: return the population of the country
+    @param countryLocation: return geographic coordinates of the country
+    @param countryContinent: return continent where the country is located
+    @param placeLabel: return the label of the place
+    @param placeWikiUri: return the wiki url of the place
+    @param placeGeoNamesId: return the geonames id of the place
+    @param placePopulation: return the population of the place
+    @param placeFeatureCode: return the geonames feature code of the place
+    @param placeLocation: return the geographic coordinates of the place
+    @param placeCountry: return information about the country where the place is located
+    """
     def __init__(self, 
                  countryLabel = True,
                  countryWikiUri = False,
@@ -178,42 +312,56 @@ class LocationInfoFlags(ReturnInfoFlagsBase):
                  placeFeatureCode = False,
                  placeLocation = False,
                  placeCountry = True):
-        self._setVal("IncludeLocationCountryLabel", countryLabel, True)
-        self._setVal("IncludeLocationCountryWikiUri", countryWikiUri, False)
-        self._setVal("IncludeLocationCountryGeoNamesId", countryGeoNamesId, False)
-        self._setVal("IncludeLocationCountryArea", countryArea, False)
-        self._setVal("IncludeLocationCountryPopulation", countryPopulation, False)
-        self._setVal("IncludeLocationCountryLocation", countryLocation, False)
-        self._setVal("IncludeLocationCountryDetails", countryDetails, False)
-        self._setVal("IncludeLocationCountryContinent", countryContinent, False)
+        self._setFlag("IncludeLocationCountryLabel", countryLabel, True)
+        self._setFlag("IncludeLocationCountryWikiUri", countryWikiUri, False)
+        self._setFlag("IncludeLocationCountryGeoNamesId", countryGeoNamesId, False)
+        self._setFlag("IncludeLocationCountryArea", countryArea, False)
+        self._setFlag("IncludeLocationCountryPopulation", countryPopulation, False)
+        self._setFlag("IncludeLocationCountryLocation", countryLocation, False)
+        self._setFlag("IncludeLocationCountryDetails", countryDetails, False)
+        self._setFlag("IncludeLocationCountryContinent", countryContinent, False)
 
-        self._setVal("IncludeLocationPlaceLabel", placeLabel, True)
-        self._setVal("IncludeLocationPlaceWikiUri", placeWikiUri, False)
-        self._setVal("IncludeLocationPlaceGeoNamesId", placeGeoNamesId, False)
-        self._setVal("IncludeLocationPlacePopulation", placePopulation, False)
-        self._setVal("IncludeLocationPlaceFeatureCode", placeFeatureCode, False)
-        self._setVal("IncludeLocationPlaceLocation", placeLocation, False)
-        self._setVal("IncludeLocationPlaceCountry", placeCountry, True)
+        self._setFlag("IncludeLocationPlaceLabel", placeLabel, True)
+        self._setFlag("IncludeLocationPlaceWikiUri", placeWikiUri, False)
+        self._setFlag("IncludeLocationPlaceGeoNamesId", placeGeoNamesId, False)
+        self._setFlag("IncludeLocationPlacePopulation", placePopulation, False)
+        self._setFlag("IncludeLocationPlaceFeatureCode", placeFeatureCode, False)
+        self._setFlag("IncludeLocationPlaceLocation", placeLocation, False)
+        self._setFlag("IncludeLocationPlaceCountry", placeCountry, True)
 
 
 class ConceptClassInfoFlags(ReturnInfoFlagsBase):
+    """
+    What information about a concept class should be returned by the API call
+
+    @param parentLabels: return the list of labels of the parent concept classes
+    @param concepts: return the list of concepts assigned to the concept class
+    @param details: return additional details about the concept class
+    """
     def __init__(self,
                  parentLabels = True,
                  concepts = False,
                  details = False):
-        self._setVal("IncludeConceptClassParentLabels", parentLabels, True)
-        self._setVal("IncludeConceptClassConcepts", concepts, False)
-        self._setVal("IncludeConceptClassDetails", details, False)
+        self._setFlag("IncludeConceptClassParentLabels", parentLabels, True)
+        self._setFlag("IncludeConceptClassConcepts", concepts, False)
+        self._setFlag("IncludeConceptClassDetails", details, False)
         
 
 class ConceptFolderInfoFlags(ReturnInfoFlagsBase):
+    """
+    What information about a concept folder should be returned by the API call
+
+    @param definition: return the complete definition of the concept folder
+    @param owner: return information about the owner of the concept folder
+    @param details: return additional details about the concept folder
+    """
     def __init__(self,
                  definition = False,
                  owner = False,
                  details = False):
-        self._setVal("IncludeConceptFolderDefinition", definition, False)
-        self._setVal("IncludeConceptFolderOwner", owner, False)
-        self._setVal("IncludeConceptFolderDetails", details, False)
+        self._setFlag("IncludeConceptFolderDefinition", definition, False)
+        self._setFlag("IncludeConceptFolderOwner", owner, False)
+        self._setFlag("IncludeConceptFolderDetails", details, False)
 
 
 
@@ -221,9 +369,6 @@ class ReturnInfo:
     """
     ReturnInfo specifies what content should be returned for each possible returned object type
 
-    @param articleBodyLen: max length of the article body (use -1 for full body, 0 for empty)
-    @param conceptType: which types of concepts should be provided in events, stories, ... Options: person, loc, org, wiki (non-entities), concepts (=person+loc+org+wiki), conceptClass, conceptFolder
-    @param conceptLang: in which languages should be the labels for provided concepts
     @param articleInfo: what details about the articles should be returned
     @param eventInfo: what details about the event should be returned
     @param sourceInfo: what details about the article's news source should be returned
@@ -233,13 +378,7 @@ class ReturnInfo:
     @param locationInfo: what details about the locations should be returned (locations are sub-types of concepts so their information will be a property inside the concept information)
     @param conceptClassInfo: what details about the concept classes should be returned (concept classes are sub-types of concepts so their information will be a property inside the concept information)
     @param conceptFolderInfo: what details about the concept folders should be returned (concept folders are sub-types of concepts so their information will be a property inside the concept information)
-    @param storyImageCount: number of images to be returned for each story (cluster). Relevant only if StoryInfoFlags.image == True
-    @param eventImageCount: number of images to be returned for each event. Relevant only if EventInfoFlags.image == True
-    @param conceptTrendingSource: source of information to be used when computing the trending score for a concept. Relevant only if ConceptInfoFlags.trendingScore == True or ConceptInfoFlags.trendingHistory == True. Valid options: news, social
-    @param categoryTrendingSource: source of information to be used when computing the trending score for a category. Relevant only if CategoryInfoFlags.trendingScore == True or CategoryInfoFlags.trendingHistory == True. Valid options: news, social
-    @type articleBodyLen: int
-    @type conceptType: str | list
-    @type conceptLang: str | list
+    
     @type articleInfo: ArticleInfoFlags
     @type eventInfo: EventInfoFlags
     @type sourceInfo: SourceInfoFlags
@@ -248,16 +387,9 @@ class ReturnInfo:
     @type conceptInfo: ConceptInfoFlags
     @type locationInfo: LocationInfoFlags
     @type conceptClassInfo: ConceptClassInfoFlags
-    @type conceptFolderInfo: ConceptFolderInfoFlags
-    @type storyImageCount: int
-    @type eventImageCount: int
-    @type conceptTrendingSource: string | list
-    @type categoryTrendingSource: string | list
+    @type conceptFolderInfo: ConceptFolderInfoFlags    
     """
     def __init__(self,
-                 articleBodyLen = 300,
-                 conceptType = ["concepts"],
-                 conceptLang = ["eng"],
                  articleInfo = ArticleInfoFlags(),
                  eventInfo = EventInfoFlags(),
                  sourceInfo = SourceInfoFlags(),
@@ -266,14 +398,7 @@ class ReturnInfo:
                  conceptInfo = ConceptInfoFlags(),
                  locationInfo = LocationInfoFlags(),
                  conceptClassInfo = ConceptInfoFlags(),
-                 conceptFolderInfo = ConceptFolderInfoFlags(),
-                 storyImageCount = 1,
-                 eventImageCount = 1,
-                 conceptTrendingSource = "news",
-                 categoryTrendingSource = "news"):
-        self.articleBodyLen = articleBodyLen
-        self.conceptType = conceptType
-        self.conceptLang = conceptLang
+                 conceptFolderInfo = ConceptFolderInfoFlags()):
         self.articleInfo = articleInfo
         self.storyInfo = storyInfo
         self.eventInfo = eventInfo
@@ -283,28 +408,21 @@ class ReturnInfo:
         self.locationInfo = locationInfo
         self.conceptClassInfo = conceptClassInfo
         self.conceptFolderInfo = conceptFolderInfo
-        self.storyImageCount = storyImageCount
-        self.eventImageCount = eventImageCount
-        self.conceptTrendingSource = conceptTrendingSource
-        self.categoryTrendingSource = categoryTrendingSource
 
     def getParams(self, prefix = ""):
         dict = {}
-        dict[prefix == "" and "articleBodyLen" or prefix + "BodyLen"] = self.articleBodyLen
-        dict[prefix == "" and "conceptType" or prefix + "ConceptType"] = self.conceptType
-        dict[prefix == "" and "conceptLang" or prefix + "ConceptLang"] = self.conceptLang
-        dict.update(self.articleInfo.getParams(prefix == "" and "article" or prefix))
-        dict.update(self.storyInfo.getParams(prefix == "" and "story" or prefix))
-        dict.update(self.eventInfo.getParams(prefix == "" and "event" or prefix))
-        dict.update(self.sourceInfo.getParams(prefix == "" and "source" or prefix))
-        dict.update(self.categoryInfo.getParams(prefix == "" and "category" or prefix))
-        dict.update(self.conceptInfo.getParams(prefix == "" and "concept" or prefix))
-        dict.update(self.locationInfo.getParams(prefix == "" and "location" or prefix))
-        dict.update(self.conceptClassInfo.getParams(prefix == "" and "conceptClass" or prefix))
-        dict.update(self.conceptFolderInfo.getParams(prefix == "" and "conceptFolder" or prefix))
-        dict[prefix == "" and "storyImageCount" or prefix + "StoryImageCount"] = self.storyImageCount
-        dict[prefix == "" and "eventImageCount" or prefix + "EventImageCount"] = self.eventImageCount
-        dict[prefix == "" and "conceptTrendingSource" or prefix + "ConceptTrendingSource"] = self.conceptTrendingSource
-        dict[prefix == "" and "categoryTrendingSource" or prefix + "CategoryTrendingSource"] = self.categoryTrendingSource
+        dict.update(self.articleInfo._getFlags(prefix == "" and "article" or prefix))
+        dict.update(self.storyInfo._getFlags(prefix == "" and "story" or prefix))
+        dict.update(self.eventInfo._getFlags(prefix == "" and "event" or prefix))
+        dict.update(self.sourceInfo._getFlags(prefix == "" and "source" or prefix))
+        dict.update(self.categoryInfo._getFlags(prefix == "" and "category" or prefix))
+        dict.update(self.conceptInfo._getFlags(prefix == "" and "concept" or prefix))
+        dict.update(self.locationInfo._getFlags(prefix == "" and "location" or prefix))
+        dict.update(self.conceptClassInfo._getFlags(prefix == "" and "conceptClass" or prefix))
+        dict.update(self.conceptFolderInfo._getFlags(prefix == "" and "conceptFolder" or prefix))
+        dict.update(self.articleInfo._getVals(prefix))
+        dict.update(self.storyInfo._getVals(prefix))
+        dict.update(self.eventInfo._getVals(prefix))
+        dict.update(self.conceptInfo._getVals(prefix))
         return dict
 
