@@ -8,7 +8,7 @@ a parameter in all query requests
 
 class ReturnInfoFlagsBase(object):
     # set the objects property propName if the dictKey key exists in dict and it is not the same as default value defVal
-    def _setProp(self, name, val, defVal):
+    def _setVal(self, name, val, defVal):
         if val != defVal:
             self.__dict__[name] = val
 
@@ -32,22 +32,22 @@ class ArticleInfoFlags(ReturnInfoFlagsBase):
                  location = False,
                  image = False,
                  extractedDates = False,
-                 shareInfo = False,
+                 socialScore = False,
                  details = False):
-        self._setProp("IncludeArticleBasicInfo", basicInfo, True)
-        self._setProp("IncludeArticleTitle", title, True)
-        self._setProp("IncludeArticleBody", body, True)
-        self._setProp("IncludeArticleEventUri", eventUri, True)
-        self._setProp("IncludeArticleConcepts", concepts, False)
-        self._setProp("IncludeArticleStoryUri", storyUri, False)
-        self._setProp("IncludeArticleDuplicateList", duplicateList, False)
-        self._setProp("IncludeArticleOriginalArticle", originalArticle, False)
-        self._setProp("IncludeArticleCategories", categories, False)
-        self._setProp("IncludeArticleLocation", location, False)
-        self._setProp("IncludeArticleImage", image, False)
-        self._setProp("IncludeArticleExtractedDates", extractedDates, False)
-        self._setProp("IncludeArticleShareInfo", shareInfo, False)
-        self._setProp("IncludeArticleDetails", details, False)
+        self._setVal("IncludeArticleBasicInfo", basicInfo, True)
+        self._setVal("IncludeArticleTitle", title, True)
+        self._setVal("IncludeArticleBody", body, True)
+        self._setVal("IncludeArticleEventUri", eventUri, True)
+        self._setVal("IncludeArticleConcepts", concepts, False)
+        self._setVal("IncludeArticleStoryUri", storyUri, False)
+        self._setVal("IncludeArticleDuplicateList", duplicateList, False)
+        self._setVal("IncludeArticleOriginalArticle", originalArticle, False)
+        self._setVal("IncludeArticleCategories", categories, False)
+        self._setVal("IncludeArticleLocation", location, False)
+        self._setVal("IncludeArticleImage", image, False)
+        self._setVal("IncludeArticleExtractedDates", extractedDates, False)
+        self._setVal("IncludeArticleSocialScore", socialScore, False)
+        self._setVal("IncludeArticleDetails", details, False)
 
 
 class StoryInfoFlags(ReturnInfoFlagsBase):
@@ -61,20 +61,20 @@ class StoryInfoFlags(ReturnInfoFlagsBase):
                  summary = False,
                  medoidArticle = False,
                  commonDates = False,
-                 shareInfo = False,
+                 socialScore = False,
                  images = False):
-        self._setProp("IncludeStoryBasicStats", basicStats, True)
-        self._setProp("IncludeStoryLocation", location, True)
+        self._setVal("IncludeStoryBasicStats", basicStats, True)
+        self._setVal("IncludeStoryLocation", location, True)
         
-        self._setProp("IncludeStoryCategories", categories, False)
-        self._setProp("IncludeStoryDate", date, False)
-        self._setProp("IncludeStoryConcepts", concepts, False)
-        self._setProp("IncludeStoryTitle", title, False)
-        self._setProp("IncludeStorySummary", summary, False)
-        self._setProp("IncludeStoryMedoidArticle", medoidArticle, False)
-        self._setProp("IncludeStoryCommonDates", commonDates, False)
-        self._setProp("IncludeStoryShareInfo", shareInfo, False)
-        self._setProp("IncludeStoryImages", images, False)
+        self._setVal("IncludeStoryCategories", categories, False)
+        self._setVal("IncludeStoryDate", date, False)
+        self._setVal("IncludeStoryConcepts", concepts, False)
+        self._setVal("IncludeStoryTitle", title, False)
+        self._setVal("IncludeStorySummary", summary, False)
+        self._setVal("IncludeStoryMedoidArticle", medoidArticle, False)
+        self._setVal("IncludeStoryCommonDates", commonDates, False)
+        self._setVal("IncludeStorySocialScore", socialScore, False)
+        self._setVal("IncludeStoryImages", images, False)
 
 
 class EventInfoFlags(ReturnInfoFlagsBase):
@@ -88,20 +88,20 @@ class EventInfoFlags(ReturnInfoFlagsBase):
                  date = True,
                  commonDates = False,
                  stories = False,
-                 shareInfo = False,
+                 socialScore = False,
                  images = False):
-        self._setProp("IncludeEventTitle", title, True)
-        self._setProp("IncludeEventSummary", summary, True)
-        self._setProp("IncludeEventArticleCounts", articleCounts, True)
-        self._setProp("IncludeEventConcepts", concepts, True)
-        self._setProp("IncludeEventCategories", categories, True)
-        self._setProp("IncludeEventLocation", location, True)
-        self._setProp("IncludeEventDate", date, True)
+        self._setVal("IncludeEventTitle", title, True)
+        self._setVal("IncludeEventSummary", summary, True)
+        self._setVal("IncludeEventArticleCounts", articleCounts, True)
+        self._setVal("IncludeEventConcepts", concepts, True)
+        self._setVal("IncludeEventCategories", categories, True)
+        self._setVal("IncludeEventLocation", location, True)
+        self._setVal("IncludeEventDate", date, True)
 
-        self._setProp("IncludeEventCommonDates", commonDates, False)
-        self._setProp("IncludeEventStories", stories, False)
-        self._setProp("IncludeEventShareInfo", shareInfo, False)
-        self._setProp("IncludeEventImages", images, False)
+        self._setVal("IncludeEventCommonDates", commonDates, False)
+        self._setVal("IncludeEventStories", stories, False)
+        self._setVal("IncludeEventSocialScore", socialScore, False)
+        self._setVal("IncludeEventImages", images, False)
         
 
 class SourceInfoFlags(ReturnInfoFlagsBase):
@@ -113,26 +113,26 @@ class SourceInfoFlags(ReturnInfoFlagsBase):
                  articleCount = False,
                  tags = False,
                  details = False):
-        self._setProp("IncludeSourceTitle", title, True)
+        self._setVal("IncludeSourceTitle", title, True)
 
-        self._setProp("IncludeSourceDescription", description, False)
-        self._setProp("IncludeSourceLocation", location, False)
-        self._setProp("IncludeSourceImportance", importance, False)
-        self._setProp("IncludeSourceArticleCount", articleCount, False)
-        self._setProp("IncludeSourceTags", tags, False)
-        self._setProp("IncludeSourceDetails", details, False)
+        self._setVal("IncludeSourceDescription", description, False)
+        self._setVal("IncludeSourceLocation", location, False)
+        self._setVal("IncludeSourceImportance", importance, False)
+        self._setVal("IncludeSourceArticleCount", articleCount, False)
+        self._setVal("IncludeSourceTags", tags, False)
+        self._setVal("IncludeSourceDetails", details, False)
 
 
 class CategoryInfoFlags(ReturnInfoFlagsBase):
     def __init__(self,
-                 parent = False,
-                 children = False,
+                 parentUri = False,
+                 childrenUris = False,
                  trendingScore = False,
                  trendingHistory = False):
-        self._setProp("IncludeCategoryParent", parent, False)
-        self._setProp("IncludeCategoryChildren", children, False)
-        self._setProp("IncludeCategoryTrendingScore", trendingScore, False)
-        self._setProp("IncludeCategoryTrendingHistory", trendingHistory, False)
+        self._setVal("IncludeCategoryParentUri", parentUri, False)
+        self._setVal("IncludeCategoryChildrenUris", childrenUris, False)
+        self._setVal("IncludeCategoryTrendingScore", trendingScore, False)
+        self._setVal("IncludeCategoryTrendingHistory", trendingHistory, False)
 
 
 class ConceptInfoFlags(ReturnInfoFlagsBase):
@@ -147,17 +147,17 @@ class ConceptInfoFlags(ReturnInfoFlagsBase):
                  conceptFolderMembership = False,
                  trendingScore = False,
                  trendingHistory = False):
-        self._setProp("IncludeConceptLabel", label, True)
+        self._setVal("IncludeConceptLabel", label, True)
         
-        self._setProp("IncludeConceptSynonyms", synonyms, False)
-        self._setProp("IncludeConceptImage", image, False)
-        self._setProp("IncludeConceptDescription", description, False)
-        self._setProp("IncludeConceptDetails", details, False)
-        self._setProp("IncludeConceptConceptClassMembership", conceptClassMembership, False)
-        self._setProp("IncludeConceptConceptClassMembershipFull", conceptClassMembershipFull, False)
-        self._setProp("IncludeConceptConceptFolderMembership", conceptFolderMembership, False)
-        self._setProp("IncludeConceptTrendingScore", trendingScore, False)
-        self._setProp("IncludeConceptTrendingHistory", trendingHistory, False)
+        self._setVal("IncludeConceptSynonyms", synonyms, False)
+        self._setVal("IncludeConceptImage", image, False)
+        self._setVal("IncludeConceptDescription", description, False)
+        self._setVal("IncludeConceptDetails", details, False)
+        self._setVal("IncludeConceptConceptClassMembership", conceptClassMembership, False)
+        self._setVal("IncludeConceptConceptClassMembershipFull", conceptClassMembershipFull, False)
+        self._setVal("IncludeConceptConceptFolderMembership", conceptFolderMembership, False)
+        self._setVal("IncludeConceptTrendingScore", trendingScore, False)
+        self._setVal("IncludeConceptTrendingHistory", trendingHistory, False)
 
 
 class LocationInfoFlags(ReturnInfoFlagsBase):
@@ -178,22 +178,22 @@ class LocationInfoFlags(ReturnInfoFlagsBase):
                  placeFeatureCode = False,
                  placeLocation = False,
                  placeCountry = True):
-        self._setProp("IncludeLocationCountryLabel", countryLabel, True)
-        self._setProp("IncludeLocationCountryWikiUri", countryWikiUri, False)
-        self._setProp("IncludeLocationCountryGeoNamesId", countryGeoNamesId, False)
-        self._setProp("IncludeLocationCountryArea", countryArea, False)
-        self._setProp("IncludeLocationCountryPopulation", countryPopulation, False)
-        self._setProp("IncludeLocationCountryLocation", countryLocation, False)
-        self._setProp("IncludeLocationCountryDetails", countryDetails, False)
-        self._setProp("IncludeLocationCountryContinent", countryContinent, False)
+        self._setVal("IncludeLocationCountryLabel", countryLabel, True)
+        self._setVal("IncludeLocationCountryWikiUri", countryWikiUri, False)
+        self._setVal("IncludeLocationCountryGeoNamesId", countryGeoNamesId, False)
+        self._setVal("IncludeLocationCountryArea", countryArea, False)
+        self._setVal("IncludeLocationCountryPopulation", countryPopulation, False)
+        self._setVal("IncludeLocationCountryLocation", countryLocation, False)
+        self._setVal("IncludeLocationCountryDetails", countryDetails, False)
+        self._setVal("IncludeLocationCountryContinent", countryContinent, False)
 
-        self._setProp("IncludeLocationPlaceLabel", placeLabel, True)
-        self._setProp("IncludeLocationPlaceWikiUri", placeWikiUri, False)
-        self._setProp("IncludeLocationPlaceGeoNamesId", placeGeoNamesId, False)
-        self._setProp("IncludeLocationPlacePopulation", placePopulation, False)
-        self._setProp("IncludeLocationPlaceFeatureCode", placeFeatureCode, False)
-        self._setProp("IncludeLocationPlaceLocation", placeLocation, False)
-        self._setProp("IncludeLocationPlaceCountry", placeCountry, True)
+        self._setVal("IncludeLocationPlaceLabel", placeLabel, True)
+        self._setVal("IncludeLocationPlaceWikiUri", placeWikiUri, False)
+        self._setVal("IncludeLocationPlaceGeoNamesId", placeGeoNamesId, False)
+        self._setVal("IncludeLocationPlacePopulation", placePopulation, False)
+        self._setVal("IncludeLocationPlaceFeatureCode", placeFeatureCode, False)
+        self._setVal("IncludeLocationPlaceLocation", placeLocation, False)
+        self._setVal("IncludeLocationPlaceCountry", placeCountry, True)
 
 
 class ConceptClassInfoFlags(ReturnInfoFlagsBase):
@@ -201,9 +201,9 @@ class ConceptClassInfoFlags(ReturnInfoFlagsBase):
                  parentLabels = True,
                  concepts = False,
                  details = False):
-        self._setProp("IncludeConceptClassParentLabels", parentLabels, True)
-        self._setProp("IncludeConceptClassConcepts", concepts, False)
-        self._setProp("IncludeConceptClassDetails", details, False)
+        self._setVal("IncludeConceptClassParentLabels", parentLabels, True)
+        self._setVal("IncludeConceptClassConcepts", concepts, False)
+        self._setVal("IncludeConceptClassDetails", details, False)
         
 
 class ConceptFolderInfoFlags(ReturnInfoFlagsBase):
@@ -211,39 +211,69 @@ class ConceptFolderInfoFlags(ReturnInfoFlagsBase):
                  definition = False,
                  owner = False,
                  details = False):
-        self._setProp("IncludeConceptFolderDefinition", definition, False)
-        self._setProp("IncludeConceptFolderOwner", owner, False)
-        self._setProp("IncludeConceptFolderDetails", details, False)
+        self._setVal("IncludeConceptFolderDefinition", definition, False)
+        self._setVal("IncludeConceptFolderOwner", owner, False)
+        self._setVal("IncludeConceptFolderDetails", details, False)
 
 
 
 class ReturnInfo:
+    """
+    ReturnInfo specifies what content should be returned for each possible returned object type
+
+    @param articleBodyLen: max length of the article body (use -1 for full body, 0 for empty)
+    @param conceptType: which types of concepts should be provided in events, stories, ... Options: person, loc, org, wiki (non-entities), concepts (=person+loc+org+wiki), conceptClass, conceptFolder
+    @param conceptLang: in which languages should be the labels for provided concepts
+    @param articleInfo: what details about the articles should be returned
+    @param eventInfo: what details about the event should be returned
+    @param sourceInfo: what details about the article's news source should be returned
+    @param storyInfo: what details about the stories (clusters) should be returned
+    @param categoryInfo: what details about the categories should be returned
+    @param conceptInfo: what details about the concepts should be returned
+    @param locationInfo: what details about the locations should be returned (locations are sub-types of concepts so their information will be a property inside the concept information)
+    @param conceptClassInfo: what details about the concept classes should be returned (concept classes are sub-types of concepts so their information will be a property inside the concept information)
+    @param conceptFolderInfo: what details about the concept folders should be returned (concept folders are sub-types of concepts so their information will be a property inside the concept information)
+    @param storyImageCount: number of images to be returned for each story (cluster). Relevant only if StoryInfoFlags.image == True
+    @param eventImageCount: number of images to be returned for each event. Relevant only if EventInfoFlags.image == True
+    @param conceptTrendingSource: source of information to be used when computing the trending score for a concept. Relevant only if ConceptInfoFlags.trendingScore == True or ConceptInfoFlags.trendingHistory == True. Valid options: news, social
+    @param categoryTrendingSource: source of information to be used when computing the trending score for a category. Relevant only if CategoryInfoFlags.trendingScore == True or CategoryInfoFlags.trendingHistory == True. Valid options: news, social
+    @type articleBodyLen: int
+    @type conceptType: str | list
+    @type conceptLang: str | list
+    @type articleInfo: ArticleInfoFlags
+    @type eventInfo: EventInfoFlags
+    @type sourceInfo: SourceInfoFlags
+    @type storyInfo: StoryInfoFlags
+    @type categoryInfo: CategoryInfoFlags
+    @type conceptInfo: ConceptInfoFlags
+    @type locationInfo: LocationInfoFlags
+    @type conceptClassInfo: ConceptClassInfoFlags
+    @type conceptFolderInfo: ConceptFolderInfoFlags
+    @type storyImageCount: int
+    @type eventImageCount: int
+    @type conceptTrendingSource: string | list
+    @type categoryTrendingSource: string | list
+    """
     def __init__(self,
                  articleBodyLen = 300,
                  conceptType = ["concepts"],
                  conceptLang = ["eng"],
-                 storyImageCount = 1,
-                 eventImageCount = 1,
                  articleInfo = ArticleInfoFlags(),
-                 storyInfo = StoryInfoFlags(),
                  eventInfo = EventInfoFlags(),
                  sourceInfo = SourceInfoFlags(),
+                 storyInfo = StoryInfoFlags(),
                  categoryInfo = CategoryInfoFlags(),
                  conceptInfo = ConceptInfoFlags(),
                  locationInfo = LocationInfoFlags(),
                  conceptClassInfo = ConceptInfoFlags(),
-                 conceptFolderInfo = ConceptFolderInfoFlags()):
-        """
-        ReturnInfo specifies what content should be returned for each possible returned type
-
-        @type articleBodyLen: int
-        @param articleBodyLen: max length of the article body (use -1 for full body, 0 for empty)
-        """
+                 conceptFolderInfo = ConceptFolderInfoFlags(),
+                 storyImageCount = 1,
+                 eventImageCount = 1,
+                 conceptTrendingSource = "news",
+                 categoryTrendingSource = "news"):
         self.articleBodyLen = articleBodyLen
         self.conceptType = conceptType
         self.conceptLang = conceptLang
-        self.storyImageCount = storyImageCount
-        self.eventImageCount = eventImageCount
         self.articleInfo = articleInfo
         self.storyInfo = storyInfo
         self.eventInfo = eventInfo
@@ -253,14 +283,16 @@ class ReturnInfo:
         self.locationInfo = locationInfo
         self.conceptClassInfo = conceptClassInfo
         self.conceptFolderInfo = conceptFolderInfo
+        self.storyImageCount = storyImageCount
+        self.eventImageCount = eventImageCount
+        self.conceptTrendingSource = conceptTrendingSource
+        self.categoryTrendingSource = categoryTrendingSource
 
     def getParams(self, prefix = ""):
         dict = {}
         dict[prefix == "" and "articleBodyLen" or prefix + "BodyLen"] = self.articleBodyLen
         dict[prefix == "" and "conceptType" or prefix + "ConceptType"] = self.conceptType
         dict[prefix == "" and "conceptLang" or prefix + "ConceptLang"] = self.conceptLang
-        dict[prefix == "" and "storyImageCount" or prefix + "StoryImageCount"] = self.storyImageCount
-        dict[prefix == "" and "eventImageCount" or prefix + "EventImageCount"] = self.eventImageCount
         dict.update(self.articleInfo.getParams(prefix == "" and "article" or prefix))
         dict.update(self.storyInfo.getParams(prefix == "" and "story" or prefix))
         dict.update(self.eventInfo.getParams(prefix == "" and "event" or prefix))
@@ -270,5 +302,9 @@ class ReturnInfo:
         dict.update(self.locationInfo.getParams(prefix == "" and "location" or prefix))
         dict.update(self.conceptClassInfo.getParams(prefix == "" and "conceptClass" or prefix))
         dict.update(self.conceptFolderInfo.getParams(prefix == "" and "conceptFolder" or prefix))
+        dict[prefix == "" and "storyImageCount" or prefix + "StoryImageCount"] = self.storyImageCount
+        dict[prefix == "" and "eventImageCount" or prefix + "EventImageCount"] = self.eventImageCount
+        dict[prefix == "" and "conceptTrendingSource" or prefix + "ConceptTrendingSource"] = self.conceptTrendingSource
+        dict[prefix == "" and "categoryTrendingSource" or prefix + "CategoryTrendingSource"] = self.categoryTrendingSource
         return dict
 

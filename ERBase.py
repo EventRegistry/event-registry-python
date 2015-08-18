@@ -35,7 +35,7 @@ def removeInvalidChars(text):
 
 class Struct(object):
     """
-    general class for converting dict to a native python object
+    helper class for converting dict to a native python object
     instead of a["b"]["c"] we can write a.b.c
     """
     def __init__(self, data):

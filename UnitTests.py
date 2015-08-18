@@ -17,7 +17,7 @@ q.addConcept(er.getConceptUri("Obama"))                 # get events related to 
 q.addRequestedResult(RequestEventsUriList())            # return uris of all events
 q.addRequestedResult(RequestEventsInfo(page = 0, count = 100, sortBy = "size", sortByAsc = True, 
                 returnInfo = ReturnInfo(
-                   conceptLang = "deu", conceptType = "person",
+                   conceptLang = "deu", conceptType = "wiki",
                    eventInfo = EventInfoFlags(concepts = True, articleCounts = True, title = True, summary = True, categories = True, location = True, stories = True, images = True)
                    )))   # return event details for first 100 events
 q.addRequestedResult(RequestEventsConceptAggr(conceptCount = 5,
@@ -52,7 +52,7 @@ for event in obj.events.results:
     lastArtCount = event.articleCounts.total
     for concept in event.concepts:
         Assert(hasattr(concept.label, "deu"), "Concept should contain label in german language")
-        Assert(concept.type == "person", "Got concept of invalid type")
+        Assert(concept.type == "wiki", "Got concept of invalid type")
 
 Assert(foundImages, "None of the results contained any images. Might be a bug")
 Assert(foundLocation, "None of the results contained a location. Might be a bug")

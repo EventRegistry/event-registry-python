@@ -9,73 +9,7 @@ from ERQueryEvents import *
 from ERQueryEvent import *
 from ERQueryArticles import *
 from ERQueryArticle import *
-                
-
-# #####################################
-# #####################################
-
-"""
-trending information is computed by comparing how frequently are individual concepts/categories
-mentioned in the articles. By default trends are computed by comparing the total number of mentions of a concept/category
-in the last two days compared to the number of mentions in the two weeks before. The trend for each concept/category
-is computed as the Pearson residual. The returned concepts/categories are the ones that have the highest residual.
-"""
-class TrendsBase(ParamsBase):
-    def _getPath(self):
-        return "/json/trends"
-
-# get currently top trending concepts
-class GetTrendingConcepts(TrendsBase):
-    def __init__(self, 
-                 source = "news", # source information from which to compute top trends. Possible values: "news", "social"
-                 count = 20):     # number of top trends to return
-        ParamsBase.__init__(self)
-        self._setVal("action", "getTrendingConcepts")
-        self._setVal("source", source)
-        self._setVal("conceptCount", count)
-
-
-# get currently top trending categories
-class GetTrendingCategories(TrendsBase):
-    def __init__(self, 
-                 source = "news",   # source information from which to compute top trends. Possible values: "news", "social"
-                 count = 20):       # number of top trends to return
-        ParamsBase.__init__(self)
-        self._setVal("action", "getTrendingCategories")
-        self._setVal("source", source)
-        self._setVal("categoryCount", count)
-
-# get currently top trending items for which the users provided the data
-# this data can be stock prices, energy prices, etc...
-class GetTrendingCustomItems(TrendsBase):
-    def __init__(self, source = "news", count = 20):
-        ParamsBase.__init__(self)
-        self._setVal("action", "getTrendingCustom")
-        self._setVal("source", source)
-        self._setVal("conceptCount", count)
-
-# get currently top trending groups of concepts
-# a group can be identified by the concept type or by a concept class uri
-class GetTrendingConceptGroups(TrendsBase):
-    def __init__(self, 
-                 source = "news",   # source information from which to compute top trends. Possible values: "news", "social"
-                 count = 20,        # number of top trends to return
-                 **kwds):     
-        ParamsBase.__init__(self)
-        self._setVal("action", "getConceptTrendGroups")
-        self._setVal("source", source)
-        self._setVal("conceptCount", count)
-
-        self._parseConceptFlags("concept", **kwargs)
-
-    # request trending of concepts of specified types
-    def getConceptTypeGroups(types = ["person", "org", "loc", "wiki"]):
-        self._setVal("conceptType", types)
-
-    # request trending of concepts assigned to the specified concept classes
-    def getConceptClassUris(conceptClassUris):
-        self._setVal("conceptClassUri", conceptClassUris)
-
+from ERTrends import *
 
 # #####################################
 # #####################################
@@ -113,8 +47,8 @@ class GetTopSharedEvents(DailySharesBase):
                  date = None,     # specify the date (either in YYYY-MM-DD or datetime.date format) for which to return top shared articles. If None then today is used
                  count = 20):     # number of top shared articles to return
         ParamsBase.__init__(self)
-        self._setProp("action", "getEvents")
-        self._setProp("count", count)
+        self._setVal("action", "getEvents")
+        self._setVal("count", count)
         
         if date == None:
             date = datetime.date.today()
@@ -327,12 +261,14 @@ class EventRegistry(object):
             return matches[0]["uri"]
         return None    
 
-    ### return info about recently modified events
-    # maxEventCount determines the maximum number of events to return in a single call (max 250)
-    # maxMinsBack sets how much in the history are we interested to look
-    # set mandatoryLang if you wish to only get events covered at least by the specified language
-    # if mandatoryLocation == True then return only events that have a known geographic location
-    # lastActivityId is another way of settings how much in the history are we interested to look. Set when you have repeated calls of the method. Set it to lastActivityId obtained in the last response
+    def getConceptInfo(self, conceptUri, 
+                       returnInfo = ReturnInfo(conceptInfo = ConceptInfoFlags(
+                           synonyms = True, image = True, description = True))):
+        """return detailed information about a particular concept"""
+        params = returnInfo.getParams()
+        params.update({"uri": conceptUri, "action": "getInfo" })
+        return self.jsonRequest("/json/concept", params)
+
     def getRecentEvents(self, 
                         maxEventCount = 60, 
                         maxMinsBack = 10 * 60, 
@@ -340,6 +276,15 @@ class EventRegistry(object):
                         mandatoryLocation = True, 
                         lastActivityId = 0, 
                         returnInfo = ReturnInfo()):
+        """
+        return info about recently modified events
+        
+        @param maxEventCount: determines the maximum number of events to return in a single call (max 250)
+        @param maxMinsBack: sets how much in the history are we interested to look
+        @param mandatoryLang: set a lang or array of langs if you wish to only get events covered at least by the specified language
+        @param mandatoryLocation: if set to True then return only events that have a known geographic location
+        @param lastActivityId: this is another way of settings how much in the history are we interested to look. Set when you have repeated calls of the method. Set it to lastActivityId obtained in the last response
+        """
         assert maxEventCount <= 1000
         params = {  "action": "getRecentActivity",
                     "addEvents": True,
