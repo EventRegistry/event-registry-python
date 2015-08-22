@@ -3,72 +3,30 @@ classes responsible for obtaining results from the Event Registry
 """
 import os, sys, urllib2, urllib, json, re
 from cookielib import CookieJar
-from ERBase import *
-from ERReturnInfo import *
-from ERQueryEvents import *
-from ERQueryEvent import *
-from ERQueryArticles import *
-from ERQueryArticle import *
-from ERTrends import *
+from Base import *
+from ReturnInfo import *
+from QueryEvents import *
+from QueryEvent import *
+from QueryArticles import *
+from QueryArticle import *
+from Trends import *
+from Info import *
+from DailyShares import *
 
-# #####################################
-# #####################################
-
-"""
-Using the bottom classes you can obtain information about articles and events that 
-were shared the most on social media (Twitter and Facebook) on a particular day.
-Given a date, articles published on that date are checked and top shared ones are returned. For an event,
-events on that day are checked and top shared ones are returned.
-Social score for an article is computed as the sum of shares on facebook and twitter.
-Social score for an event is computed by checking 30 top shared articles in the event and averaging their social scores.
-"""
-
-class DailySharesBase(ParamsBase):
-    def _getPath(self):
-        return "/json/topDailyShares"
-
-# get top shared articles for today or any other day
-class GetTopSharedArticles(DailySharesBase):
-    def __init__(self, 
-                 date = None,     # specify the date (either in YYYY-MM-DD or datetime.date format) for which to return top shared articles. If None then today is used
-                 count = 20):     # number of top shared articles to return
-        ParamsBase.__init__(self)
-        self._setVal("action", "getArticles")
-        self._setVal("count", count)
-        
-        if date == None:
-            date = datetime.date.today()
-        self._setDateVal("date", date)
-        
-        
-# get top shared events for today or any other day
-class GetTopSharedEvents(DailySharesBase):
-    def __init__(self, 
-                 date = None,     # specify the date (either in YYYY-MM-DD or datetime.date format) for which to return top shared articles. If None then today is used
-                 count = 20):     # number of top shared articles to return
-        ParamsBase.__init__(self)
-        self._setVal("action", "getEvents")
-        self._setVal("count", count)
-        
-        if date == None:
-            date = datetime.date.today()
-        self._setDateVal("date", date)
-        
-
-# #####################################
-# #####################################
-
-# object that can access event registry 
 class EventRegistry(object):
-    def __init__(self, host = "http://eventregistry.org", logging = False, 
+    """
+    the core object that is used to access any data in Event Registry
+    it is used to send all the requests and queries
+    """
+    def __init__(self, host = None, logging = False, 
                  minDelayBetweenRequests = 0.5,     # the minimum number of seconds between individual api calls
                  repeatFailedRequestCount = -1,    # if a request fails (for example, because ER is down), what is the max number of times the request should be repeated (-1 for indefinitely)
                  verboseOutput = False):            # if true, additional info about query times etc will be printed to console
-        self.Host = host
-        self._lastException = None
-        self._logRequests = logging
+        self._host = host
         self._erUsername = None
         self._erPassword = None
+        self._lastException = None
+        self._logRequests = logging
         self._minDelayBetweenRequests = minDelayBetweenRequests
         self._repeatFailedRequestCount = repeatFailedRequestCount
         self._verboseOutput = verboseOutput
@@ -78,21 +36,30 @@ class EventRegistry(object):
         self._reqOpener = urllib2.build_opener(urllib2.HTTPCookieProcessor(cj))
 
         # if there is a settings.json file in the directory then try using it to login to ER
+        # and to read the host name from it (if custom host is not specified)
         currPath = os.path.split(__file__)[0]
         settPath = os.path.join(currPath, "settings.json")
         if os.path.exists(settPath):
             settings = json.load(open(settPath))
-            self.login(settings.get("username", ""), settings.get("password", ""), False)
+            self._host = host or settings.get("host", "http://eventregistry.org")
+            if settings.has_key("username") and settings.has_key("password"):
+                self.login(settings.get("username", ""), settings.get("password", ""), False)
+        else:
+            self._host = host or "http://eventregistry.org"
+
         
-    # ensure that queries are not made too fast
     def _sleepIfNecessary(self):
+        """ensure that queries are not made too fast"""
         t = time.time()
         if t - self._lastQueryTime < self._minDelayBetweenRequests:
             time.sleep(self._minDelayBetweenRequests - (t - self._lastQueryTime))
         self._lastQueryTime = t
 
-     # make the request - repeat it _repeatFailedRequestCount times, if they fail (indefinitely if _repeatFailedRequestCount = -1)
     def _getUrlResponse(self, url, data = None):
+        """
+        make the request - repeat it _repeatFailedRequestCount times, 
+        if they fail (indefinitely if _repeatFailedRequestCount = -1)
+        """
         tryCount = 0
         while self._repeatFailedRequestCount < 0 or tryCount < self._repeatFailedRequestCount:
             tryCount += 1
@@ -111,32 +78,36 @@ class EventRegistry(object):
         return None
 
     def setLogging(val):
+        """should all requests be logged to a file or not?"""
         self._logRequests = val
 
     def getLastException(self):
+        """return the last exception"""
         return self._lastException
 
     def printLastException(self):
         print str(self._lastException)
 
-    # print time prefix + text
     def printConsole(self, text):
+        """print time prefix + text to console"""
         print time.strftime("%H:%M:%S") + " " + str(text)
 
-    # login the user. without logging in, the user is limited to 10.000 queries per day. 
-    # if you have a registered account, the number of allowed requests per day can be higher, depending on your subscription plan
     def login(self, username, password, throwExceptOnFailure = True):
+        """
+        login the user. without logging in, the user is limited to 10.000 queries per day. 
+        if you have a registered account, the number of allowed requests per day can be higher, depending on your subscription plan
+        """
         self._erUsername = username
         self._erPassword = password
-        req = urllib2.Request(self.Host + "/login", urllib.urlencode({ "email": username, "pass": password }))
+        req = urllib2.Request(self._host + "/login", urllib.urlencode({ "email": username, "pass": password }))
         respInfo = self._reqOpener.open(req).read()
         respInfo = json.loads(respInfo)
         if throwExceptOnFailure and respInfo.has_key("error"):
             raise Exception(respInfo["error"])
         return respInfo
 
-    # make a get request
     def jsonRequest(self, methodUrl, paramDict):
+        """make a GET request"""
         self._sleepIfNecessary()
         self._lastException = None
 
@@ -147,7 +118,7 @@ class EventRegistry(object):
         
         try:
             params = urllib.urlencode(paramDict, True)
-            url = self.Host + methodUrl + "?" + params
+            url = self._host + methodUrl + "?" + params
             if self._logRequests:
                 with open("requests_log.txt", "a") as log:
                     log.write(url + "\n")
@@ -160,8 +131,11 @@ class EventRegistry(object):
             self._lastException = ex
             return None
 
-    # make a post request where all parameters are encoded in the body - use for requests with many parameters
     def jsonPostRequest(self, methodUrl, paramDict):
+        """
+        make a post request where all parameters are encoded in the body
+        use for requests with many parameters
+        """
         self._sleepIfNecessary()
         self._lastException = None
 
@@ -172,7 +146,7 @@ class EventRegistry(object):
         
         try:
             params = urllib.urlencode(paramDict, True)
-            url = self.Host + methodUrl
+            url = self._host + methodUrl
             if self._logRequests:
                 with open("requests_log.txt", "a") as log:
                     log.write(url + "\n")
@@ -185,14 +159,14 @@ class EventRegistry(object):
             self._lastException = ex
             return None
             
-    # main method for executing the search queries. 
     def execQuery(self, query, convertToDict = True):
+        """main method for executing the search queries."""
         self._sleepIfNecessary()
         self._lastException = None
 
         try:
             params = query._encode(self._erUsername, self._erPassword)
-            url = self.Host + query._getPath() + "?" + params
+            url = self._host + query._getPath() + "?" + params
             if self._logRequests:
                 with open("requests_log.txt", "a") as log:
                     log.write(url + "\n")
@@ -205,57 +179,59 @@ class EventRegistry(object):
             self._lastException = ex
             return None
 
-    # return a list of concepts that contain the given prefix
-    # valid sources: person, loc, org, wiki, entities (== person + loc + org), concepts (== entities + wiki), conceptClass, conceptFolder
-    def suggestConcepts(self, prefix, sources = ["concepts"], lang = "eng", labelLang = "eng", page = 0, count = 20):      
+    def suggestConcepts(self, prefix, sources = ["concepts"], lang = "eng", labelLang = "eng", page = 0, count = 20):
+        """
+        return a list of concepts that contain the given prefix
+        valid sources: person, loc, org, wiki, entities (== person + loc + org), concepts (== entities + wiki), conceptClass, conceptFolder
+        """
         return self.jsonRequest("/json/suggestConcepts", { "prefix": prefix, "source": sources, "lang": lang, "labelLang": labelLang, "page": page, "count": count})
         
-    # return a list of news sources that match the prefix
     def suggestNewsSources(self, prefix, page = 0, count = 20):
+        """return a list of news sources that match the prefix"""
         return self.jsonRequest("/json/suggestSources", { "prefix": prefix, "page": page, "count": count })
         
-    # return a list of geo locations (cities or countries) that contain the prefix
     def suggestLocations(self, prefix, count = 20, lang = "eng", source = ["place", "country"]):
+        """return a list of geo locations (cities or countries) that contain the prefix"""
         return self.jsonRequest("/json/suggestLocations", { "prefix": prefix, "count": count, "source": source, "lang": lang })
         
-    # return a list of dmoz categories that contain the prefix
     def suggestCategories(self, prefix, page = 0, count = 20):
+        """return a list of dmoz categories that contain the prefix"""
         return self.jsonRequest("/json/suggestCategories", { "prefix": prefix, "page": page, "count": count })
 
-    # return a list of dmoz categories that contain the prefix
     def suggestConceptClasses(self, prefix, lang = "eng", labelLang = "eng", page = 0, count = 20):
+        """return a list of dmoz categories that contain the prefix"""
         return self.jsonRequest("/json/suggestConceptClasses", { "prefix": prefix, "lang": lang, "labelLang": labelLang, "page": page, "count": count })
         
-    # return a concept uri that is the best match for the given concept label
     def getConceptUri(self, conceptLabel, lang = "eng", sources = ["concepts"]):
+        """return a concept uri that is the best match for the given concept label"""
         matches = self.suggestConcepts(conceptLabel, lang = lang, sources = sources)
         if matches != None and len(matches) > 0 and matches[0].has_key("uri"):
             return matches[0]["uri"]
         return None
 
-    # return a location uri that is the best match for the given location label
     def getLocationUri(self, locationLabel, lang = "eng", source = ["place", "country"]):
+        """return a location uri that is the best match for the given location label"""
         matches = self.suggestLocations(locationLabel, lang = lang, source = source)
         if matches != None and len(matches) > 0 and matches[0].has_key("wikiUri"):
             return matches[0]["wikiUri"]
         return None
 
-    # return a category uri that is the best match for the given label
     def getCategoryUri(self, categoryLabel):
+        """return a category uri that is the best match for the given label"""
         matches = self.suggestCategories(categoryLabel)
         if matches != None and len(matches) > 0 and matches[0].has_key("uri"):
             return matches[0]["uri"]
         return None
 
-    # return the news source that best matches the source name
     def getNewsSourceUri(self, sourceName):
+        """return the news source that best matches the source name"""
         matches = self.suggestNewsSources(sourceName)
         if matches != None and len(matches) > 0 and matches[0].has_key("uri"):
             return matches[0]["uri"]
         return None
     
-    # return a uri of the concept class that is the best match for the given label
     def getConceptClass(self, classLabel, lang = "eng"):
+        """return a uri of the concept class that is the best match for the given label"""
         matches = self.suggestConceptClasses(classLabel, lang = lang)
         if matches != None and len(matches) > 0 and matches[0].has_key("uri"):
             return matches[0]["uri"]
@@ -303,17 +279,19 @@ class EventRegistry(object):
 
         return self.jsonRequest("/json/overview", params)
 
-    ### return info about recently added articles
-    # maxArticleCount determines the maximum number of articles to return in a single call (max 250)
-    # maxMinsBack sets how much in the history are we interested to look
-    # if mandatorySourceLocation == True then return only articles from sources for which we know geographic location
-    # lastActivityId is another way of settings how much in the history are we interested to look. Set when you have repeated calls of the method. Set it to lastActivityId obtained in the last response
     def getRecentArticles(self, 
                           maxArticleCount = 60, 
                           maxMinsBack = 10 * 60, 
                           mandatorySourceLocation = True, 
                           lastActivityId = 0, 
                           returnInfo = ReturnInfo()):
+        """
+        return info about recently added articles
+        @param maxArticleCount: determines the maximum number of articles to return in a single call (max 250)
+        @param maxMinsBack: sets how much in the history are we interested to look
+        @param mandatorySourceLocation: if True then return only articles from sources for which we know geographic location
+        @param lastActivityId: another way of settings how much in the history are we interested to look. Set when you have repeated calls of the method. Set it to lastActivityId obtained in the last response
+        """
         assert maxArticleCount <= 1000
         params = {
             "action": "getRecentActivity",
@@ -329,6 +307,6 @@ class EventRegistry(object):
         params.update(returnParams)
         return self.jsonRequest("/json/overview", params)
 
-    # get some stats about recently imported articles and events
     def getRecentStats(self):
+        """get some stats about recently imported articles and events"""
         return self.jsonRequest("/json/overview", { "action": "getRecentStats"})

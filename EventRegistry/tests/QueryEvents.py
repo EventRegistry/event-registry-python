@@ -1,15 +1,8 @@
-﻿from EventRegistry import *
+﻿from eventregistry import *
 
-def Assert(condition, msg):
-    if not condition:
-        print msg
-
-#er = EventRegistry(host = "http://eventregistry.org", logging = True)
-#er = EventRegistry(host = "http://beta.eventregistry.org", logging = True)
-er = EventRegistry(host = "http://localhost:8090", logging = True)
+er = EventRegistry()
 
 q = QueryEvents()
-Assert(er.getConceptUri("Obama") != None, "No suggestions are provided for name Obama")
 
 q.addConcept(er.getConceptUri("Obama"))                 # get events related to obama
 #q.addCategory(er.getCategoryUri("society issues"))      # and are related to issues in society

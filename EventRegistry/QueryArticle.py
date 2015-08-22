@@ -1,5 +1,5 @@
-﻿from ERBase import *
-from ERReturnInfo import *
+﻿from Base import *
+from ReturnInfo import *
 
 class QueryArticle(Query):
     """
@@ -28,10 +28,19 @@ class QueryArticle(Query):
     @staticmethod
     def queryByUrl(articleUrlOrUrlList):
         """
-        obtain information about one or more articles by providing their urls
+        obtain information about one or more articles by providing their web urls
         """
         q = QueryArticle([])
         q.queryParams["articleUrl"] = articleUrlOrUrlList
+        return q
+
+    @staticmethod
+    def queryByUri(articleUriOrUriList):
+        """
+        obtain information about one or more articles by providing their article uris (newsfeed ids, such as "284017606")
+        """
+        q = QueryArticle([])
+        q.queryParams["articleUri"] = articleUriOrUriList
         return q
     
     def addRequestedResult(self, requestArticle):

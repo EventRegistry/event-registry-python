@@ -1,5 +1,5 @@
-﻿from ERBase import *
-from ERReturnInfo import *
+﻿from Base import *
+from ReturnInfo import *
 
 class QueryArticles(Query):
     """
@@ -167,11 +167,14 @@ class RequestArticlesCategoryAggr(RequestArticles):
     """
     return aggreate of categories of resulting articles
     """
-    def __init__(self, articlesSampleSize = 20000):
+    def __init__(self, articlesSampleSize = 20000,
+                 returnInfo = ReturnInfo()):
         assert articlesSampleSize <= 50000
         self.resultType = "categoryAggr"
         self.categoryAggrSampleSize = articlesSampleSize
-        
+        self.__dict__.update(returnInfo.getParams("categoryAggr"))
+
+
 class RequestArticlesConceptAggr(RequestArticles):
     """
     get aggreate of concepts of resulting articles
@@ -245,7 +248,7 @@ class RequestArticlesConceptTrends(RequestArticles):
                  returnInfo = ReturnInfo()):
         assert count <= 50
         self.resultType = "conceptTrends"
-        self.trendingConceptsConceptCount = count
+        self.conceptTrendsConceptCount = count
         self.__dict__.update(returnInfo.getParams("conceptTrends"))
 
 class RequestArticlesDateMentionAggr(RequestArticles):

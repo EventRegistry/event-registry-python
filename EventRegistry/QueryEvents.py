@@ -1,5 +1,5 @@
-﻿from ERBase import *
-from ERReturnInfo import *
+﻿from Base import *
+from ReturnInfo import *
 
 
 class QueryEvents(Query):

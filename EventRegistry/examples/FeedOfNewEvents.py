@@ -4,10 +4,12 @@ updated since the last query. For the received set of events it prints the basic
 and then goes and also downloads the top 20 articles assigned to this event in any of the 
 core languages (eng, deu, spa, zho, slv)
 """
-from EventRegistry import *
+
+
+from eventregistry import *
 import json, time, datetime
 
-er = EventRegistry(host = "http://eventregistry.org", logging = True)
+er = EventRegistry()
 lastEventActivityId = 0
 while True:
     print "last activity id: ", lastEventActivityId

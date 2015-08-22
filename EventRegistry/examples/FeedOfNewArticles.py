@@ -3,10 +3,10 @@ this is a simple script that makes a query to ER to get the feed of articles tha
 since the last query.
 """
 
-from EventRegistry import *
+from eventregistry import *
 import json, time, datetime
 
-er = EventRegistry(host = "http://eventregistry.org", logging = True)
+er = EventRegistry()
 
 lastArticleActivityId = 0
 while True:

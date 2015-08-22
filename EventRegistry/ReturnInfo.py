@@ -7,14 +7,19 @@ a parameter in all query requests
 """
 
 class ReturnInfoFlagsBase(object):
-    # set the objects property propName if the dictKey key exists in dict and it is not the same as default value defVal
+    """
+    base class for the return info types
+    """
+
     def _setFlag(self, name, val, defVal):
+        """set the objects property propName if the dictKey key exists in dict and it is not the same as default value defVal"""
         if not hasattr(self, "flags"):
             self.flags = {}
         if val != defVal:
             self.flags[name] = val
 
     def _getFlags(self, prefix):
+        """return the dict of stored flags, where each flag name should be first prefixed using prefix"""
         if not hasattr(self, "flags"):
             self.flags = {}
         dict = {}
@@ -23,19 +28,32 @@ class ReturnInfoFlagsBase(object):
         return dict
 
     def _setVal(self, name, val):
+        """set value of name to val"""
+        if not hasattr(self, "vals"):
+            self.vals = {}
+        self.vals[name] = val
+
+    def _setVal(self, name, val, defVal):
+        """set value of name to val in case the val != defVal"""
+        if val == defVal:
+            return
         if not hasattr(self, "vals"):
             self.vals = {}
         self.vals[name] = val
 
     def _getVals(self, prefix):
+        """
+        return the values in the vals dict
+        in case prefix is "", change the first letter of the name to lowercase, otherwise use prefix+name as the new name
+        """
         if not hasattr(self, "vals"):
             self.vals = {}
         dict = {}
         for key in self.vals.keys():
             # if no prefix then lower the first letter
             if prefix == "": 
-                key = key[:1].lower() + key[1:] if key else ""
-                dict[key] = self.vals[key]
+                newkey = key[:1].lower() + key[1:] if key else ""
+                dict[newkey] = self.vals[key]
             else:
                 dict[prefix + key] = self.vals[key]
         return dict
@@ -76,7 +94,7 @@ class ArticleInfoFlags(ReturnInfoFlagsBase):
                  extractedDates = False,
                  socialScore = False,
                  details = False):
-        self._setVal("ArticleBodyLen", bodyLen)
+        self._setVal("ArticleBodyLen", bodyLen, 300)
         self._setFlag("IncludeArticleBasicInfo", basicInfo, True)
         self._setFlag("IncludeArticleTitle", title, True)
         self._setFlag("IncludeArticleBody", body, True)
@@ -118,6 +136,7 @@ class StoryInfoFlags(ReturnInfoFlagsBase):
                  medoidArticle = False,
                  commonDates = False,
                  socialScore = False,
+                 details = False,
                  imageCount = 0):
         self._setFlag("IncludeStoryBasicStats", basicStats, True)
         self._setFlag("IncludeStoryLocation", location, True)
@@ -130,7 +149,8 @@ class StoryInfoFlags(ReturnInfoFlagsBase):
         self._setFlag("IncludeStoryMedoidArticle", medoidArticle, False)
         self._setFlag("IncludeStoryCommonDates", commonDates, False)
         self._setFlag("IncludeStorySocialScore", socialScore, False)
-        self._setVal("StoryImageCount", imageCount)
+        self._setFlag("IncludeStoryDetails", details, False)
+        self._setVal("StoryImageCount", imageCount, 0)
 
 
 class EventInfoFlags(ReturnInfoFlagsBase):
@@ -160,6 +180,7 @@ class EventInfoFlags(ReturnInfoFlagsBase):
                  commonDates = False,
                  stories = False,
                  socialScore = False,
+                 details = False,
                  imageCount = 0):
         self._setFlag("IncludeEventTitle", title, True)
         self._setFlag("IncludeEventSummary", summary, True)
@@ -172,7 +193,8 @@ class EventInfoFlags(ReturnInfoFlagsBase):
         self._setFlag("IncludeEventCommonDates", commonDates, False)
         self._setFlag("IncludeEventStories", stories, False)
         self._setFlag("IncludeEventSocialScore", socialScore, False)
-        self._setVal("EventImageCount", imageCount)
+        self._setFlag("IncludeEventDetails", details, False)
+        self._setVal("EventImageCount", imageCount, 0)
         
 
 class SourceInfoFlags(ReturnInfoFlagsBase):
@@ -220,12 +242,14 @@ class CategoryInfoFlags(ReturnInfoFlagsBase):
                  childrenUris = False,
                  trendingScore = False,
                  trendingHistory = False,
+                 details = False,
                  trendingSource = "news"):
         self._setFlag("IncludeCategoryParentUri", parentUri, False)
         self._setFlag("IncludeCategoryChildrenUris", childrenUris, False)
         self._setFlag("IncludeCategoryTrendingScore", trendingScore, False)
         self._setFlag("IncludeCategoryTrendingHistory", trendingHistory, False)
-        self._setVal("CategoryTrendingSource", trendingSource)
+        self._setFlag("IncludeCategoryDetails", details, False)
+        self._setVal("CategoryTrendingSource", trendingSource, "news")
 
 
 class ConceptInfoFlags(ReturnInfoFlagsBase):
@@ -249,8 +273,8 @@ class ConceptInfoFlags(ReturnInfoFlagsBase):
     @type trendingSource: string | list
     """
     def __init__(self,
-                 type = ["concepts"],
-                 lang = ["eng"],
+                 type = "concepts",
+                 lang = "eng",
                  label = True,
                  synonyms = False,
                  image = False,
@@ -262,8 +286,8 @@ class ConceptInfoFlags(ReturnInfoFlagsBase):
                  trendingScore = False,
                  trendingHistory = False,
                  trendingSource = "news"):
-        self._setVal("ConceptType", type)
-        self._setVal("ConceptLang", lang)
+        self._setVal("ConceptType", type, "concepts")
+        self._setVal("ConceptLang", lang, "eng")
         self._setFlag("IncludeConceptLabel", label, True)
         self._setFlag("IncludeConceptSynonyms", synonyms, False)
         self._setFlag("IncludeConceptImage", image, False)
@@ -274,7 +298,7 @@ class ConceptInfoFlags(ReturnInfoFlagsBase):
         self._setFlag("IncludeConceptConceptFolderMembership", conceptFolderMembership, False)
         self._setFlag("IncludeConceptTrendingScore", trendingScore, False)
         self._setFlag("IncludeConceptTrendingHistory", trendingHistory, False)
-        self._setVal("ConceptTrendingSource", trendingSource)
+        self._setVal("ConceptTrendingSource", trendingSource, "news")
 
 
 class LocationInfoFlags(ReturnInfoFlagsBase):
@@ -395,36 +419,41 @@ class ReturnInfo:
                  articleInfo = ArticleInfoFlags(),
                  eventInfo = EventInfoFlags(),
                  sourceInfo = SourceInfoFlags(),
-                 storyInfo = StoryInfoFlags(),
                  categoryInfo = CategoryInfoFlags(),
                  conceptInfo = ConceptInfoFlags(),
                  locationInfo = LocationInfoFlags(),
+                 storyInfo = StoryInfoFlags(),
                  conceptClassInfo = ConceptInfoFlags(),
                  conceptFolderInfo = ConceptFolderInfoFlags()):
         self.articleInfo = articleInfo
-        self.storyInfo = storyInfo
         self.eventInfo = eventInfo
         self.sourceInfo = sourceInfo
         self.categoryInfo = categoryInfo
         self.conceptInfo = conceptInfo
         self.locationInfo = locationInfo
+        self.storyInfo = storyInfo
         self.conceptClassInfo = conceptClassInfo
         self.conceptFolderInfo = conceptFolderInfo
 
     def getParams(self, prefix = ""):
         dict = {}
         dict.update(self.articleInfo._getFlags(prefix == "" and "article" or prefix))
-        dict.update(self.storyInfo._getFlags(prefix == "" and "story" or prefix))
         dict.update(self.eventInfo._getFlags(prefix == "" and "event" or prefix))
         dict.update(self.sourceInfo._getFlags(prefix == "" and "source" or prefix))
-        dict.update(self.categoryInfo._getFlags(prefix == "" and "category" or prefix))
         dict.update(self.conceptInfo._getFlags(prefix == "" and "concept" or prefix))
+        dict.update(self.categoryInfo._getFlags(prefix == "" and "category" or prefix))
         dict.update(self.locationInfo._getFlags(prefix == "" and "location" or prefix))
+        dict.update(self.storyInfo._getFlags(prefix == "" and "story" or prefix))
         dict.update(self.conceptClassInfo._getFlags(prefix == "" and "conceptClass" or prefix))
         dict.update(self.conceptFolderInfo._getFlags(prefix == "" and "conceptFolder" or prefix))
         dict.update(self.articleInfo._getVals(prefix))
-        dict.update(self.storyInfo._getVals(prefix))
         dict.update(self.eventInfo._getVals(prefix))
+        dict.update(self.sourceInfo._getVals(prefix))
         dict.update(self.conceptInfo._getVals(prefix))
+        dict.update(self.categoryInfo._getVals(prefix))
+        dict.update(self.locationInfo._getVals(prefix))
+        dict.update(self.storyInfo._getVals(prefix))
+        dict.update(self.conceptClassInfo._getVals(prefix))
+        dict.update(self.conceptFolderInfo._getVals(prefix))
         return dict
 

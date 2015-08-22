@@ -1,7 +1,6 @@
-﻿from EventRegistry import *
+﻿from eventregistry import *
 
-#er = EventRegistry(host = "http://eventregistry.org", logging = True)
-er = EventRegistry(host = "http://localhost:8090", logging = True)
+er = EventRegistry()
 
 
 q = QueryArticles()

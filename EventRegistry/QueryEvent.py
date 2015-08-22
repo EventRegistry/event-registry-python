@@ -1,5 +1,5 @@
-﻿from ERBase import *
-from ERReturnInfo import *
+﻿from Base import *
+from ReturnInfo import *
 
 class QueryEvent(Query):
     """
@@ -7,7 +7,7 @@ class QueryEvent(Query):
 
     @param eventUriOrUriList: a single event uri or a list of event uris
     """
-    def __init__(self, eventUriOrList, **kwargs):
+    def __init__(self, eventUriOrList):
         super(QueryEvent, self).__init__()
         self._setVal("action", "getEvent")
         self._setVal("eventUri", eventUriOrList)

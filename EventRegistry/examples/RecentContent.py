@@ -1,6 +1,6 @@
-from EventRegistry import *
+﻿from eventregistry import *
 
-er = EventRegistry(host = "http://eventregistry.org", logging = True)
+er = EventRegistry()
 
 # print recent statistics - number of articles, events, ...
 print er.getRecentStats()
