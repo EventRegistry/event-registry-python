@@ -3,7 +3,6 @@ from eventregistry import *
 
 
 class TestQueryArticles(unittest.TestCase):
-    
     def setUp(self):
         self.er = EventRegistry()
         self.articleInfo = ArticleInfoFlags(bodyLen = -1, concepts = True, storyUri = True, duplicateList = True, originalArticle = True, categories = True,
@@ -11,8 +10,7 @@ class TestQueryArticles(unittest.TestCase):
         self.sourceInfo = SourceInfoFlags(description = True, location = True, importance = True, articleCount = True, tags = True, details = True)
         self.conceptInfo = ConceptInfoFlags(type=["entities"], lang = "spa", synonyms = True, image = True, description = True, details = True, 
                 conceptClassMembership = True, conceptFolderMembership = True, trendingScore = True, trendingHistory = True)
-        self.locationInfo = LocationInfoFlags(countryWikiUri = True, countryLabel = True, countryLocation = True, countryArea = True, countryPopulation = True, 
-                placeWikiUri = True, placeLabel = True, placeLocation = True, placeCountry = True)
+        self.locationInfo = LocationInfoFlags(wikiUri = True, label = True, geoLocation = True, population = True, countryArea = True, placeFeatureCode = True, placeCountry = True)
         self.categoryInfo = CategoryInfoFlags(parentUri = True, childrenUris = True, trendingScore = True, trendingHistory = True)
         self.returnInfo = ReturnInfo(articleInfo = self.articleInfo, conceptInfo = self.conceptInfo,
             sourceInfo = self.sourceInfo, locationInfo = self.locationInfo, categoryInfo = self.categoryInfo)
@@ -25,6 +23,8 @@ class TestQueryArticles(unittest.TestCase):
     def ensureValidArticle(self, article, testName):
         for prop in ["id", "url", "uri", "title", "body", "source", "details", "location", "duplicateList", "originalArticle", "time", "date", "categories", "lang", "extractedDates", "concepts", "details"]:
             self.assertTrue(article.has_key(prop), "Property '%s' was expected in article for test %s" % (prop, testName))
+        for concept in article.get("concepts"):
+            self.ensureValidConcept(concept, testName)
         self.assertTrue(article.get("isDuplicate") or article.has_key("eventUri"), "Nonduplicates should have event uris")
 
     def ensureValidSource(self, source, testName):
@@ -40,20 +40,60 @@ class TestQueryArticles(unittest.TestCase):
         q.addConcept(self.er.getConceptUri("Obama"))
         return q
 
-    def test_ArticleList(self):
-        q = self.createQuery()
-        q.addRequestedResult(RequestArticlesInfo(returnInfo = self.returnInfo))
-        res = self.er.execQuery(q)
-
+    def validateGeneralArticleList(self, res):
         self.assertIsNotNone(res.get("articles"), "Expected to get 'articles'")
         
         articles = res.get("articles").get("results")
-        self.assertEquals(len(articles), 20, "Expected to get 20 articles")
+        self.assertEquals(len(articles), 30, "Expected to get 30 articles")
         for article in articles:
             self.ensureValidArticle(article, "articleList")
-            
 
-    def test_ConceptTrends(self):
+    def testArticleList(self):
+        q = self.createQuery()
+        q.addRequestedResult(RequestArticlesInfo(count = 30,  returnInfo = self.returnInfo))
+        res = self.er.execQuery(q)
+        self.validateGeneralArticleList(res)
+            
+                    
+    def testArticleListWithKeywordSearch(self):
+        q = QueryArticles(keywords = "iphone")
+        q.addRequestedResult(RequestArticlesInfo(count = 30,  returnInfo = self.returnInfo))
+        res = self.er.execQuery(q)
+        self.validateGeneralArticleList(res)
+
+
+    def testArticleListWithPublisherSearch(self):
+        bbcUri = self.er.getNewsSourceUri("bbc")
+        q = QueryArticles(sourceUri = bbcUri)
+        q.addRequestedResult(RequestArticlesInfo(count = 30,  returnInfo = self.returnInfo))
+        res = self.er.execQuery(q)
+        self.validateGeneralArticleList(res)
+
+
+    def testArticleListWithCategorySearch(self):
+        disasterUri = self.er.getCategoryUri("disa")
+        q = QueryArticles(categoryUri = disasterUri)
+        q.addRequestedResult(RequestArticlesInfo(count = 30,  returnInfo = self.returnInfo))
+        res = self.er.execQuery(q)
+        self.validateGeneralArticleList(res)
+
+
+    def testArticleListWithLangSearch(self):
+        q = QueryArticles(lang = "deu")
+        q.addRequestedResult(RequestArticlesInfo(count = 30,  returnInfo = self.returnInfo))
+        res = self.er.execQuery(q)
+        self.validateGeneralArticleList(res)
+
+
+    def testArticleListWithLocationSearch(self):
+        location = self.er.getLocationUri("germany")
+        q = QueryArticles(locationUri = location)
+        q.addRequestedResult(RequestArticlesInfo(count = 30,  returnInfo = self.returnInfo))
+        res = self.er.execQuery(q)
+        self.validateGeneralArticleList(res)
+
+
+    def testConceptTrends(self):
         q = self.createQuery()
         q.addRequestedResult(RequestArticlesConceptTrends(count = 5, returnInfo = self.returnInfo))
         res = self.er.execQuery(q)
@@ -73,7 +113,7 @@ class TestQueryArticles(unittest.TestCase):
             self.ensureValidConcept(concept, "conceptTrends")
 
 
-    def test_ConceptAggr(self):
+    def testConceptAggr(self):
         q = self.createQuery()
         q.addRequestedResult(RequestArticlesConceptAggr(conceptCount = 50, returnInfo = self.returnInfo))
         res = self.er.execQuery(q)
@@ -84,7 +124,7 @@ class TestQueryArticles(unittest.TestCase):
             self.ensureValidConcept(concept, "conceptAggr")
 
 
-    def test_KeywordAggr(self):
+    def testKeywordAggr(self):
         q = self.createQuery()
         q.addRequestedResult(RequestArticlesKeywordAggr())
         res = self.er.execQuery(q)
@@ -97,7 +137,7 @@ class TestQueryArticles(unittest.TestCase):
             self.assertTrue(kw.has_key("weight"), "Expected a weight property")
 
 
-    def test_CategoryAggr(self):
+    def testCategoryAggr(self):
         q = self.createQuery()
         q.addRequestedResult(RequestArticlesCategoryAggr(returnInfo = self.returnInfo))
         res = self.er.execQuery(q)
@@ -109,7 +149,7 @@ class TestQueryArticles(unittest.TestCase):
             self.ensureValidCategory(cat, "categoryAggr")
 
 
-    def test_ConceptMatrix(self):
+    def testConceptMatrix(self):
         q = self.createQuery()
         q.addRequestedResult(RequestArticlesConceptMatrix(count = 20, returnInfo = self.returnInfo))
         res = self.er.execQuery(q)
@@ -124,7 +164,7 @@ class TestQueryArticles(unittest.TestCase):
             self.ensureValidConcept(concept, "conceptMatrix")
 
 
-    def test_SourceAggr(self):
+    def testSourceAggr(self):
         q = self.createQuery()
         q.addRequestedResult(RequestArticlesSourceAggr(returnInfo = self.returnInfo))
         res = self.er.execQuery(q)

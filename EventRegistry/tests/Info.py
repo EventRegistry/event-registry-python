@@ -128,7 +128,7 @@ class TestInfo(unittest.TestCase):
                                            conceptFolderMembership = False,
                                            trendingScore = False,
                                            trendingHistory = False),
-            locationInfo = LocationInfoFlags(countryLabel = False, placeLabel = False, placeCountry = False)))
+            locationInfo = LocationInfoFlags(label = False, placeCountry = False)))
         q.queryById(range(10))
         res = self.er.execQuery(q)
         self.assertEqual(len(res), 10, "Expected 10 concepts")

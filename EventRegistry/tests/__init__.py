@@ -1,7 +1,10 @@
-﻿def Assert(condition, msg):
-    if not condition:
-        print msg
+﻿import unittest
+from AutoSuggestions import *
+from QueryArticles import *
+from QueryArticle import *
+from QueryEvent import *
+from QueryEvents import *
+from Info import *
 
-from .QueryEvents import *
-from .QueryArticles import *
-from .AutoSuggestions import *
+def runTests():
+    unittest.main();

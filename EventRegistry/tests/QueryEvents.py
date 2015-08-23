@@ -1,171 +1,278 @@
-﻿from eventregistry import *
+﻿import unittest
+from eventregistry import *
 
-er = EventRegistry()
 
-q = QueryEvents()
-
-q.addConcept(er.getConceptUri("Obama"))                 # get events related to obama
-#q.addCategory(er.getCategoryUri("society issues"))      # and are related to issues in society
-#q.addNewsSource(er.getNewsSourceUri("bbc"))             # and have been reported by BBC
-q.addRequestedResult(RequestEventsUriList())            # return uris of all events
-q.addRequestedResult(RequestEventsInfo(page = 0, count = 100, sortBy = "size", sortByAsc = True, 
-    returnInfo = ReturnInfo(
-        conceptInfo = ConceptInfoFlags(lang = "deu", type = "wiki"),
-        eventInfo = EventInfoFlags(concepts = True, articleCounts = True, title = True, summary = True, categories = True, location = True, stories = True, imageCount = 1)
-        )))   # return event details for first 100 events
-q.addRequestedResult(RequestEventsConceptAggr(conceptCount = 5,
-    returnInfo = ReturnInfo(
-        conceptInfo = ConceptInfoFlags(type = ["org", "loc"]))))        # compute concept aggregate on the events
-res = er.execQuery(q)
-obj = createStructFromDict(res)
-
-Assert(hasattr(obj, "conceptAggr"), "Results should contain conceptAggr")
-Assert(hasattr(obj, "events"), "Results should contain events")
-Assert(hasattr(obj, "uriList"), "Results should contain uriList")
-
-Assert(len(obj.conceptAggr) <= 10, "Received a list of concepts that is too long")
-for concept in obj.conceptAggr:
-    Assert(concept.type == "loc" or concept.type == "org", "Got concept of invalid type")
-
-lastArtCount = 0
-Assert(len(obj.events.results) <= 100, "Returned list of events was too long")
-
-foundImages = False
-foundLocation = False
-for event in obj.events.results:
-    Assert(hasattr(event, "articleCounts"), "Event should contain articleCounts")
-    Assert(hasattr(event, "categories"), "Event should contain categories")
-    Assert(hasattr(event, "concepts"), "Event should contain concepts")
-    Assert(hasattr(event, "stories"), "Event should contain stories")
-    Assert(hasattr(event, "title"), "Event should contain title")
-    Assert(hasattr(event, "summary"), "Event should contain summary")
-    foundImages = foundImages or hasattr(event, "images")
-    foundLocation = foundLocation or hasattr(event, "location")
-
-    Assert(event.articleCounts.total >= lastArtCount, "Events were not sorted by increasing size")
-    lastArtCount = event.articleCounts.total
-    for concept in event.concepts:
-        Assert(hasattr(concept.label, "deu"), "Concept should contain label in german language")
-        Assert(concept.type == "wiki", "Got concept of invalid type")
-
-Assert(foundImages, "None of the results contained any images. Might be a bug")
-Assert(foundLocation, "None of the results contained a location. Might be a bug")
-
-q = QueryEvents()
-q.addKeyword("car")  # get events containing word car
-q.addRequestedResult(RequestEventsInfo(page = 1, count = 10, sortBy = "date", sortByAsc = False, 
-    returnInfo = ReturnInfo(
-        conceptInfo = ConceptInfoFlags(type = "org"), 
-        eventInfo = EventInfoFlags(concepts = False, articleCounts = False, title = False, summary = False, categories = False, location = False, stories = False, imageCount = 0)
-        )))
-q.addRequestedResult(RequestEventsConceptTrends(conceptCount = 5, 
-    returnInfo = ReturnInfo(
-        conceptInfo = ConceptInfoFlags(type = ["org", "loc"], lang = "spa"))))
-res = er.execQuery(q)
-obj = createStructFromDict(res)
-
-Assert(hasattr(obj, "events"), "Results should contain events")
-Assert(hasattr(obj, "conceptTrends"), "Results should contain conceptAggr")
-
-for concept in obj.conceptTrends.conceptInfo:
-    Assert(concept.type == "loc" or concept.type == "org", "Got concept of invalid type")
-    Assert(hasattr(concept.label, "spa"), "Concept did not contain label in expected langage")
-
-lastEventDate = obj.events.results[0].eventDate if len(obj.events.results) > 0 else ""
-for event in obj.events.results:
-    Assert(event.eventDate <= lastEventDate, "Events are not sorted by date")
-    lastEventDate = event.eventDate
-    Assert(not hasattr(event, "articleCounts"), "Event should not contain articleCounts")
-    Assert(not hasattr(event, "categories"), "Event should not contain categories")
-    Assert(not hasattr(event, "concepts"), "Event should not contain concepts")
-    Assert(not hasattr(event, "location"), "Event should not contain location")
-    Assert(not hasattr(event, "stories"), "Event should not contain stories")
-    Assert(not hasattr(event, "images"), "Event should not contain images")
-    Assert(not hasattr(event, "title"), "Event should not contain title")
-    Assert(not hasattr(event, "summary"), "Event should not contain summary")
-
+class TestQueryEvents(unittest.TestCase):
     
-q = QueryEvents()
-q.addLocation(er.getLocationUri("Washington"))
-q.addRequestedResult(RequestEventsConceptTrends(40, 
-    returnInfo = ReturnInfo(
-        conceptInfo = ConceptInfoFlags(type = "person"))))
-q.addRequestedResult(RequestEventsCategoryAggr())
-q.addRequestedResult(RequestEventsInfo())
-res = er.execQuery(q)
+    def setUp(self):
+        self.er = EventRegistry()
+        self.articleInfo = ArticleInfoFlags(bodyLen = -1, concepts = True, storyUri = True, duplicateList = True, originalArticle = True, categories = True,
+                location = True, image = True, extractedDates = True, socialScore = True, details = True)
+        self.sourceInfo = SourceInfoFlags(description = True, location = True, importance = True, articleCount = True, tags = True, details = True)
+        self.conceptInfo = ConceptInfoFlags(type=["entities"], lang = "spa", synonyms = True, image = True, description = True, details = True, 
+                conceptClassMembership = True, conceptFolderMembership = True, trendingScore = True, trendingHistory = True)
+        self.locationInfo = LocationInfoFlags(wikiUri = True, label = True, geoLocation = True, population = True, countryArea = True, placeFeatureCode = True, placeCountry = True)
+        self.categoryInfo = CategoryInfoFlags(parentUri = True, childrenUris = True, trendingScore = True, trendingHistory = True)
+        self.eventInfo = EventInfoFlags(commonDates = True, stories = True, socialScore = True, details = True, imageCount = 2)
+        self.storyInfo = StoryInfoFlags(categories = True, date = True, concepts = True, title = True, summary = True, 
+                                        medoidArticle = True, commonDates = True, socialScore = True, imageCount = 2, details = True) 
+        self.returnInfo = ReturnInfo(articleInfo = self.articleInfo, conceptInfo = self.conceptInfo, eventInfo = self.eventInfo, storyInfo = self.storyInfo,
+            sourceInfo = self.sourceInfo, locationInfo = self.locationInfo, categoryInfo = self.categoryInfo)
 
-# get info about event with uri "123"
-eventUri = "131"
-q = QueryEvent(eventUri)
-q.addRequestedResult(RequestEventInfo(
-    returnInfo = ReturnInfo(
-        conceptInfo = ConceptInfoFlags(lang = ["eng", "spa", "slv"], type = "wiki"),
-        eventInfo = EventInfoFlags(concepts = True, articleCounts = True, title = True, summary = True, categories = True, location = True, stories = True, imageCount = 1)
-    )))
-q.addRequestedResult(RequestEventArticles(page = 0, count = 50, sortBy = "cosSim", sortByAsc = True, 
-    returnInfo = ReturnInfo(
-        conceptInfo = ConceptInfoFlags(lang = "spa", type = "wiki"), 
-        articleInfo = ArticleInfoFlags(concepts = True, storyUri = True, duplicateList = True, originalArticle = True, categories = True, location = True, extractedDates = True)
-    ))) # get 10 articles about the event (any language is ok) that are closest to the center of the event
-q.addRequestedResult(RequestEventArticleTrend())
-q.addRequestedResult(RequestEventKeywordAggr())
-eventRes = er.execQuery(q)
+    def ensureValidConcept(self, concept, testName):
+        for prop in ["id", "uri", "label", "synonyms", "image", "description", "details", "conceptClassMembership", "conceptFolderMembership", "trendingScore", "trendingHistory", "details"]:
+            self.assertTrue(concept.has_key(prop), "Property '%s' was expected in concept for test %s" % (prop, testName))
+        self.assertTrue(concept.get("type") in ["person", "loc", "org"], "Expected concept to be an entity type, but got %s" % (concept.get("type")))
 
-Assert(eventRes.has_key(eventUri), "Returned information did not contain information about the event")
-Assert(eventRes[eventUri].has_key("info"), "Event did not contain 'info' result")
-Assert(eventRes[eventUri].has_key("articleTrend"), "Event did not contain 'articleTrend' result")
-Assert(eventRes[eventUri].has_key("keywordAggr"), "Event did not contain 'keywordAggr' result")
+    def ensureValidArticle(self, article, testName):
+        for prop in ["id", "url", "uri", "title", "body", "source", "details", "location", "duplicateList", "originalArticle", "time", "date", "categories", "lang", "extractedDates", "concepts", "details"]:
+            self.assertTrue(article.has_key(prop), "Property '%s' was expected in article for test %s" % (prop, testName))
+        for concept in article.get("concepts"):
+            self.ensureValidConcept(concept, testName)
+        self.assertTrue(article.get("isDuplicate") or article.has_key("eventUri"), "Nonduplicates should have event uris")
 
-eventInfo = createStructFromDict(eventRes[eventUri]["info"])
-Assert(hasattr(eventInfo, "articleCounts"), "Event did not contain articleCounts")
-Assert(hasattr(eventInfo, "categories"), "Event did not contain categories")
-Assert(hasattr(eventInfo, "concepts"), "Event did not contain concepts")
-Assert(hasattr(eventInfo, "stories"), "Event did not contain stories")
-Assert(hasattr(eventInfo, "title"), "Event did not contain title")
-Assert(hasattr(eventInfo, "summary"), "Event did not contain summary")
-for concept in eventInfo.concepts:
-    Assert(hasattr(concept.label, "eng"), "Concept did not contain label in English langage")
-    Assert(hasattr(concept.label, "slv"), "Concept did not contain label in Slovene langage")
-    Assert(hasattr(concept.label, "spa"), "Concept did not contain label in Spanish langage")
-    Assert(concept.type == "wiki", "Got concept of invalid type")
+    def ensureValidSource(self, source, testName):
+        for prop in ["id", "uri", "location", "importance", "articleCount", "tags", "details"]:
+            self.assertTrue(source.has_key(prop), "Property '%s' was expected in source for test %s" % (prop, testName))
 
-# check if we got expected content in the articles
-articles = createStructFromDict(eventRes[eventUri]["articles"])
-lastSim = -1
-for article in articles.results:
-    Assert(article.sim >= lastSim, "Articles are not sorted by cos sim")
-    lastSim = article.sim
-    Assert(hasattr(article, "concepts"), "Article did not contain concepts")
-    Assert(hasattr(article, "categories"), "Article did not contain categories")
-    Assert(hasattr(article, "eventUri"), "Article did not contain eventUri")
-    Assert(hasattr(article, "storyUri"), "Article did not contain storyUri")
-    if (article.isDuplicate):
-        Assert(hasattr(article, "originalArticle"), "Article is a duplicate but did not contain original article")
-    else:
-        Assert(hasattr(article, "duplicateList"), "Article did not contain duplicates list")
-    for concept in article.concepts:
-        Assert(hasattr(concept.label, "spa"), "Concept did not contain label in Spanish langage")
-        Assert(concept.type == "wiki", "Concept of wrong type")
+    def ensureValidCategory(self, category, testName):
+        for prop in ["id", "uri", "parentUri", "childrenUris", "trendingScore", "trendingHistory"]:
+            self.assertTrue(category.has_key(prop), "Property '%s' was expected in source for test %s" % (prop, testName))
 
-if (len(articles.results) > 0):
-    articleUris = [art.uri for art in articles.results[:5]]  # take only first X articles
-    # query info about specific articles
-    qa = QueryArticle(articleUris)
-    qa.addRequestedResult(RequestArticleInfo())                 # get all info about the specified article
-    qa.addRequestedResult(RequestArticleSimilarArticles())      # get info about similar articles
-    qa.addRequestedResult(RequestArticleDuplicatedArticles())   # if an article has duplicates then return list of duplicated articles
-    qa.addRequestedResult(RequestArticleOriginalArticle())      # if an article is a duplicate then return the information about original article
-    articleRes = er.execQuery(qa)
-    
-    Assert(len(articleRes.keys()) == len(articleUris), "Did not receive expected set of articles")
+    def ensureValidEvent(self, event, testName):
+        for prop in ["uri", "title", "summary", "articleCounts", "concepts", "categories", "location", "eventDate", "commonDates", "stories", "socialScore", "details", "images"]:
+            self.assertTrue(event.has_key(prop), "Property '%s' was expected in event for test %s" % (prop, testName))
+        for concept in event.get("concepts"):
+            self.ensureValidConcept(concept, testName)
+        for story in event.get("stories"):
+            self.ensureValidStory(story, testName)
+        for category in event.get("categories"):
+            self.ensureValidCategory(category, testName)
 
-    for artKey in articleRes.keys():
-        artDict = articleRes[artKey]
-        article = createStructFromDict(artDict)
-        Assert(hasattr(article, "info"), "Article did not contain 'info' result")
-        Assert(hasattr(article, "similarArticles"), "Article did not contain 'similarArticles' result")
-        Assert(hasattr(article, "duplicatedArticles"), "Article did not contain 'duplicatedArticles' result")
+    def ensureValidStory(self, story, testName):
+        for prop in ["uri", "title", "summary", "concepts", "categories", "location", 
+                     "storyDate", "averageDate", "commonDates", "socialScore", "details", "images"]:
+            self.assertTrue(story.has_key(prop), "Property '%s' was expected in story for test %s" % (prop, testName))
+
+    def validateGeneralEventList(self, res):
+        self.assertIsNotNone(res.get("events"), "Expected to get 'events'")
         
+        events = res.get("events").get("results")
+        self.assertEquals(len(events), 10, "Expected to get 10 events")
+        for event in events:
+            self.ensureValidEvent(event, "eventList")
+
+    def createQuery(self):
+        q = QueryEvents()
+        q.addConcept(self.er.getConceptUri("Obama"))
+        return q
+
+    def testEventList(self):
+        q = self.createQuery()
+        q.addRequestedResult(RequestEventsInfo(count = 10, returnInfo = self.returnInfo))
+        res = self.er.execQuery(q)
+        self.validateGeneralEventList(res)
+        
+    def testEventListWithKeywordSearch(self):
+        q = QueryEvents(keywords="germany")
+        q.addRequestedResult(RequestEventsInfo(count = 10, returnInfo = self.returnInfo))
+        res = self.er.execQuery(q)
+        self.validateGeneralEventList(res)
+        
+    def testEventListWithSourceSearch(self):
+        q = QueryEvents(sourceUri = self.er.getNewsSourceUri("bbc"))
+        q.addRequestedResult(RequestEventsInfo(count = 10, returnInfo = self.returnInfo))
+        res = self.er.execQuery(q)
+        self.validateGeneralEventList(res)
+
+    def testEventListWithCategorySearch(self):
+        q = QueryEvents(categoryUri = self.er.getCategoryUri("disa"))
+        q.addRequestedResult(RequestEventsInfo(count = 10, returnInfo = self.returnInfo))
+        res = self.er.execQuery(q)
+        self.validateGeneralEventList(res)
+    
+    def testEventListWithLanguageSearch(self):
+        q = QueryEvents(lang = "spa")
+        q.addRequestedResult(RequestEventsInfo(count = 10, returnInfo = self.returnInfo))
+        res = self.er.execQuery(q)
+        self.validateGeneralEventList(res)
+
+    def testEventListWithMinArtsSearch(self):
+        q = QueryEvents(minArticlesInEvent = 100)
+        q.addRequestedResult(RequestEventsInfo(count = 10, returnInfo = self.returnInfo))
+        res = self.er.execQuery(q)
+        self.validateGeneralEventList(res)
+                
+    def testConceptTrends(self):
+        q = self.createQuery()
+        q.addRequestedResult(RequestEventsConceptTrends(conceptCount = 5, returnInfo = self.returnInfo))
+        res = self.er.execQuery(q)
+
+        self.assertIsNotNone(res.get("conceptTrends"), "Expected to get 'conceptTrends'")
+        self.assertIsNotNone(res.get("conceptTrends").get("trends"), "Expected to get 'trends' property in conceptTrends")
+        self.assertIsNotNone(res.get("conceptTrends").get("conceptInfo"), "Expected to get 'conceptInfo' property in conceptTrends")
+        self.assertTrue(len(res["conceptTrends"]["conceptInfo"]) == 5, "Expected to get 5 concepts in concept trends")
+        trends = res["conceptTrends"]["trends"]
+        self.assertTrue(len(trends) > 0, "Expected to get trends for some days")
+        for trend in trends:
+            self.assertTrue(trend.has_key("date"), "A trend should have a date")
+            self.assertTrue(trend.has_key("conceptFreq"), "A trend should have a conceptFreq")
+            self.assertTrue(trend.has_key("totArts"), "A trend should have a totArts property")
+            self.assertTrue(len(trend.get("conceptFreq")), "Concept frequencies should contain 5 elements - one for each concept")
+        for concept in res.get("conceptTrends").get("conceptInfo"):
+            self.ensureValidConcept(concept, "conceptTrends")
+
+    
+    def testConceptAggr(self):
+        q = self.createQuery()
+        q.addRequestedResult(RequestEventsConceptAggr(conceptCount = 50, returnInfo = self.returnInfo))
+        res = self.er.execQuery(q)
+
+        self.assertIsNotNone(res.get("conceptAggr"), "Expected to get 'conceptAggr'")
+        self.assertEqual(len(res.get("conceptAggr")), 50, "Expected a different number of concept in conceptAggr")
+        for concept in res.get("conceptAggr"):
+            self.ensureValidConcept(concept, "conceptAggr")
+
+        
+    def testKeywordAggr(self):
+        q = self.createQuery()
+        q.addRequestedResult(RequestEventsKeywordAggr())
+        res = self.er.execQuery(q)
+
+        self.assertIsNotNone(res.get("keywordAggr"), "Expected to get 'keywordAggr'")
+        keywords = res.get("keywordAggr")
+        self.assertTrue(len(keywords) > 0, "Expected to get some keywords")
+        for kw in keywords:
+            self.assertTrue(kw.has_key("keyword"), "Expected a keyword property")
+            self.assertTrue(kw.has_key("weight"), "Expected a weight property")
 
 
-      
+    def testCategoryAggr(self):
+        q = self.createQuery()
+        q.addRequestedResult(RequestEventsCategoryAggr(returnInfo = self.returnInfo))
+        res = self.er.execQuery(q)
+
+        self.assertIsNotNone(res.get("categoryAggr"), "Expected to get 'categoryAggr'")
+        categories = res.get("categoryAggr")
+        self.assertTrue(len(categories) > 0, "Expected to get a non empty category aggr")
+        for cat in categories:
+            self.ensureValidCategory(cat, "categoryAggr")
+
+            
+    def testConceptMatrix(self):
+        q = self.createQuery()
+        q.addRequestedResult(RequestEventsConceptMatrix(conceptCount = 20, returnInfo = self.returnInfo))
+        res = self.er.execQuery(q)
+        
+        self.assertIsNotNone(res.get("conceptMatrix"), "Expected to get 'conceptMatrix'")
+        matrix = res.get("conceptMatrix")
+        self.assertTrue(matrix.has_key("sampleSize"), "Expecting 'sampleSize' property in conceptMatrix")
+        self.assertTrue(matrix.has_key("freqMatrix"), "Expecting 'freqMatrix' property in conceptMatrix")
+        self.assertTrue(matrix.has_key("concepts"), "Expecting 'concepts' property in conceptMatrix")
+        self.assertEquals(len(matrix.get("concepts")), 20, "Expected 20 concepts")
+        for concept in matrix.get("concepts"):
+            self.ensureValidConcept(concept, "conceptMatrix")
+
+
+    def test_SourceAggr(self):
+        q = self.createQuery()
+        q.addRequestedResult(RequestEventsSourceAggr(sourceCount = 15, returnInfo = self.returnInfo))
+        res = self.er.execQuery(q)
+        
+        self.assertIsNotNone(res.get("sourceAggr"), "Expected to get 'sourceAggr'")
+        self.assertEquals(len(res.get("sourceAggr")), 15, "Expected 15 sources")
+        for sourceInfo in res.get("sourceAggr"):
+            self.ensureValidSource(sourceInfo.get("source"), "sourceAggr")
+            self.assertTrue(sourceInfo.get("counts"), "Source info should contain counts object")
+            self.assertIsNotNone(sourceInfo.get("counts").get("frequency"), "Counts should contain a frequency")
+            self.assertIsNotNone(sourceInfo.get("counts").get("ratio"), "Counts should contain ratio")
+            
+
+    def testSearchBySource(self):
+        q = QueryEvents()
+        q.addNewsSource(self.er.getNewsSourceUri("bbc"))             # and have been reported by BBC
+        q.addRequestedResult(RequestEventsUriList())            # return uris of all events
+        q.addRequestedResult(RequestEventsInfo(page = 0, count = 100, sortBy = "size", sortByAsc = True, 
+            returnInfo = ReturnInfo(
+                conceptInfo = ConceptInfoFlags(lang = "deu", type = "wiki"),
+                eventInfo = EventInfoFlags(concepts = True, articleCounts = True, title = True, summary = True, categories = True, location = True, stories = True, imageCount = 1)
+                )))   # return event details for first 100 events
+        q.addRequestedResult(RequestEventsConceptAggr(conceptCount = 5,
+            returnInfo = ReturnInfo(conceptInfo = ConceptInfoFlags(type = ["org", "loc"]))))        # compute concept aggregate on the events
+        res = self.er.execQuery(q)
+        obj = createStructFromDict(res)
+
+        self.assertTrue(hasattr(obj, "conceptAggr"), "Results should contain conceptAggr")
+        self.assertTrue(hasattr(obj, "events"), "Results should contain events")
+        self.assertTrue(hasattr(obj, "uriList"), "Results should contain uriList")
+
+        self.assertTrue(len(obj.conceptAggr) <= 10, "Received a list of concepts that is too long")
+        for concept in obj.conceptAggr:
+            self.assertTrue(concept.type == "loc" or concept.type == "org", "Got concept of invalid type")
+
+        lastArtCount = 0
+        self.assertTrue(len(obj.events.results) <= 100, "Returned list of events was too long")
+
+        for event in obj.events.results:
+            self.assertTrue(hasattr(event, "articleCounts"), "Event should contain articleCounts")
+            self.assertTrue(hasattr(event, "categories"), "Event should contain categories")
+            self.assertTrue(hasattr(event, "concepts"), "Event should contain concepts")
+            self.assertTrue(hasattr(event, "stories"), "Event should contain stories")
+            self.assertTrue(hasattr(event, "title"), "Event should contain title")
+            self.assertTrue(hasattr(event, "summary"), "Event should contain summary")
+            self.assertTrue(hasattr(event, "images"), "Event should contain images")
+            self.assertTrue(hasattr(event, "location"), "Event should contain location")
+
+            self.assertTrue(event.articleCounts.total >= lastArtCount, "Events were not sorted by increasing size")
+            lastArtCount = event.articleCounts.total
+            for concept in event.concepts:
+                self.assertTrue(hasattr(concept.label, "deu"), "Concept should contain label in german language")
+                self.assertTrue(concept.type == "wiki", "Got concept of invalid type")
+
+    def testSearchByKeyword(self):
+        q = QueryEvents()
+        q.addKeyword("car")  # get events containing word car
+        q.addRequestedResult(RequestEventsInfo(page = 1, count = 10, sortBy = "date", sortByAsc = False, 
+            returnInfo = ReturnInfo(
+                conceptInfo = ConceptInfoFlags(type = "org"), 
+                eventInfo = EventInfoFlags(concepts = False, articleCounts = False, title = False, summary = False, categories = False, location = False, stories = False, imageCount = 0)
+                )))
+        q.addRequestedResult(RequestEventsConceptTrends(conceptCount = 5, 
+            returnInfo = ReturnInfo(
+                conceptInfo = ConceptInfoFlags(type = ["org", "loc"], lang = "spa"))))
+        res = self.er.execQuery(q)
+        obj = createStructFromDict(res)
+
+        self.assertTrue(hasattr(obj, "events"), "Results should contain events")
+        self.assertTrue(hasattr(obj, "conceptTrends"), "Results should contain conceptAggr")
+
+        for concept in obj.conceptTrends.conceptInfo:
+            self.assertTrue(concept.type == "loc" or concept.type == "org", "Got concept of invalid type")
+            self.assertTrue(hasattr(concept.label, "spa"), "Concept did not contain label in expected langage")
+
+        lastEventDate = obj.events.results[0].eventDate if len(obj.events.results) > 0 else ""
+        for event in obj.events.results:
+            self.assertTrue(event.eventDate <= lastEventDate, "Events are not sorted by date")
+            lastEventDate = event.eventDate
+            self.assertFalse(hasattr(event, "articleCounts"), "Event should not contain articleCounts")
+            self.assertFalse(hasattr(event, "categories"), "Event should not contain categories")
+            self.assertFalse(hasattr(event, "concepts"), "Event should not contain concepts")
+            self.assertFalse(hasattr(event, "location"), "Event should not contain location")
+            self.assertFalse(hasattr(event, "stories"), "Event should not contain stories")
+            self.assertFalse(hasattr(event, "images"), "Event should not contain images")
+            self.assertFalse(hasattr(event, "title"), "Event should not contain title")
+            self.assertFalse(hasattr(event, "summary"), "Event should not contain summary")
+
+    def testSearchByLocation(self):    
+        q = QueryEvents()
+        q.addLocation(self.er.getLocationUri("Washington"))
+        q.addRequestedResult(RequestEventsConceptTrends(conceptCount = 40, returnInfo = ReturnInfo(
+                conceptInfo = ConceptInfoFlags(type = "person"))))
+        q.addRequestedResult(RequestEventsCategoryAggr())
+        q.addRequestedResult(RequestEventsInfo())
+        res = self.er.execQuery(q)
+
+
+if __name__ == "__main__":
+    suite = unittest.TestLoader().loadTestsFromTestCase(TestQueryEvents)
+    unittest.TextTestRunner(verbosity=3).run(suite)

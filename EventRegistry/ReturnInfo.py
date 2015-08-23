@@ -306,53 +306,42 @@ class LocationInfoFlags(ReturnInfoFlagsBase):
     What information about a geographic location should be returned by the API call
     Locations are sub-types of concepts so this information is always provided as a "location" property in concept information
     country* flags are taken into account when the locations represent countries. Similarly place* flags are relevant when the location is a place (city, area, ...)
-    @param countryLabel: return label of the country
-    @param countryWikiUri: return wiki url of the country
-    @param countryGeoNamesId: return geonames id for the country
+    @param label: return label of the place/country
+    @param wikiUri: return wiki url of the place/country
+    @param geoNamesId: return geonames id for the place/country
+    @param population: return the population of the place/country
+    @param geoLocation: return geographic coordinates of the place/country
+
     @param countryArea: return geographic area of the country
-    @param countryPopulation: return the population of the country
-    @param countryLocation: return geographic coordinates of the country
     @param countryContinent: return continent where the country is located
-    @param placeLabel: return the label of the place
-    @param placeWikiUri: return the wiki url of the place
-    @param placeGeoNamesId: return the geonames id of the place
-    @param placePopulation: return the population of the place
+
     @param placeFeatureCode: return the geonames feature code of the place
-    @param placeLocation: return the geographic coordinates of the place
     @param placeCountry: return information about the country where the place is located
     """
     def __init__(self, 
-                 countryLabel = True,
-                 countryWikiUri = False,
-                 countryGeoNamesId = False,
+                 label = True,
+                 wikiUri = False,
+                 geoNamesId = False,
+                 population = False,
+                 geoLocation = False,
+
                  countryArea = False,
-                 countryPopulation = False,
-                 countryLocation = False,
                  countryDetails = False,
                  countryContinent = False,
                  
-                 placeLabel = True,
-                 placeWikiUri = False,
-                 placeGeoNamesId = False,
-                 placePopulation = False,
                  placeFeatureCode = False,
-                 placeLocation = False,
                  placeCountry = True):
-        self._setFlag("IncludeLocationCountryLabel", countryLabel, True)
-        self._setFlag("IncludeLocationCountryWikiUri", countryWikiUri, False)
-        self._setFlag("IncludeLocationCountryGeoNamesId", countryGeoNamesId, False)
+        self._setFlag("IncludeLocationLabel", label, True)
+        self._setFlag("IncludeLocationWikiUri", wikiUri, False)
+        self._setFlag("IncludeLocationGeoNamesId", geoNamesId, False)
+        self._setFlag("IncludeLocationPopulation", population, False)
+        self._setFlag("IncludeLocationGeoLocation", geoLocation, False)
+
         self._setFlag("IncludeLocationCountryArea", countryArea, False)
-        self._setFlag("IncludeLocationCountryPopulation", countryPopulation, False)
-        self._setFlag("IncludeLocationCountryLocation", countryLocation, False)
         self._setFlag("IncludeLocationCountryDetails", countryDetails, False)
         self._setFlag("IncludeLocationCountryContinent", countryContinent, False)
 
-        self._setFlag("IncludeLocationPlaceLabel", placeLabel, True)
-        self._setFlag("IncludeLocationPlaceWikiUri", placeWikiUri, False)
-        self._setFlag("IncludeLocationPlaceGeoNamesId", placeGeoNamesId, False)
-        self._setFlag("IncludeLocationPlacePopulation", placePopulation, False)
         self._setFlag("IncludeLocationPlaceFeatureCode", placeFeatureCode, False)
-        self._setFlag("IncludeLocationPlaceLocation", placeLocation, False)
         self._setFlag("IncludeLocationPlaceCountry", placeCountry, True)
 
 

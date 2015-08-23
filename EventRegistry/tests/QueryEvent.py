@@ -1,0 +1,134 @@
+import unittest
+from eventregistry import *
+
+
+class TestQueryEvent(unittest.TestCase):
+    
+    def setUp(self):
+        self.er = EventRegistry()
+        self.articleInfo = ArticleInfoFlags(bodyLen = -1, concepts = True, storyUri = True, duplicateList = True, originalArticle = True, categories = True,
+                location = True, image = True, extractedDates = True, socialScore = True, details = True)
+        self.sourceInfo = SourceInfoFlags(description = True, location = True, importance = True, articleCount = True, tags = True, details = True)
+        self.conceptInfo = ConceptInfoFlags(type=["entities"], lang = "spa", synonyms = True, image = True, description = True, details = True, 
+                conceptClassMembership = True, conceptFolderMembership = True, trendingScore = True, trendingHistory = True)
+        self.locationInfo = LocationInfoFlags(wikiUri = True, label = True, geoLocation = True, population = True, countryArea = True, placeFeatureCode = True, placeCountry = True)
+        self.categoryInfo = CategoryInfoFlags(parentUri = True, childrenUris = True, trendingScore = True, trendingHistory = True)
+        self.eventInfo = EventInfoFlags(commonDates = True, stories = True, socialScore = True, details = True, imageCount = 2)
+        self.storyInfo = StoryInfoFlags(categories = True, date = True, concepts = True, title = True, summary = True, 
+                                        medoidArticle = True, commonDates = True, socialScore = True, imageCount = 2, details = True) 
+        self.returnInfo = ReturnInfo(articleInfo = self.articleInfo, conceptInfo = self.conceptInfo, eventInfo = self.eventInfo, storyInfo = self.storyInfo,
+            sourceInfo = self.sourceInfo, locationInfo = self.locationInfo, categoryInfo = self.categoryInfo)
+
+    def ensureValidConcept(self, concept, testName):
+        for prop in ["id", "uri", "label", "synonyms", "image", "description", "details", "conceptClassMembership", "conceptFolderMembership", "trendingScore", "trendingHistory", "details"]:
+            self.assertTrue(concept.has_key(prop), "Property '%s' was expected in concept for test %s" % (prop, testName))
+        self.assertTrue(concept.get("type") in ["person", "loc", "org"], "Expected concept to be an entity type, but got %s" % (concept.get("type")))
+
+    def ensureValidArticle(self, article, testName):
+        for prop in ["id", "url", "uri", "title", "body", "source", "details", "location", "duplicateList", "originalArticle", "time", "date", "categories", "lang", "extractedDates", "concepts", "details"]:
+            self.assertTrue(article.has_key(prop), "Property '%s' was expected in article for test %s" % (prop, testName))
+        for concept in article.get("concepts"):
+            self.ensureValidConcept(concept, testName)
+        self.assertTrue(article.get("isDuplicate") or article.has_key("eventUri"), "Nonduplicates should have event uris")
+
+    def ensureValidSource(self, source, testName):
+        for prop in ["id", "uri", "location", "importance", "articleCount", "tags", "details"]:
+            self.assertTrue(source.has_key(prop), "Property '%s' was expected in source for test %s" % (prop, testName))
+
+    def ensureValidCategory(self, category, testName):
+        for prop in ["id", "uri", "parentUri", "childrenUris", "trendingScore", "trendingHistory"]:
+            self.assertTrue(category.has_key(prop), "Property '%s' was expected in source for test %s" % (prop, testName))
+
+    def ensureValidEvent(self, event, testName):
+        for prop in ["uri", "title", "summary", "articleCounts", "concepts", "categories", "location", "eventDate", "commonDates", "stories", "socialScore", "details", "images"]:
+            self.assertTrue(event.has_key(prop), "Property '%s' was expected in event for test %s" % (prop, testName))
+        for concept in event.get("concepts"):
+            self.ensureValidConcept(concept, testName)
+        for story in event.get("stories"):
+            self.ensureValidStory(story, testName)
+        for category in event.get("categories"):
+            self.ensureValidCategory(category, testName)
+
+    def ensureValidStory(self, story, testName):
+        for prop in ["uri", "title", "summary", "concepts", "categories", "location", 
+                     "storyDate", "averageDate", "commonDates", "socialScore", "details", "images"]:
+            self.assertTrue(story.has_key(prop), "Property '%s' was expected in story for test %s" % (prop, testName))
+
+    def createQuery(self):
+        return QueryEvent(range(100, 110))
+
+
+    def testArticleList(self):
+        q = self.createQuery()
+        q.addRequestedResult(RequestEventArticles(returnInfo = self.returnInfo))
+        res = self.er.execQuery(q)
+
+        for event in res.values():
+            for article in event.get("articles").get("results"):
+                self.ensureValidArticle(article, "testArticleList")
+
+
+    def testArticleUris(self):
+        q = self.createQuery()
+        q.addRequestedResult(RequestEventArticleUris())
+        res = self.er.execQuery(q)
+
+        for event in res.values():
+            self.assertIsNotNone(event.get("articleUris"), "Expected to see 'articleUris'")
+            
+
+    def testKeywords(self):
+        q = self.createQuery()
+        q.addRequestedResult(RequestEventKeywordAggr())
+        res = self.er.execQuery(q)
+        
+        for event in res.values():
+            self.assertIsNotNone(event.get("keywordAggr"), "Expected to see 'keywordAggr'")
+            for kw in event.get("keywordAggr"):
+                self.assertIsNotNone(kw.get("keyword"), "Keyword expected")
+                self.assertIsNotNone(kw.get("weight"), "Weight expected")
+
+    def testSourceAggr(self):
+        q = self.createQuery()
+        q.addRequestedResult(RequestEventSourceAggr())
+        res = self.er.execQuery(q)
+
+        for event in res.values():
+            self.assertIsNotNone(event.get("sourceAggr"), "Expected to see 'sourceAggr'")
+
+
+    def testArticleTrend(self):
+        q = self.createQuery()
+        q.addRequestedResult(RequestEventArticleTrend())
+        res = self.er.execQuery(q)
+
+        for event in res.values():
+            self.assertIsNotNone(event.get("articleTrend"), "Expected to see 'articleTrend'")
+
+
+    def testSimilarEvents(self):
+        q = self.createQuery()
+        q.addRequestedResult(RequestEventSimilarEvents(addArticleTrendInfo = True, returnInfo = self.returnInfo))
+        res = self.er.execQuery(q)
+
+        for event in res.values():
+            self.assertIsNotNone(event.get("similarEvents"), "Expected to see 'similarEvents'")
+            for simEvent in event.get("similarEvents").get("similarEvents"):
+                self.ensureValidEvent(simEvent, "testSimilarEvents")
+            self.assertIsNotNone(event.get("similarEvents").get("trends"), "Expected to see a 'trends' property")
+          
+                  
+    def testSimilarStories(self):
+        q = self.createQuery()
+        q.addRequestedResult(RequestEventSimilarStories(returnInfo = self.returnInfo))
+        res = self.er.execQuery(q)
+
+        for event in res.values():
+            self.assertIsNotNone(event.get("similarStories"), "Expected to see 'similarStories'")
+            for simStory in event.get("similarStories"):
+                self.ensureValidStory(simStory, "testSimilarStories")
+          
+
+if __name__ == "__main__":
+    suite = unittest.TestLoader().loadTestsFromTestCase(TestQueryEvent)
+    unittest.TextTestRunner(verbosity=3).run(suite)

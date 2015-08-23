@@ -128,6 +128,7 @@ class RequestEventSimilarEvents(RequestEvent):
         self.similarEventsIncludeSelf = includeSelf                     
         self.__dict__.update(returnInfo.getParams("similarEvents"))
 
+
 class RequestEventSimilarStories(RequestEvent):
     """
     return a list of similar stories (clusters)

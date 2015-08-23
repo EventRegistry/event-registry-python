@@ -136,6 +136,7 @@ class RequestEvents:
     def __init__(self):
         self.resultType = None
 
+
 class RequestEventsInfo(RequestEvents):
     """
     return event details for resulting events
@@ -158,6 +159,7 @@ class RequestEventsInfo(RequestEvents):
     def setCount(self, count):
         self.eventsCount = count
 
+
 class RequestEventsUriList(RequestEvents):
     """
     return a simple list of event uris for resulting events
@@ -165,12 +167,14 @@ class RequestEventsUriList(RequestEvents):
     def __init__(self):
         self.resultType = "uriList"
 
+
 class RequestEventsTimeAggr(RequestEvents):
     """
     return time distribution of resulting events
     """
     def __init__(self):
         self.resultType = "timeAggr"
+
 
 class RequestEventsKeywordAggr(RequestEvents):
     """
@@ -180,6 +184,7 @@ class RequestEventsKeywordAggr(RequestEvents):
         self.resultType = "keywordAggr"
         self.keywordAggrLang = lang
 
+
 class RequestEventsLocAggr(RequestEvents):
     """
     return aggreate of locations of resulting events
@@ -187,6 +192,7 @@ class RequestEventsLocAggr(RequestEvents):
     def __init__(self, returnInfo = ReturnInfo()):
         self.resultType = "locAggr"
         self.__dict__.update(returnInfo.getParams("locAggr"))
+
 
 class RequestEventsLocTimeAggr(RequestEvents):
     """
@@ -196,17 +202,6 @@ class RequestEventsLocTimeAggr(RequestEvents):
         self.resultType = "locTimeAggr"
         self.__dict__.update(returnInfo.getParams("locTimeAggr"))
 
-class RequestEventsTopSourceAggr(RequestEvents):
-    """
-    return a list of top news sources that report about events that are among the results
-    """
-    def __init__(self, 
-                 topSourceCount = 20, 
-                 returnInfo = ReturnInfo()):
-        assert topSourceCount <= 200
-        self.resultType = "topSourceAggr"
-        self.topSourceAggrTopSourceCount = topSourceCount
-        self.__dict__.update(returnInfo.getParams("topSourceAggr"))
 
 class RequestEventsConceptAggr(RequestEvents):
     """
@@ -219,6 +214,7 @@ class RequestEventsConceptAggr(RequestEvents):
         self.resultType = "conceptAggr"
         self.conceptAggrConceptCount = conceptCount
         self.__dict__.update(returnInfo.getParams("conceptAggr"))
+
 
 class RequestEventsConceptGraph(RequestEvents):
     """
@@ -237,6 +233,7 @@ class RequestEventsConceptGraph(RequestEvents):
         self.conceptGraphLinkCount = linkCount
         self.conceptGraphSampleSize = eventsSampleSize
         self.__dict__.update(returnInfo.getParams("conceptGraph"))
+
 
 class RequestEventsConceptMatrix(RequestEvents):
     """
@@ -257,6 +254,7 @@ class RequestEventsConceptMatrix(RequestEvents):
         self.conceptMatrixSampleSize = eventsSampleSize
         self.__dict__.update(returnInfo.getParams("conceptMatrix"))
 
+
 class RequestEventsConceptTrends(RequestEvents):
     """
     return a list of top trending concepts and their daily trending info over time
@@ -269,6 +267,18 @@ class RequestEventsConceptTrends(RequestEvents):
         self.conceptTrendsConceptCount = conceptCount
         self.__dict__.update(returnInfo.getParams("conceptTrends"))
 
+
+class RequestEventsSourceAggr(RequestEvents):
+    """
+    return top news sources that report about the events that match the search conditions
+    """
+    def __init__(self, sourceCount = 30,
+                 returnInfo = ReturnInfo()):
+        self.resultType = "sourceAggr"
+        self.sourceAggrSourceCount = sourceCount
+        self.__dict__.update(returnInfo.getParams("sourceAggr"))
+
+
 class RequestEventsDateMentionAggr(RequestEvents):
     """
     return events and the dates that are mentioned in articles about these events
@@ -277,8 +287,9 @@ class RequestEventsDateMentionAggr(RequestEvents):
                  minDaysApart = 0, 
                  minDateMentionCount = 5):
         self.resultType = "dateMentionAggr"
-        self.dateMentionAggrMinDateMentionCount = minDateMentionCount
         self.dateMentionAggrMinDaysApart = minDaysApart
+        self.dateMentionAggrMinDateMentionCount = minDateMentionCount
+        
 
 class RequestEventsEventClusters(RequestEvents):
     """
@@ -296,12 +307,15 @@ class RequestEventsEventClusters(RequestEvents):
         self.eventClustersMaxEventsToCluster = maxEventsToCluster
         self.__dict__.update(returnInfo.getParams("eventClusters"))
 
+
 class RequestEventsCategoryAggr(RequestEvents):
     """
     return distribution of events into dmoz categories
     """
-    def __init__(self):
+    def __init__(self, returnInfo = ReturnInfo()):
         self.resultType = "categoryAggr"
+        self.__dict__.update(returnInfo.getParams("recentActivity"))
+
 
 class RequestEventsRecentActivity(RequestEvents):
     """
