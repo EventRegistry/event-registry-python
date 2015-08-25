@@ -73,9 +73,11 @@ class RequestEventKeywordAggr(RequestEvent):
     """
     return keyword aggregate (tag-cloud) from articles in the event
     """
-    def __init__(self, eventSampleSize = 500):
+    def __init__(self, lang = "eng",        # the lang parameter should match one of the languages for which we have articles in the event. 
+                 eventSampleSize = 500):
         assert eventSampleSize <= 1000
         self.resultType = "keywordAggr"
+        self.keywordAggrLang = lang
         self.keywordAggrSampleSize = eventSampleSize
         
 class RequestEventSourceAggr(RequestEvent):

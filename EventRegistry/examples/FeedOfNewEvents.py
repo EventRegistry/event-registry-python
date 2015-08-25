@@ -29,5 +29,5 @@ while True:
                 print "obtained details about %d events" % len(eventRet)
             else:
                 print "failed to obtain event information"
-        lastEventActivityId = ret["recentActivity"]["events"]["lastActivityId"]
+        lastEventActivityId = ret["recentActivity"]["events"].get("lastActivityId", 0)
     time.sleep(20)

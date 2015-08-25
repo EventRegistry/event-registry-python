@@ -88,6 +88,10 @@ class EventRegistry(object):
     def printLastException(self):
         print str(self._lastException)
 
+    def prettyFormatObj(self, obj):
+        """return an object in a pretty printed version"""
+        return json.dumps(obj, sort_keys=True, indent=4, separators=(',', ': '))
+
     def printConsole(self, text):
         """print time prefix + text to console"""
         print time.strftime("%H:%M:%S") + " " + str(text)

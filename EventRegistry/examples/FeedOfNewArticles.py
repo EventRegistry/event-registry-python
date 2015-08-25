@@ -14,7 +14,7 @@ while True:
     ret = er.getRecentArticles(200, lastActivityId = lastArticleActivityId)
     if ret != None and ret.has_key("recentActivity") and ret["recentActivity"].has_key("articles") and ret["recentActivity"]["articles"].has_key("activity") and isinstance(ret["recentActivity"]["articles"]["activity"], list):
         # update the last activity id (used for the next request)
-        lastArticleActivityId = ret["recentActivity"]["articles"]["lastActivityId"]
+        lastArticleActivityId = ret["recentActivity"]["articles"].get("lastActivityId", 0)
 
         articleList = ret["recentActivity"]["articles"]["activity"]
         print "%d articles were added since the last call" % len(articleList)

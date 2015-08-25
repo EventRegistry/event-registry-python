@@ -1,4 +1,4 @@
-import unittest
+﻿import unittest
 from eventregistry import *
 
 
@@ -23,6 +23,8 @@ class TestQueryEvent(unittest.TestCase):
         for prop in ["id", "uri", "label", "synonyms", "image", "description", "details", "conceptClassMembership", "conceptFolderMembership", "trendingScore", "trendingHistory", "details"]:
             self.assertTrue(concept.has_key(prop), "Property '%s' was expected in concept for test %s" % (prop, testName))
         self.assertTrue(concept.get("type") in ["person", "loc", "org"], "Expected concept to be an entity type, but got %s" % (concept.get("type")))
+        if concept.get("location"):
+            self.ensureValidLocation(concept.get("location"), testName)
 
     def ensureValidArticle(self, article, testName):
         for prop in ["id", "url", "uri", "title", "body", "source", "details", "location", "duplicateList", "originalArticle", "time", "date", "categories", "lang", "extractedDates", "concepts", "details"]:
@@ -30,10 +32,14 @@ class TestQueryEvent(unittest.TestCase):
         for concept in article.get("concepts"):
             self.ensureValidConcept(concept, testName)
         self.assertTrue(article.get("isDuplicate") or article.has_key("eventUri"), "Nonduplicates should have event uris")
+        if article.get("location"):
+            self.ensureValidLocation(article.get("location"), testName)
 
     def ensureValidSource(self, source, testName):
         for prop in ["id", "uri", "location", "importance", "articleCount", "tags", "details"]:
             self.assertTrue(source.has_key(prop), "Property '%s' was expected in source for test %s" % (prop, testName))
+        if source.get("location"):
+            self.ensureValidLocation(source.get("location"), testName)
 
     def ensureValidCategory(self, category, testName):
         for prop in ["id", "uri", "parentUri", "childrenUris", "trendingScore", "trendingHistory"]:
@@ -48,11 +54,26 @@ class TestQueryEvent(unittest.TestCase):
             self.ensureValidStory(story, testName)
         for category in event.get("categories"):
             self.ensureValidCategory(category, testName)
+        if event.get("location"):
+            self.ensureValidLocation(event.get("location"), testName)
 
     def ensureValidStory(self, story, testName):
         for prop in ["uri", "title", "summary", "concepts", "categories", "location", 
                      "storyDate", "averageDate", "commonDates", "socialScore", "details", "images"]:
             self.assertTrue(story.has_key(prop), "Property '%s' was expected in story for test %s" % (prop, testName))
+        if story.get("location"):
+            self.ensureValidLocation(story.get("location"), testName)
+
+    def ensureValidLocation(self, location, testName):
+        for prop in ["wikiUri", "label", "lat", "long", "geoNamesId", "population"]:
+            self.assertTrue(story.has_key(prop), "Property '%s' was expected in a location for test %s" % (prop, testName))
+        if location.get("type") == "country":
+            for prop in ["area", "code2", "code3", "webExt", "continent"]:
+                self.assertTrue(story.has_key(prop), "Property '%s' was expected in a location for test %s" % (prop, testName))
+        if location.get("type") == "place":
+            for prop in ["featureCode", "country"]:
+                self.assertTrue(story.has_key(prop), "Property '%s' was expected in a location for test %s" % (prop, testName))
+
 
     def createQuery(self):
         return QueryEvent(range(100, 110))
@@ -84,6 +105,9 @@ class TestQueryEvent(unittest.TestCase):
         
         for event in res.values():
             self.assertIsNotNone(event.get("keywordAggr"), "Expected to see 'keywordAggr'")
+            if event.get("keywordAggr").has_key("error"):
+                print "Got error: " + event.get("keywordAggr").get("error")
+                continue;
             for kw in event.get("keywordAggr"):
                 self.assertIsNotNone(kw.get("keyword"), "Keyword expected")
                 self.assertIsNotNone(kw.get("weight"), "Weight expected")

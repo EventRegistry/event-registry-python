@@ -2,8 +2,8 @@
 
 er = EventRegistry()
 
-# get info about event with uri "123"
-q = QueryEvent("997019")
+# get info about event with a particular uri
+q = QueryEvent("121")
 q.addRequestedResult(RequestEventInfo(
     returnInfo = ReturnInfo(conceptInfo = ConceptInfoFlags(lang = ["eng", "spa", "slv"]))))
 q.addRequestedResult(RequestEventArticles(0, 10))        # get 10 articles about the event (any language is ok) that are closest to the center of the event

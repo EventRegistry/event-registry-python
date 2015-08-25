@@ -5,9 +5,12 @@ class SourceInfo(ParamsBase):
     """
     obtain desired information about one or more news sources
     """
-    def __init__(self, returnInfo = ReturnInfo()):
+    def __init__(self, uriOrUriList = None, 
+                 returnInfo = ReturnInfo()):
         ParamsBase.__init__(self)
         self._setVal("action", "getInfo")
+        if uriOrUriList != None:
+            self.queryByUri(uriOrUriList)
         self.queryParams.update(returnInfo.getParams())
 
     def queryById(self, idOrIdList):
@@ -26,9 +29,12 @@ class ConceptInfo(ParamsBase):
     """
     obtain information about concepts
     """
-    def __init__(self, returnInfo = ReturnInfo()):
+    def __init__(self, uriOrUriList = None, 
+                 returnInfo = ReturnInfo()):
         ParamsBase.__init__(self)
         self._setVal("action", "getInfo")
+        if uriOrUriList != None:
+            self.queryByUri(uriOrUriList)
         self.queryParams.update(returnInfo.getParams())
 
     def queryById(self, idOrIdList):
@@ -46,9 +52,12 @@ class CategoryInfo(ParamsBase):
     """"
     obtain information about categories
     """
-    def __init__(self, returnInfo = ReturnInfo()):
+    def __init__(self, uriOrUriList = None,
+                 returnInfo = ReturnInfo()):
         ParamsBase.__init__(self)
         self._setVal("action", "getInfo")
+        if uriOrUriList != None:
+            self.queryByUri(uriOrUriList)
         self.queryParams.update(returnInfo.getParams())
 
     def queryById(self, idOrIdList):

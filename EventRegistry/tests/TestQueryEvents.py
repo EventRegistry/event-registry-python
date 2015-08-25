@@ -30,10 +30,14 @@ class TestQueryEvents(unittest.TestCase):
         for concept in article.get("concepts"):
             self.ensureValidConcept(concept, testName)
         self.assertTrue(article.get("isDuplicate") or article.has_key("eventUri"), "Nonduplicates should have event uris")
+        if article.get("location"):
+            self.ensureValidLocation(article.get("location"), testName)
 
     def ensureValidSource(self, source, testName):
         for prop in ["id", "uri", "location", "importance", "articleCount", "tags", "details"]:
             self.assertTrue(source.has_key(prop), "Property '%s' was expected in source for test %s" % (prop, testName))
+        if source.get("location"):
+            self.ensureValidLocation(source.get("location"), testName)
 
     def ensureValidCategory(self, category, testName):
         for prop in ["id", "uri", "parentUri", "childrenUris", "trendingScore", "trendingHistory"]:
@@ -53,6 +57,19 @@ class TestQueryEvents(unittest.TestCase):
         for prop in ["uri", "title", "summary", "concepts", "categories", "location", 
                      "storyDate", "averageDate", "commonDates", "socialScore", "details", "images"]:
             self.assertTrue(story.has_key(prop), "Property '%s' was expected in story for test %s" % (prop, testName))
+        if story.get("location"):
+            self.ensureValidLocation(story.get("location"), testName)
+
+    def ensureValidLocation(self, location, testName):
+        for prop in ["wikiUri", "label", "lat", "long", "geoNamesId", "population"]:
+            self.assertTrue(story.has_key(prop), "Property '%s' was expected in a location for test %s" % (prop, testName))
+        if location.get("type") == "country":
+            for prop in ["area", "code2", "code3", "webExt", "continent"]:
+                self.assertTrue(story.has_key(prop), "Property '%s' was expected in a location for test %s" % (prop, testName))
+        if location.get("type") == "place":
+            for prop in ["featureCode", "country"]:
+                self.assertTrue(story.has_key(prop), "Property '%s' was expected in a location for test %s" % (prop, testName))
+
 
     def validateGeneralEventList(self, res):
         self.assertIsNotNone(res.get("events"), "Expected to get 'events'")

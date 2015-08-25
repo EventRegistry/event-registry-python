@@ -49,8 +49,8 @@ class TestQueryArticle(unittest.TestCase):
         for article in res.values():
             self.ensureValidArticle(article["info"], "articleList")
 
-        uris = [article.get("uri") for article in res.values()]
-        urls = [article.get("url") for article in res.values()]
+        uris = [article.get("info").get("uri") for article in res.values()]
+        urls = [article.get("info").get("url") for article in res.values()]
 
         q = QueryArticle.queryByUrl(urls)
         q.addRequestedResult(RequestArticleInfo(returnInfo = self.returnInfo))
