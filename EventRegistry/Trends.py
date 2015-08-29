@@ -9,7 +9,7 @@ from Base import *
 from ReturnInfo import *
 
 
-class TrendsBase(ParamsBase):
+class TrendsBase(QueryParamsBase):
     def _getPath(self):
         return "/json/trends"
 
@@ -21,7 +21,7 @@ class GetTrendingConcepts(TrendsBase):
                  source = "news",   # source information from which to compute top trends. Options: "news", "social"
                  count = 20,        # number of top trends to return
                  returnInfo = ReturnInfo()):     # specify the details of the concepts to return
-        ParamsBase.__init__(self)
+        QueryParamsBase.__init__(self)
         self._setVal("action", "getTrendingConcepts")
         self._setVal("source", source)
         self._setVal("conceptCount", count)
@@ -36,7 +36,7 @@ class GetTrendingCategories(TrendsBase):
                  source = "news",   # source information from which to compute top trends. Options: "news", "social"
                  count = 20,        # number of top trends to return
                  returnInfo = ReturnInfo()):     # specify the details of the categories to return
-        ParamsBase.__init__(self)
+        QueryParamsBase.__init__(self)
         self._setVal("action", "getTrendingCategories")
         self._setVal("source", source)
         self._setVal("categoryCount", count)
@@ -51,7 +51,7 @@ class GetTrendingCustomItems(TrendsBase):
     def __init__(self, 
                  count = 20,        # number of top trends to return
                  returnInfo = ReturnInfo()):     # specify the details of the concepts to return
-        ParamsBase.__init__(self)
+        QueryParamsBase.__init__(self)
         self._setVal("action", "getTrendingCustom")
         self._setVal("conceptCount", count)
         self.queryParams.update(returnInfo.getParams())
@@ -66,7 +66,7 @@ class GetTrendingConceptGroups(TrendsBase):
                  source = "news",   # source information from which to compute top trends. Options: "news", "social"
                  count = 20,        # number of top trends to return
                  returnInfo = ReturnInfo()):     # specify the details of the concepts to return
-        ParamsBase.__init__(self)
+        QueryParamsBase.__init__(self)
         self._setVal("action", "getConceptTrendGroups")
         self._setVal("source", source)
         self._setVal("conceptCount", count)

@@ -60,7 +60,7 @@ def createStructFromDict(data):
     else:
         return Struct(data)
 
-class ParamsBase(object):
+class QueryParamsBase(object):
     """
     Base class for Query and AdminQuery
     used for storing parameters for a query. Parameter values can either be
@@ -105,33 +105,21 @@ class ParamsBase(object):
             self.queryParams[propName] = []
         self.queryParams[propName].append(val)
 
-    def _encode(self, erUsername = None, erPassword = None):
-        """encode the parameters. if the username and pass are also provided then add also them to the request parameters"""
-        allParams = {}
-        allParams.update(self.queryParams)
-        if erUsername != None and erPassword != None:
-            allParams["erUsername"] = erUsername
-            allParams["erPassword"] = erPassword
-        return urllib.urlencode(allParams, True)
+    def _getQueryParams(self):
+        """return the parameters."""
+        return dict(self.queryParams)
 
 
-class Query(ParamsBase):
+class Query(QueryParamsBase):
     def __init__(self):
-        ParamsBase.__init__(self)
+        QueryParamsBase.__init__(self)
         self.resultTypeList = []
       
     def clearRequestedResults(self):
         self.resultTypeList = []
 
-    def _encode(self, erUsername = None, erPassword = None):
-        """encode the request. if the username and pass are also provided then add also them to the request parameters"""
-        allParams = self._getQueryParamsWithResultTypes()
-        if erUsername != None and erPassword != None:
-            allParams["erUsername"] = erUsername
-            allParams["erPassword"] = erPassword
-        return urllib.urlencode(allParams, True)
-
-    def _getQueryParamsWithResultTypes(self):
+    def _getQueryParams(self):
+        """encode the request."""
         allParams = {}
         if len(self.resultTypeList) == 0:
             raise ValueError("The query does not have any result type specified. No sense in performing such a query")

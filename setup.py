@@ -18,4 +18,7 @@ setup(name='eventregistry',
       author_email='gleban@gmail.com',
       license='MIT',
       packages=['eventregistry'],
+      install_requires=[
+          'requests',
+      ],
       zip_safe=False)

@@ -1,4 +1,4 @@
-"""
+﻿"""
 Using the bottom classes you can obtain information about articles and events that 
 were shared the most on social media (Twitter and Facebook) on a particular day.
 Given a date, articles published on that date are checked and top shared ones are returned. For an event,
@@ -9,7 +9,7 @@ Social score for an event is computed by checking 30 top shared articles in the 
 from Base import *
 from ReturnInfo import *
 
-class DailySharesBase(ParamsBase):
+class DailySharesBase(QueryParamsBase):
     def _getPath(self):
         return "/json/topDailyShares"
 
@@ -18,7 +18,7 @@ class GetTopSharedArticles(DailySharesBase):
     def __init__(self, 
                  date = None,     # specify the date (either in YYYY-MM-DD or datetime.date format) for which to return top shared articles. If None then today is used
                  count = 20):     # number of top shared articles to return
-        ParamsBase.__init__(self)
+        QueryParamsBase.__init__(self)
         self._setVal("action", "getArticles")
         self._setVal("count", count)
         
@@ -32,7 +32,7 @@ class GetTopSharedEvents(DailySharesBase):
     def __init__(self, 
                  date = None,     # specify the date (either in YYYY-MM-DD or datetime.date format) for which to return top shared articles. If None then today is used
                  count = 20):     # number of top shared articles to return
-        ParamsBase.__init__(self)
+        QueryParamsBase.__init__(self)
         self._setVal("action", "getEvents")
         self._setVal("count", count)
         

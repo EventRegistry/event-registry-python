@@ -1,8 +1,7 @@
 ﻿"""
 classes responsible for obtaining results from the Event Registry
 """
-import os, sys, urllib2, urllib, json, re
-from cookielib import CookieJar
+import os, sys, urllib2, urllib, json, re, requests
 from Base import *
 from ReturnInfo import *
 from QueryEvents import *
@@ -32,9 +31,7 @@ class EventRegistry(object):
         self._repeatFailedRequestCount = repeatFailedRequestCount
         self._verboseOutput = verboseOutput
         self._lastQueryTime = time.time()
-
-        cj = CookieJar()
-        self._reqOpener = urllib2.build_opener(urllib2.HTTPCookieProcessor(cj))
+               
 
         # if there is a settings.json file in the directory then try using it to login to ER
         # and to read the host name from it (if custom host is not specified)
@@ -56,18 +53,23 @@ class EventRegistry(object):
             time.sleep(self._minDelayBetweenRequests - (t - self._lastQueryTime))
         self._lastQueryTime = t
 
-    def _getUrlResponse(self, url, data = None):
+    def _getUrlResponse(self, methodUrl, data = None):
         """
         make the request - repeat it _repeatFailedRequestCount times, 
         if they fail (indefinitely if _repeatFailedRequestCount = -1)
         """
+        if self._logRequests:
+            with open("requests_log.txt", "a") as log:
+                if data != None:
+                    log.write("# " + json.dumps(data) + "\n")
+                log.write(methodUrl + "\n")                
         tryCount = 0
         while self._repeatFailedRequestCount < 0 or tryCount < self._repeatFailedRequestCount:
             tryCount += 1
             try:
                 startT = datetime.datetime.now()
-                req = urllib2.Request(url, data)
-                respInfo = self._reqOpener.open(req).read()
+                url = self._host + methodUrl;
+                respInfo = requests.get(url, data = data).text
                 endT = datetime.datetime.now()
                 if self._verboseOutput:
                     self.printConsole("request took %.3f sec" % ((endT-startT).total_seconds()))
@@ -104,80 +106,46 @@ class EventRegistry(object):
         """
         self._erUsername = username
         self._erPassword = password
-        req = urllib2.Request(self._host + "/login", urllib.urlencode({ "email": username, "pass": password }))
-        respInfo = self._reqOpener.open(req).read()
-        respInfo = json.loads(respInfo)
-        if throwExceptOnFailure and respInfo.has_key("error"):
-            raise Exception(respInfo["error"])
-        return respInfo
-
-    def jsonRequest(self, methodUrl, paramDict):
-        """make a GET request"""
-        self._sleepIfNecessary()
-        self._lastException = None
-
-        # add user credentials if specified
-        if self._erUsername != None and self._erPassword != None:
-            paramDict["erUsername"] = self._erUsername
-            paramDict["erPassword"] = self._erPassword
-        
+        respInfo = None
         try:
-            params = urllib.urlencode(paramDict, True)
-            url = self._host + methodUrl + "?" + params
-            if self._logRequests:
-                with open("requests_log.txt", "a") as log:
-                    log.write(url + "\n")
-            # make the request
-            respInfo = self._getUrlResponse(url)
-            if respInfo != None:
-                respInfo = json.loads(respInfo)
-            return respInfo
+            respInfo = requests.post(self._host + "/login", data = { "email": username, "pass": password }).text
+            respInfo = json.loads(respInfo)
+            if throwExceptOnFailure and respInfo.has_key("error"):
+                raise Exception(respInfo["error"])
         except Exception as ex:
-            self._lastException = ex
-            return None
-
-    def jsonPostRequest(self, methodUrl, paramDict):
-        """
-        make a post request where all parameters are encoded in the body
-        use for requests with many parameters
-        """
-        self._sleepIfNecessary()
-        self._lastException = None
-
-        # add user credentials if specified
-        if self._erUsername != None and self._erPassword != None:
-            paramDict["erUsername"] = self._erUsername
-            paramDict["erPassword"] = self._erPassword
-        
-        try:
-            params = urllib.urlencode(paramDict, True)
-            url = self._host + methodUrl
-            if self._logRequests:
-                with open("requests_log.txt", "a") as log:
-                    log.write(url + "\n")
-            # make the request
-            respInfo = self._getUrlResponse(url, params)
-            if respInfo != None:
-                respInfo = json.loads(respInfo)
+            if isinstance(ex, requests.exceptions.ConnectionError) and throwExceptOnFailure:
+                raise ex
+        finally:
             return respInfo
-        except Exception as ex:
-            self._lastException = ex
-            return None
             
     def execQuery(self, query, convertToDict = True):
         """main method for executing the search queries."""
+        # don't modify original query params
+        allParams = query._getQueryParams()
+        # make the request
+        respInfo = self.jsonRequest(query._getPath(), allParams, convertToDict)
+        return respInfo
+
+
+    def jsonRequest(self, methodUrl, paramDict, convertToDict = True):
+        """
+        make a request for json data
+        @param methodUrl: url on er (e.g. "/json/article")
+        @param paramDict: optional object containing the parameters to include in the request (e.g. { "articleUri": "123412342" }).
+        @param convertToDict: should the returned result be first parsed to a python object?
+        """
         self._sleepIfNecessary()
         self._lastException = None
 
+        # add user credentials if specified
+        if self._erUsername != None and self._erPassword != None:
+            paramDict["erUsername"] = self._erUsername
+            paramDict["erPassword"] = self._erPassword
+        
         try:
-            params = query._encode(self._erUsername, self._erPassword)
-            url = self._host + query._getPath() + "?" + params
-            if self._logRequests:
-                with open("requests_log.txt", "a") as log:
-                    log.write(url + "\n")
             # make the request
-            respInfo = self._getUrlResponse(url)
-            if respInfo != None and convertToDict:
+            respInfo = self._getUrlResponse(methodUrl, paramDict)
+            if respInfo != None:
                 respInfo = json.loads(respInfo)
             return respInfo
         except Exception as ex:

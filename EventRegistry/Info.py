@@ -1,13 +1,13 @@
 ﻿from Base import *
 from ReturnInfo import *
 
-class SourceInfo(ParamsBase):
+class SourceInfo(QueryParamsBase):
     """
     obtain desired information about one or more news sources
     """
     def __init__(self, uriOrUriList = None, 
                  returnInfo = ReturnInfo()):
-        ParamsBase.__init__(self)
+        QueryParamsBase.__init__(self)
         self._setVal("action", "getInfo")
         if uriOrUriList != None:
             self.queryByUri(uriOrUriList)
@@ -25,13 +25,13 @@ class SourceInfo(ParamsBase):
         return "/json/source"
 
 
-class ConceptInfo(ParamsBase):
+class ConceptInfo(QueryParamsBase):
     """
     obtain information about concepts
     """
     def __init__(self, uriOrUriList = None, 
                  returnInfo = ReturnInfo()):
-        ParamsBase.__init__(self)
+        QueryParamsBase.__init__(self)
         self._setVal("action", "getInfo")
         if uriOrUriList != None:
             self.queryByUri(uriOrUriList)
@@ -48,13 +48,13 @@ class ConceptInfo(ParamsBase):
     def _getPath(self):
         return "/json/concept"
 
-class CategoryInfo(ParamsBase):
-    """"
+class CategoryInfo(QueryParamsBase):
+    """
     obtain information about categories
     """
     def __init__(self, uriOrUriList = None,
                  returnInfo = ReturnInfo()):
-        ParamsBase.__init__(self)
+        QueryParamsBase.__init__(self)
         self._setVal("action", "getInfo")
         if uriOrUriList != None:
             self.queryByUri(uriOrUriList)
