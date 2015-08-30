@@ -9,9 +9,10 @@ from QueryEvent import *
 from QueryArticles import *
 from QueryArticle import *
 from QueryStory import *
-from Trends import *
-from Info import *
+from Counts import *
 from DailyShares import *
+from Info import *
+from Trends import *
 
 class EventRegistry(object):
     """
@@ -178,35 +179,35 @@ class EventRegistry(object):
     def getConceptUri(self, conceptLabel, lang = "eng", sources = ["concepts"]):
         """return a concept uri that is the best match for the given concept label"""
         matches = self.suggestConcepts(conceptLabel, lang = lang, sources = sources)
-        if matches != None and len(matches) > 0 and matches[0].has_key("uri"):
+        if matches != None and isinstance(matches, list) and len(matches) > 0 and matches[0].has_key("uri"):
             return matches[0]["uri"]
         return None
 
     def getLocationUri(self, locationLabel, lang = "eng", source = ["place", "country"]):
         """return a location uri that is the best match for the given location label"""
         matches = self.suggestLocations(locationLabel, lang = lang, source = source)
-        if matches != None and len(matches) > 0 and matches[0].has_key("wikiUri"):
+        if matches != None and isinstance(matches, list) and len(matches) > 0 and matches[0].has_key("wikiUri"):
             return matches[0]["wikiUri"]
         return None
 
     def getCategoryUri(self, categoryLabel):
         """return a category uri that is the best match for the given label"""
         matches = self.suggestCategories(categoryLabel)
-        if matches != None and len(matches) > 0 and matches[0].has_key("uri"):
+        if matches != None and isinstance(matches, list) and len(matches) > 0 and matches[0].has_key("uri"):
             return matches[0]["uri"]
         return None
 
     def getNewsSourceUri(self, sourceName):
         """return the news source that best matches the source name"""
         matches = self.suggestNewsSources(sourceName)
-        if matches != None and len(matches) > 0 and matches[0].has_key("uri"):
+        if matches != None and isinstance(matches, list) and len(matches) > 0 and matches[0].has_key("uri"):
             return matches[0]["uri"]
         return None
     
     def getConceptClass(self, classLabel, lang = "eng"):
         """return a uri of the concept class that is the best match for the given label"""
         matches = self.suggestConceptClasses(classLabel, lang = lang)
-        if matches != None and len(matches) > 0 and matches[0].has_key("uri"):
+        if matches != None and isinstance(matches, list) and len(matches) > 0 and matches[0].has_key("uri"):
             return matches[0]["uri"]
         return None    
 

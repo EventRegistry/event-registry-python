@@ -6,7 +6,7 @@ class TestInfo(unittest.TestCase):
         self.er = EventRegistry()
 
     def test_sourcesById(self):
-        q = SourceInfo(returnInfo = ReturnInfo(
+        q = GetSourceInfo(returnInfo = ReturnInfo(
             sourceInfo = SourceInfoFlags(title = True,
                                          description = True,
                                          location = True,
@@ -29,7 +29,7 @@ class TestInfo(unittest.TestCase):
         if True not in [source.has_key("location") for source in res.values()]:
             print "Warning: none of the sources has a location set"
 
-        q = SourceInfo(returnInfo = ReturnInfo(
+        q = GetSourceInfo(returnInfo = ReturnInfo(
             sourceInfo = SourceInfoFlags(title = False,
                                          description = False,
                                          location = False,
@@ -51,8 +51,9 @@ class TestInfo(unittest.TestCase):
             self.assertIsNone(item.get("details"), "Source tags should be missing")
             self.assertIsNone(item.get("location"), "Source location should be missing")
         
+
     def test_sourcesByUri(self):
-        q = SourceInfo(returnInfo = ReturnInfo(
+        q = GetSourceInfo(returnInfo = ReturnInfo(
             sourceInfo = SourceInfoFlags(title = True,
                                          description = True,
                                          location = True,
@@ -75,8 +76,9 @@ class TestInfo(unittest.TestCase):
             self.assertIsNotNone(item.get("tags"), "Source tags is missing")
             self.assertIsNotNone(item.get("details"), "Source tags is missing")
 
+
     def test_conceptsById(self):
-        q = ConceptInfo(returnInfo = ReturnInfo(
+        q = GetConceptInfo(returnInfo = ReturnInfo(
             conceptInfo = ConceptInfoFlags(type = "wiki",
                                            lang = ["deu", "slv"],
                                            label = True,
@@ -116,7 +118,7 @@ class TestInfo(unittest.TestCase):
             self.assertIsNotNone(item.get("trendingHistory").get("news"), "Concept should have trendingHistory for news")
             self.assertIsNotNone(item.get("trendingHistory").get("social"), "Concept should have trendingHistory for social")
 
-        q = ConceptInfo(returnInfo = ReturnInfo(
+        q = GetConceptInfo(returnInfo = ReturnInfo(
             conceptInfo = ConceptInfoFlags(type = "wiki",
                                            label = False,
                                            synonyms = False,
@@ -149,10 +151,9 @@ class TestInfo(unittest.TestCase):
             self.assertIsNone(item.get("trendingScore"), "Concept should not have have trendingScore")
             self.assertIsNone(item.get("trendingHistory"), "Concept should not have have trendingHistory")
 
-
-
+            
     def test_categories(self):
-        q = CategoryInfo(returnInfo = ReturnInfo(
+        q = GetCategoryInfo(returnInfo = ReturnInfo(
             categoryInfo = CategoryInfoFlags(
                 parentUri = True,
                 childrenUris = True,
