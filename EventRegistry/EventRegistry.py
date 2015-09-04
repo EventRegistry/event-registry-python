@@ -9,6 +9,7 @@ from QueryEvent import *
 from QueryArticles import *
 from QueryArticle import *
 from QueryStory import *
+from Correlations import *
 from Counts import *
 from DailyShares import *
 from Info import *
@@ -33,7 +34,6 @@ class EventRegistry(object):
         self._verboseOutput = verboseOutput
         self._lastQueryTime = time.time()
                
-
         # if there is a settings.json file in the directory then try using it to login to ER
         # and to read the host name from it (if custom host is not specified)
         currPath = os.path.split(__file__)[0]
@@ -45,6 +45,9 @@ class EventRegistry(object):
                 self.login(settings.get("username", ""), settings.get("password", ""), False)
         else:
             self._host = host or "http://eventregistry.org"
+        self._requestLogFName = os.path.join(currPath, "requests_log.txt")
+
+        print "Event Registry host: %s" % (self._host)
 
         
     def _sleepIfNecessary(self):
@@ -60,7 +63,7 @@ class EventRegistry(object):
         if they fail (indefinitely if _repeatFailedRequestCount = -1)
         """
         if self._logRequests:
-            with open("requests_log.txt", "a") as log:
+            with open(self._requestLogFName, "a") as log:
                 if data != None:
                     log.write("# " + json.dumps(data) + "\n")
                 log.write(methodUrl + "\n")                
@@ -164,9 +167,9 @@ class EventRegistry(object):
         """return a list of news sources that match the prefix"""
         return self.jsonRequest("/json/suggestSources", { "prefix": prefix, "page": page, "count": count })
         
-    def suggestLocations(self, prefix, count = 20, lang = "eng", source = ["place", "country"]):
+    def suggestLocations(self, prefix, count = 20, lang = "eng", source = ["place", "country"], countryUri = None):
         """return a list of geo locations (cities or countries) that contain the prefix"""
-        return self.jsonRequest("/json/suggestLocations", { "prefix": prefix, "count": count, "source": source, "lang": lang })
+        return self.jsonRequest("/json/suggestLocations", { "prefix": prefix, "count": count, "source": source, "lang": lang, "countryUri": countryUri or "" })
         
     def suggestCategories(self, prefix, page = 0, count = 20):
         """return a list of dmoz categories that contain the prefix"""
@@ -183,9 +186,9 @@ class EventRegistry(object):
             return matches[0]["uri"]
         return None
 
-    def getLocationUri(self, locationLabel, lang = "eng", source = ["place", "country"]):
+    def getLocationUri(self, locationLabel, lang = "eng", source = ["place", "country"], countryUri = None):
         """return a location uri that is the best match for the given location label"""
-        matches = self.suggestLocations(locationLabel, lang = lang, source = source)
+        matches = self.suggestLocations(locationLabel, lang = lang, source = source, countryUri = countryUri)
         if matches != None and isinstance(matches, list) and len(matches) > 0 and matches[0].has_key("wikiUri"):
             return matches[0]["wikiUri"]
         return None

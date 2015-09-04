@@ -21,5 +21,9 @@ locations = eventreg.suggestLocations("Lond")
 # get a top location that best matches the prefix "Lond"
 londonUri = eventreg.getLocationUri("Lond")
 
+usUri = eventreg.getLocationUri("united states", source= "country")
+# get a top location for "lond" that is located in USA
+londonUsUri = eventreg.getLocationUri("Lond", countryUri = usUri)
+
 # suggest a list of concept classes that best match the text "auto"
 classes = eventreg.suggestConceptClasses("auto")

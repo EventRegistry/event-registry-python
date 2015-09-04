@@ -70,6 +70,22 @@ class QueryParamsBase(object):
     def __init__(self):
         self.queryParams = {}
 
+    @staticmethod
+    def copy(obj):
+        assert isinstance(obj, QueryParamsBase)
+        ret = QueryParamsBase()
+        ret.queryParams = dict(obj.queryParams)
+        return ret
+
+    def _clearVal(self, propName):
+        """remove the value of a property propName (if existing)"""
+        if self.queryParams.has_key(propName):
+            del self.queryParams[propName]
+
+    def _hasVal(self, propName):
+        """do we have in the query property named propName"""
+        return self.queryParams.has_key(propName)
+
     def _setVal(self, propName, val):
         """set a value of a property in the query"""
         if isinstance(val, unicode):
