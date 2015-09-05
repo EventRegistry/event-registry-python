@@ -12,7 +12,7 @@ class GetSourceInfo(QueryParamsBase):
         self._setVal("action", "getInfo")
         if uriOrUriList != None:
             self.queryByUri(uriOrUriList)
-        self.queryParams.update(returnInfo.getParams())
+        self._update(returnInfo.getParams())
 
     def queryById(self, idOrIdList):
         """search sources by id(s)"""
@@ -37,7 +37,7 @@ class GetConceptInfo(QueryParamsBase):
         self._setVal("action", "getInfo")
         if uriOrUriList != None:
             self.queryByUri(uriOrUriList)
-        self.queryParams.update(returnInfo.getParams())
+        self._update(returnInfo.getParams())
 
     def queryById(self, idOrIdList):
         """search concepts by id(s)"""
@@ -62,7 +62,7 @@ class GetCategoryInfo(QueryParamsBase):
         self._setVal("action", "getInfo")
         if uriOrUriList != None:
             self.queryByUri(uriOrUriList)
-        self.queryParams.update(returnInfo.getParams())
+        self._update(returnInfo.getParams())
 
     def queryById(self, idOrIdList):
         """search categories by their id(s)"""

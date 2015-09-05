@@ -25,7 +25,7 @@ class GetTrendingConcepts(TrendsBase):
         self._setVal("action", "getTrendingConcepts")
         self._setVal("source", source)
         self._setVal("conceptCount", count)
-        self.queryParams.update(returnInfo.getParams())
+        self._update(returnInfo.getParams())
 
 
 class GetTrendingCategories(TrendsBase):
@@ -40,8 +40,8 @@ class GetTrendingCategories(TrendsBase):
         self._setVal("action", "getTrendingCategories")
         self._setVal("source", source)
         self._setVal("categoryCount", count)
-        self.queryParams.update(returnInfo.getParams())
-
+        self._update(returnInfo.getParams())
+        
 
 class GetTrendingCustomItems(TrendsBase):
     """
@@ -54,7 +54,7 @@ class GetTrendingCustomItems(TrendsBase):
         QueryParamsBase.__init__(self)
         self._setVal("action", "getTrendingCustom")
         self._setVal("conceptCount", count)
-        self.queryParams.update(returnInfo.getParams())
+        self._update(returnInfo.getParams())
 
 
 class GetTrendingConceptGroups(TrendsBase):
@@ -70,7 +70,7 @@ class GetTrendingConceptGroups(TrendsBase):
         self._setVal("action", "getConceptTrendGroups")
         self._setVal("source", source)
         self._setVal("conceptCount", count)
-        self.queryParams.update(returnInfo.getParams())
+        self._update(returnInfo.getParams())
 
     def getConceptTypeGroups(types = ["person", "org", "loc", "wiki"]):
         """request trending of concepts of specified types"""

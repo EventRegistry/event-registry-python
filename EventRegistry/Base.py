@@ -60,6 +60,7 @@ def createStructFromDict(data):
     else:
         return Struct(data)
 
+
 class QueryParamsBase(object):
     """
     Base class for Query and AdminQuery
@@ -120,6 +121,9 @@ class QueryParamsBase(object):
         if not self.queryParams.has_key(propName):
             self.queryParams[propName] = []
         self.queryParams[propName].append(val)
+
+    def _update(self, object):
+        self.queryParams.update(object)
 
     def _getQueryParams(self):
         """return the parameters."""

@@ -17,10 +17,12 @@ class DailySharesBase(QueryParamsBase):
 class GetTopSharedArticles(DailySharesBase):
     def __init__(self, 
                  date = None,     # specify the date (either in YYYY-MM-DD or datetime.date format) for which to return top shared articles. If None then today is used
-                 count = 20):     # number of top shared articles to return
+                 count = 20,      # number of top shared articles to return
+                 returnInfo = ReturnInfo()):
         QueryParamsBase.__init__(self)
         self._setVal("action", "getArticles")
         self._setVal("count", count)
+        self._update(returnInfo.getParams())
         
         if date == None:
             date = datetime.date.today()
@@ -31,10 +33,12 @@ class GetTopSharedArticles(DailySharesBase):
 class GetTopSharedEvents(DailySharesBase):
     def __init__(self, 
                  date = None,     # specify the date (either in YYYY-MM-DD or datetime.date format) for which to return top shared articles. If None then today is used
-                 count = 20):     # number of top shared articles to return
+                 count = 20,      # number of top shared articles to return
+                 returnInfo = ReturnInfo()):
         QueryParamsBase.__init__(self)
         self._setVal("action", "getEvents")
         self._setVal("count", count)
+        self._update(returnInfo.getParams())
         
         if date == None:
             date = datetime.date.today()

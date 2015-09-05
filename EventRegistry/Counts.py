@@ -49,6 +49,7 @@ class GetCounts(CountsBase):
         self._setVal("action", "getCounts")
         self._setVal("source", source)
         self._setVal("type", type)
+        self._update(returnInfo.getParams())
         if uriOrUriList != None:
             self.queryByUri(uriOrUriList)
         if startDate != None or endDate != None:
@@ -113,6 +114,7 @@ class GetCountsEx(CountsBase):
         self._setVal("action", "getCountsEx")
         self._setVal("source", source)
         self._setVal("type", type)
+        self._update(returnInfo.getParams())
         if uriOrUriList != None:
             self.queryByUri(uriOrUriList)
         if startDate != None or endDate != None:

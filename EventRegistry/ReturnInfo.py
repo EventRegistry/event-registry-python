@@ -58,6 +58,7 @@ class ReturnInfoFlagsBase(object):
                 dict[prefix + key] = self.vals[key]
         return dict
 
+
 class ArticleInfoFlags(ReturnInfoFlagsBase):
     """"
     What information about an article should be returned by the API call
