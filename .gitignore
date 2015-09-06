@@ -49,3 +49,4 @@ target/
 /*.egg-info
 /.vs/EventRegistryAPI/v14/*.suo
 /*.user
+/eventregistry/requests_log.txt
