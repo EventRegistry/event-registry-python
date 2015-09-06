@@ -6,14 +6,14 @@ def readme():
 
 setup(name='eventregistry',
       version='6.0',
-      long_description=readme(),
+      description = "A package that can be used to query information in Event Registry (http://eventregistry.org/)",
       classifiers=[
         'Development Status :: 2 - Besta',
         'License :: OSI Approved :: MIT License',
         'Programming Language :: Python :: 2.7',
         'Topic :: Text Processing :: Information extraction',
       ],
-      url='http://github.com/storborg/funniest',
+      url='https://github.com/gregorleban/EventRegistry',
       author='Gregor Leban',
       author_email='gleban@gmail.com',
       license='MIT',
