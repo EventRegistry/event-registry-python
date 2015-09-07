@@ -96,8 +96,8 @@ class EventRegistry(object):
     def printLastException(self):
         print str(self._lastException)
 
-    def prettyFormatObj(self, obj):
-        """return an object in a pretty printed version"""
+    def format(self, obj):
+        """return a string containing the object in a pretty formated version"""
         return json.dumps(obj, sort_keys=True, indent=4, separators=(',', ': '))
 
     def printConsole(self, text):
