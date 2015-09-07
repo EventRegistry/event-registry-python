@@ -13,6 +13,7 @@ from Correlations import *
 from Counts import *
 from DailyShares import *
 from Info import *
+from Recent import *
 from Trends import *
 
 class EventRegistry(object):
@@ -76,7 +77,7 @@ class EventRegistry(object):
                 respInfo = requests.get(url, data = data).text
                 endT = datetime.datetime.now()
                 if self._verboseOutput:
-                    self.printConsole("request took %.3f sec" % ((endT-startT).total_seconds()))
+                    self.printConsole("request took %.3f sec. Response size: %.2fKB" % ((endT-startT).total_seconds(), len(respInfo) / 1024.0))
                 return respInfo
             except Exception as ex:
                 self._lastException = ex
@@ -156,12 +157,12 @@ class EventRegistry(object):
             self._lastException = ex
             return None
 
-    def suggestConcepts(self, prefix, sources = ["concepts"], lang = "eng", labelLang = "eng", page = 0, count = 20):
+    def suggestConcepts(self, prefix, sources = ["concepts"], lang = "eng", conceptLang = "eng", page = 0, count = 20):
         """
         return a list of concepts that contain the given prefix
         valid sources: person, loc, org, wiki, entities (== person + loc + org), concepts (== entities + wiki), conceptClass, conceptFolder
         """
-        return self.jsonRequest("/json/suggestConcepts", { "prefix": prefix, "source": sources, "lang": lang, "labelLang": labelLang, "page": page, "count": count})
+        return self.jsonRequest("/json/suggestConcepts", { "prefix": prefix, "source": sources, "lang": lang, "conceptLang": conceptLang, "page": page, "count": count})
         
     def suggestNewsSources(self, prefix, page = 0, count = 20):
         """return a list of news sources that match the prefix"""
@@ -175,9 +176,9 @@ class EventRegistry(object):
         """return a list of dmoz categories that contain the prefix"""
         return self.jsonRequest("/json/suggestCategories", { "prefix": prefix, "page": page, "count": count })
 
-    def suggestConceptClasses(self, prefix, lang = "eng", labelLang = "eng", page = 0, count = 20):
+    def suggestConceptClasses(self, prefix, lang = "eng", conceptLang = "eng", page = 0, count = 20):
         """return a list of dmoz categories that contain the prefix"""
-        return self.jsonRequest("/json/suggestConceptClasses", { "prefix": prefix, "lang": lang, "labelLang": labelLang, "page": page, "count": count })
+        return self.jsonRequest("/json/suggestConceptClasses", { "prefix": prefix, "lang": lang, "conceptLang": conceptLang, "page": page, "count": count })
         
     def getConceptUri(self, conceptLabel, lang = "eng", sources = ["concepts"]):
         """return a concept uri that is the best match for the given concept label"""
@@ -207,7 +208,7 @@ class EventRegistry(object):
             return matches[0]["uri"]
         return None
     
-    def getConceptClass(self, classLabel, lang = "eng"):
+    def getConceptClassUri(self, classLabel, lang = "eng"):
         """return a uri of the concept class that is the best match for the given label"""
         matches = self.suggestConceptClasses(classLabel, lang = lang)
         if matches != None and isinstance(matches, list) and len(matches) > 0 and matches[0].has_key("uri"):
@@ -221,68 +222,6 @@ class EventRegistry(object):
         params = returnInfo.getParams()
         params.update({"uri": conceptUri, "action": "getInfo" })
         return self.jsonRequest("/json/concept", params)
-
-    def getRecentEvents(self, 
-                        maxEventCount = 60, 
-                        maxMinsBack = 10 * 60, 
-                        mandatoryLang = None, 
-                        mandatoryLocation = True, 
-                        lastActivityId = 0, 
-                        returnInfo = ReturnInfo()):
-        """
-        return info about recently modified events
-        
-        @param maxEventCount: determines the maximum number of events to return in a single call (max 250)
-        @param maxMinsBack: sets how much in the history are we interested to look
-        @param mandatoryLang: set a lang or array of langs if you wish to only get events covered at least by the specified language
-        @param mandatoryLocation: if set to True then return only events that have a known geographic location
-        @param lastActivityId: this is another way of settings how much in the history are we interested to look. Set when you have repeated calls of the method. Set it to lastActivityId obtained in the last response
-        """
-        assert maxEventCount <= 1000
-        params = {  "action": "getRecentActivity",
-                    "addEvents": True,
-                    "addArticles": False,
-                    "recentActivityEventsMaxEventCount": maxEventCount,             # max number of returned events
-                    "recentActivityEventsMaxMinsBack": maxMinsBack,
-                    "recentActivityEventsMandatoryLocation": mandatoryLocation,     # return only events that have a known geo location
-                    "recentActivityEventsLastActivityId": lastActivityId       # one criteria for telling the system about what was the latest activity already received (obtained by previous calls to this method)
-                  }
-        # return only events that have at least a story in the specified language
-        if mandatoryLang != None:
-            params["recentActivityEventsMandatoryLang"] = mandatoryLang
-
-        returnParams = returnInfo.getParams("recentActivityEvents")
-        params.update(returnParams)
-
-        return self.jsonRequest("/json/overview", params)
-
-    def getRecentArticles(self, 
-                          maxArticleCount = 60, 
-                          maxMinsBack = 10 * 60, 
-                          mandatorySourceLocation = True, 
-                          lastActivityId = 0, 
-                          returnInfo = ReturnInfo()):
-        """
-        return info about recently added articles
-        @param maxArticleCount: determines the maximum number of articles to return in a single call (max 250)
-        @param maxMinsBack: sets how much in the history are we interested to look
-        @param mandatorySourceLocation: if True then return only articles from sources for which we know geographic location
-        @param lastActivityId: another way of settings how much in the history are we interested to look. Set when you have repeated calls of the method. Set it to lastActivityId obtained in the last response
-        """
-        assert maxArticleCount <= 1000
-        params = {
-            "action": "getRecentActivity",
-            "addEvents": False,
-            "addArticles": True,
-            "recentActivityArticlesMaxMinsBack": maxMinsBack,
-            "recentActivityArticlesMaxArticleCount": maxArticleCount,                   # max number of returned events
-            "recentActivityArticlesMandatorySourceLocation": mandatorySourceLocation,   # return only articles that have a known geo location
-            "recentActivityArticlesLastActivityId": lastActivityId                      # one criteria for telling the system about what was the latest activity already received (obtained by previous calls to this method)
-            }
-
-        returnParams = returnInfo.getParams("recentActivityArticles")
-        params.update(returnParams)
-        return self.jsonRequest("/json/overview", params)
 
     def getRecentStats(self):
         """get some stats about recently imported articles and events"""

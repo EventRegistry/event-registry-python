@@ -5,18 +5,18 @@ and then goes and also downloads the top 20 articles assigned to this event in a
 core languages (eng, deu, spa, zho, slv)
 """
 
-
 from eventregistry import *
-import json, time, datetime
+import time
 
-er = EventRegistry()
-lastEventActivityId = 0
+er = EventRegistry("http://beta.eventregistry.org", verboseOutput = True)
+
+recentQ = GetRecentEvents(maxEventCount = 200)
+
 while True:
-    print "last activity id: ", lastEventActivityId
-    ret = er.getRecentEvents(200, lastActivityId = lastEventActivityId)
-    if ret != None and ret.has_key("recentActivity") and ret["recentActivity"].has_key("events") and ret["recentActivity"]["events"].has_key("eventInfo") and isinstance(ret["recentActivity"]["events"]["eventInfo"], dict):
-        print "%d events updated since last call" % len(ret["recentActivity"]["events"]["activity"])
-        uris = [uri for uri in ret["recentActivity"]["events"]["eventInfo"]]
+    ret = recentQ.getUpdates(er)
+    if ret.has_key("eventInfo") and isinstance(ret["eventInfo"], dict):
+        print "%d events updated since last call" % len(ret["activity"])
+        uris = [uri for uri in ret["eventInfo"]]
         size = 50
         for i in range(0, len(uris), size):
             uriChunk = uris[i:i+size]
@@ -29,5 +29,4 @@ while True:
                 print "obtained details about %d events" % len(eventRet)
             else:
                 print "failed to obtain event information"
-        lastEventActivityId = ret["recentActivity"]["events"].get("lastActivityId", 0)
     time.sleep(20)

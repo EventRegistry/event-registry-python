@@ -2,28 +2,28 @@
 examples showing how to use the autosuggest functionalities for concepts, sources, categories, locations, ....
 """
 
-import eventregistry as er
+from eventregistry import *
 
-eventreg = er.EventRegistry()
+er = EventRegistry()
 
 # get concept uris for concepts based on the concept labels:
-conceptUrisMatchingObama = eventreg.suggestConcepts("Obama")
+conceptUrisMatchingObama = er.suggestConcepts("Obama", lang = "eng", conceptLang = ["eng", "deu"])
 # get only the top concept that best matches the prefix
-conceptUriForBarackObama = eventreg.getConceptUri("Obama")
+conceptUriForBarackObama = er.getConceptUri("Obama")
 
 # return a list of categories that contain text "Business"
-businessRelated = eventreg.suggestCategories("Business")
+businessRelated = er.suggestCategories("Business")
 # return the top category that contains text "Business"
-businessCategoryUri = eventreg.getCategoryUri("Business")
+businessCategoryUri = er.getCategoryUri("Business")
 
 # get a list of locations that best match the prefix "Lond"
-locations = eventreg.suggestLocations("Lond")
+locations = er.suggestLocations("Lond")
 # get a top location that best matches the prefix "Lond"
-londonUri = eventreg.getLocationUri("Lond")
+londonUri = er.getLocationUri("Lond")
 
-usUri = eventreg.getLocationUri("united states", source= "country")
+usUri = er.getLocationUri("united states", source= "country")
 # get a top location for "lond" that is located in USA
-londonUsUri = eventreg.getLocationUri("Lond", countryUri = usUri)
+londonUsUri = er.getLocationUri("Lond", countryUri = usUri)
 
 # suggest a list of concept classes that best match the text "auto"
-classes = eventreg.suggestConceptClasses("auto")
+classes = er.suggestConceptClasses("auto")
