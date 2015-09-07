@@ -123,21 +123,21 @@ class EventRegistry(object):
         finally:
             return respInfo
             
-    def execQuery(self, query, convertToDict = True):
+    def execQuery(self, query, parseJSON = True):
         """main method for executing the search queries."""
         # don't modify original query params
         allParams = query._getQueryParams()
         # make the request
-        respInfo = self.jsonRequest(query._getPath(), allParams, convertToDict)
+        respInfo = self.jsonRequest(query._getPath(), allParams, parseJSON)
         return respInfo
 
 
-    def jsonRequest(self, methodUrl, paramDict, convertToDict = True):
+    def jsonRequest(self, methodUrl, paramDict, parseJSON = True):
         """
         make a request for json data
         @param methodUrl: url on er (e.g. "/json/article")
         @param paramDict: optional object containing the parameters to include in the request (e.g. { "articleUri": "123412342" }).
-        @param convertToDict: should the returned result be first parsed to a python object?
+        @param parseJSON: should the returned result be first parsed to a python object?
         """
         self._sleepIfNecessary()
         self._lastException = None
