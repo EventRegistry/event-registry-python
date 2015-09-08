@@ -413,8 +413,17 @@ class ReturnInfo:
                  conceptInfo = ConceptInfoFlags(),
                  locationInfo = LocationInfoFlags(),
                  storyInfo = StoryInfoFlags(),
-                 conceptClassInfo = ConceptInfoFlags(),
+                 conceptClassInfo = ConceptClassInfoFlags(),
                  conceptFolderInfo = ConceptFolderInfoFlags()):
+        assert isinstance(articleInfo, ArticleInfoFlags)
+        assert isinstance(eventInfo, EventInfoFlags)
+        assert isinstance(sourceInfo, SourceInfoFlags)
+        assert isinstance(categoryInfo, CategoryInfoFlags)
+        assert isinstance(conceptInfo, ConceptInfoFlags)
+        assert isinstance(locationInfo, LocationInfoFlags)
+        assert isinstance(storyInfo, StoryInfoFlags)
+        assert isinstance(conceptClassInfo, ConceptClassInfoFlags)
+        assert isinstance(conceptFolderInfo, ConceptFolderInfoFlags)
         self.articleInfo = articleInfo
         self.eventInfo = eventInfo
         self.sourceInfo = sourceInfo

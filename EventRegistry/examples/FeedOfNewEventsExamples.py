@@ -16,7 +16,11 @@ while True:
     ret = recentQ.getUpdates(er)
     if ret.has_key("eventInfo") and isinstance(ret["eventInfo"], dict):
         print "%d events updated since last call" % len(ret["activity"])
-        uris = [uri for uri in ret["eventInfo"]]
+        
+        # get URIs of the events that are new/updated
+        uris = ret["eventInfo"].keys()
+        
+        
         size = 50
         for i in range(0, len(uris), size):
             uriChunk = uris[i:i+size]

@@ -92,6 +92,9 @@ class QueryArticles(Query):
     def addCategory(self, categoryUri):
         self._addArrayVal("categoryUri", categoryUri)
 
+    def addNewsSource(self, newsSourceUri):
+        self._addArrayVal("sourceUri", newsSourceUri)
+
     def addKeyword(self, keyword):
         self.queryParams["keywords"] = self.queryParams.pop("keywords", "") + " " + keyword
 
@@ -162,19 +165,8 @@ class RequestArticlesTimeAggr(RequestArticles):
     """
     def __init__(self):
         self.resultType = "timeAggr"
-
-class RequestArticlesCategoryAggr(RequestArticles):
-    """
-    return aggreate of categories of resulting articles
-    """
-    def __init__(self, articlesSampleSize = 20000,
-                 returnInfo = ReturnInfo()):
-        assert articlesSampleSize <= 50000
-        self.resultType = "categoryAggr"
-        self.categoryAggrSampleSize = articlesSampleSize
-        self.__dict__.update(returnInfo.getParams("categoryAggr"))
-
-
+        
+        
 class RequestArticlesConceptAggr(RequestArticles):
     """
     get aggreate of concepts of resulting articles
@@ -188,7 +180,20 @@ class RequestArticlesConceptAggr(RequestArticles):
         self.conceptAggrConceptCount = conceptCount
         self.conceptAggrSampleSize = articlesSampleSize  
         self.__dict__.update(returnInfo.getParams("conceptAggr"))
+    
+
+class RequestArticlesCategoryAggr(RequestArticles):
+    """
+    return aggreate of categories of resulting articles
+    """
+    def __init__(self, articlesSampleSize = 20000,
+                 returnInfo = ReturnInfo()):
+        assert articlesSampleSize <= 50000
+        self.resultType = "categoryAggr"
+        self.categoryAggrSampleSize = articlesSampleSize
+        self.__dict__.update(returnInfo.getParams("categoryAggr"))
         
+            
 class RequestArticlesSourceAggr(RequestArticles):
     """
     get aggreate of news sources of resulting articles
@@ -198,6 +203,7 @@ class RequestArticlesSourceAggr(RequestArticles):
         self.resultType = "sourceAggr"
         self.__dict__.update(returnInfo.getParams("sourceAggr"))
 
+
 class RequestArticlesKeywordAggr(RequestArticles):
     """
     get aggreate of sources of resulting articles
@@ -205,29 +211,15 @@ class RequestArticlesKeywordAggr(RequestArticles):
     def __init__(self, lang = "eng", articlesSampleSize = 500):
         assert articlesSampleSize <= 1000
         self.resultType = "keywordAggr"
-        self.keywordAggrLang = articlesSampleSize
-                
-class RequestArticlesConceptMatrix(RequestArticles):
-    """
-    get aggreate of sources of resulting articles
-    """
-    def __init__(self, count = 25, 
-                 measure = "pmi",    # measure options: pmi (pointwise mutual information), pairTfIdf (pair frequence * IDF of individual concepts), chiSquare
-                 sampleSize = 500, 
-                 returnInfo = ReturnInfo()):
-        assert count <= 200
-        assert sampleSize <= 10000
-        self.resultType = "conceptMatrix"
-        self.conceptMatrixConceptCount = count
-        self.conceptMatrixMeasure = measure
-        self.conceptMatrixSampleSize = sampleSize
-        self.__dict__.update(returnInfo.getParams("conceptMatrix"))
-        
+        self.keywordAggrLang = lang
+        self.keywordAggrSampleSize = articlesSampleSize
+                   
+           
 class RequestArticlesConceptGraph(RequestArticles):
     """
     get concept graph of resulting articles
     """
-    def __init__(self, count = 25, 
+    def __init__(self, conceptCount = 25, 
                  linkCount = 50, 
                  sampleSize = 500, 
                  returnInfo = ReturnInfo()):
@@ -235,11 +227,29 @@ class RequestArticlesConceptGraph(RequestArticles):
         assert linkCount <= 2000
         assert sampleSize <= 20000
         self.resultType = "conceptGraph"
-        self.conceptGraphConceptCount = count
+        self.conceptGraphConceptCount = conceptCount
         self.conceptGraphLinkCount = linkCount
         self.conceptGraphSampleSize = sampleSize
         self.__dict__.update(returnInfo.getParams("conceptGraph"))
         
+            
+class RequestArticlesConceptMatrix(RequestArticles):
+    """
+    get aggreate of sources of resulting articles
+    """
+    def __init__(self, conceptCount = 25, 
+                 measure = "pmi",    # measure options: pmi (pointwise mutual information), pairTfIdf (pair frequence * IDF of individual concepts), chiSquare
+                 sampleSize = 500, 
+                 returnInfo = ReturnInfo()):
+        assert conceptCount <= 200
+        assert sampleSize <= 10000
+        self.resultType = "conceptMatrix"
+        self.conceptMatrixConceptCount = conceptCount
+        self.conceptMatrixMeasure = measure
+        self.conceptMatrixSampleSize = sampleSize
+        self.__dict__.update(returnInfo.getParams("conceptMatrix"))
+      
+
 class RequestArticlesConceptTrends(RequestArticles):
     """
     get trending of concepts in the resulting articles
@@ -251,12 +261,14 @@ class RequestArticlesConceptTrends(RequestArticles):
         self.conceptTrendsConceptCount = count
         self.__dict__.update(returnInfo.getParams("conceptTrends"))
 
+
 class RequestArticlesDateMentionAggr(RequestArticles):
     """
     get mentioned dates in the articles
     """
     def __init__(self):
         self.resultType = "dateMentionAggr"
+
 
 class RequestArticlesRecentActivity(RequestArticles):
     """
