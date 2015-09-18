@@ -1,8 +1,9 @@
 ﻿"""
 classes responsible for obtaining results from the Event Registry
 """
-import os, sys, urllib2, urllib, json, re, requests
+import os, sys, urllib2, urllib, json, re, requests, time
 from Base import *
+from EventForText import *
 from ReturnInfo import *
 from QueryEvents import *
 from QueryEvent import *
@@ -26,15 +27,16 @@ class EventRegistry(object):
                  repeatFailedRequestCount = -1,    # if a request fails (for example, because ER is down), what is the max number of times the request should be repeated (-1 for indefinitely)
                  verboseOutput = False):            # if true, additional info about query times etc will be printed to console
         self._host = host
-        self._erUsername = None
-        self._erPassword = None
         self._lastException = None
         self._logRequests = logging
         self._minDelayBetweenRequests = minDelayBetweenRequests
         self._repeatFailedRequestCount = repeatFailedRequestCount
         self._verboseOutput = verboseOutput
         self._lastQueryTime = time.time()
-               
+        self._cookies = None
+        self._dailyAvailableRequests = -1
+        self._remainingAvailableRequests = -1
+                       
         # if there is a settings.json file in the directory then try using it to login to ER
         # and to read the host name from it (if custom host is not specified)
         currPath = os.path.split(__file__)[0]
@@ -49,41 +51,6 @@ class EventRegistry(object):
         self._requestLogFName = os.path.join(currPath, "requests_log.txt")
 
         print "Event Registry host: %s" % (self._host)
-
-        
-    def _sleepIfNecessary(self):
-        """ensure that queries are not made too fast"""
-        t = time.time()
-        if t - self._lastQueryTime < self._minDelayBetweenRequests:
-            time.sleep(self._minDelayBetweenRequests - (t - self._lastQueryTime))
-        self._lastQueryTime = t
-
-    def _getUrlResponse(self, methodUrl, data = None):
-        """
-        make the request - repeat it _repeatFailedRequestCount times, 
-        if they fail (indefinitely if _repeatFailedRequestCount = -1)
-        """
-        if self._logRequests:
-            with open(self._requestLogFName, "a") as log:
-                if data != None:
-                    log.write("# " + json.dumps(data) + "\n")
-                log.write(methodUrl + "\n")                
-        tryCount = 0
-        while self._repeatFailedRequestCount < 0 or tryCount < self._repeatFailedRequestCount:
-            tryCount += 1
-            try:
-                startT = datetime.datetime.now()
-                url = self._host + methodUrl;
-                respInfo = requests.get(url, data = data).text
-                endT = datetime.datetime.now()
-                if self._verboseOutput:
-                    self.printConsole("request took %.3f sec. Response size: %.2fKB" % ((endT-startT).total_seconds(), len(respInfo) / 1024.0))
-                return respInfo
-            except Exception as ex:
-                self._lastException = ex
-                self.printLastException()
-                time.sleep(5)   # sleep for 5 seconds on error
-        return None
 
     def setLogging(val):
         """should all requests be logged to a file or not?"""
@@ -104,24 +71,34 @@ class EventRegistry(object):
         """print time prefix + text to console"""
         print time.strftime("%H:%M:%S") + " " + str(text)
 
+    def getRemainingAvailableRequests(self):
+        """get the number of requests that are still available for the user today"""
+        return self._remainingAvailableRequests
+
+    def getDailyAvailableRequests(self):
+        """get the total number of requests that the user can make in a day"""
+        return self._dailyAvailableRequests;
+
     def login(self, username, password, throwExceptOnFailure = True):
         """
         login the user. without logging in, the user is limited to 10.000 queries per day. 
         if you have a registered account, the number of allowed requests per day can be higher, depending on your subscription plan
         """
-        self._erUsername = username
-        self._erPassword = password
-        respInfo = None
+        respInfoObj = None
         try:
-            respInfo = requests.post(self._host + "/login", data = { "email": username, "pass": password }).text
-            respInfo = json.loads(respInfo)
-            if throwExceptOnFailure and respInfo.has_key("error"):
+            respInfo = requests.post(self._host + "/login", data = { "email": username, "pass": password })
+            self._cookies = respInfo.cookies
+            respInfoText = respInfo.text
+            respInfoObj = json.loads(respInfoText)
+            if throwExceptOnFailure and respInfoObj.has_key("error"):
                 raise Exception(respInfo["error"])
+            elif respInfoObj.has_key("info"):
+                print "Successfully logged in with user %s" % (username)
         except Exception as ex:
             if isinstance(ex, requests.exceptions.ConnectionError) and throwExceptOnFailure:
                 raise ex
         finally:
-            return respInfo
+            return respInfoObj
             
     def execQuery(self, query, parseJSON = True):
         """main method for executing the search queries."""
@@ -142,11 +119,6 @@ class EventRegistry(object):
         self._sleepIfNecessary()
         self._lastException = None
 
-        # add user credentials if specified
-        if self._erUsername != None and self._erPassword != None:
-            paramDict["erUsername"] = self._erUsername
-            paramDict["erPassword"] = self._erPassword
-        
         try:
             # make the request
             respInfo = self._getUrlResponse(methodUrl, paramDict)
@@ -226,3 +198,46 @@ class EventRegistry(object):
     def getRecentStats(self):
         """get some stats about recently imported articles and events"""
         return self.jsonRequest("/json/overview", { "action": "getRecentStats"})
+
+    
+    # utility methods
+
+    def _sleepIfNecessary(self):
+        """ensure that queries are not made too fast"""
+        t = time.time()
+        if t - self._lastQueryTime < self._minDelayBetweenRequests:
+            time.sleep(self._minDelayBetweenRequests - (t - self._lastQueryTime))
+        self._lastQueryTime = t
+
+    def _getUrlResponse(self, methodUrl, data = None):
+        """
+        make the request - repeat it _repeatFailedRequestCount times, 
+        if they fail (indefinitely if _repeatFailedRequestCount = -1)
+        """
+        if self._logRequests:
+            with open(self._requestLogFName, "a") as log:
+                if data != None:
+                    log.write("# " + json.dumps(data) + "\n")
+                log.write(methodUrl + "\n")                
+        tryCount = 0
+        while self._repeatFailedRequestCount < 0 or tryCount < self._repeatFailedRequestCount:
+            tryCount += 1
+            try:
+                startT = datetime.datetime.now()
+                url = self._host + methodUrl;
+                respInfo = requests.get(url, data = data, cookies = self._cookies)
+                # remember the available requests
+                self._dailyAvailableRequests = try_parse_int(respInfo.headers.get("x-ratelimit-limit", ""), val = -1)
+                self._remainingAvailableRequests = try_parse_int(respInfo.headers.get("x-ratelimit-remaining", ""), val = -1)
+                respInfoContent = respInfo.text
+                if respInfo.status_code != requests.codes.ok:
+                    raise requests.exceptions.HTTPError("Status code %d: %s" % (respInfo.status_code, respInfo.content), response = respInfo)
+                endT = datetime.datetime.now()
+                if self._verboseOutput:
+                    self.printConsole("request took %.3f sec. Response size: %.2fKB" % ((endT-startT).total_seconds(), len(respInfoContent) / 1024.0))
+                return respInfoContent
+            except Exception as ex:
+                self._lastException = ex
+                self.printLastException()
+                time.sleep(5)   # sleep for 5 seconds on error
+        return None
