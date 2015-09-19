@@ -314,7 +314,7 @@ class RequestEventsCategoryAggr(RequestEvents):
     """
     def __init__(self, returnInfo = ReturnInfo()):
         self.resultType = "categoryAggr"
-        self.__dict__.update(returnInfo.getParams("recentActivity"))
+        self.__dict__.update(returnInfo.getParams("categoryAggr"))
 
 
 class RequestEventsRecentActivity(RequestEvents):

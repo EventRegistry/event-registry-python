@@ -32,6 +32,11 @@ invalidCharRe = re.compile(r"[\x00-\x08]|\x0b|\x0c|\x0e|\x0f|[\x10-\x19]|[\x1a-\
 def removeInvalidChars(text):
     return invalidCharRe.sub("", text)
 
+def tryParseInt(s, base=10, val=None):
+    try:
+        return int(s, base)
+    except ValueError:
+        return val
 
 class Struct(object):
     """

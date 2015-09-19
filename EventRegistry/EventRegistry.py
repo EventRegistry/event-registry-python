@@ -227,8 +227,8 @@ class EventRegistry(object):
                 url = self._host + methodUrl;
                 respInfo = requests.get(url, data = data, cookies = self._cookies)
                 # remember the available requests
-                self._dailyAvailableRequests = try_parse_int(respInfo.headers.get("x-ratelimit-limit", ""), val = -1)
-                self._remainingAvailableRequests = try_parse_int(respInfo.headers.get("x-ratelimit-remaining", ""), val = -1)
+                self._dailyAvailableRequests = tryParseInt(respInfo.headers.get("x-ratelimit-limit", ""), val = -1)
+                self._remainingAvailableRequests = tryParseInt(respInfo.headers.get("x-ratelimit-remaining", ""), val = -1)
                 respInfoContent = respInfo.text
                 if respInfo.status_code != requests.codes.ok:
                     raise requests.exceptions.HTTPError("Status code %d: %s" % (respInfo.status_code, respInfo.content), response = respInfo)

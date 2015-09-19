@@ -4,14 +4,17 @@ from eventregistry import *
 
 class TestQueryEvent(unittest.TestCase):
     
-    def setUp(self):
+    @classmethod
+    def setUpClass(self):
         self.er = EventRegistry()
         self.articleInfo = ArticleInfoFlags(bodyLen = -1, concepts = True, storyUri = True, duplicateList = True, originalArticle = True, categories = True,
                 location = True, image = True, extractedDates = True, socialScore = True, details = True)
         self.sourceInfo = SourceInfoFlags(description = True, location = True, importance = True, articleCount = True, tags = True, details = True)
         self.conceptInfo = ConceptInfoFlags(type=["entities"], lang = "spa", synonyms = True, image = True, description = True, details = True, 
                 conceptClassMembership = True, conceptFolderMembership = True, trendingScore = True, trendingHistory = True)
-        self.locationInfo = LocationInfoFlags(wikiUri = True, label = True, geoLocation = True, population = True, countryArea = True, placeFeatureCode = True, placeCountry = True)
+        self.locationInfo = LocationInfoFlags(wikiUri = True, label = True, geoNamesId = True, geoLocation = True, population = True, 
+                                              countryArea = True, countryDetails = True, countryContinent = True,
+                                              placeFeatureCode = True, placeCountry = True)
         self.categoryInfo = CategoryInfoFlags(parentUri = True, childrenUris = True, trendingScore = True, trendingHistory = True)
         self.eventInfo = EventInfoFlags(commonDates = True, stories = True, socialScore = True, details = True, imageCount = 2)
         self.storyInfo = StoryInfoFlags(categories = True, date = True, concepts = True, title = True, summary = True, 
@@ -66,13 +69,13 @@ class TestQueryEvent(unittest.TestCase):
 
     def ensureValidLocation(self, location, testName):
         for prop in ["wikiUri", "label", "lat", "long", "geoNamesId", "population"]:
-            self.assertTrue(story.has_key(prop), "Property '%s' was expected in a location for test %s" % (prop, testName))
+            self.assertTrue(location.has_key(prop), "Property '%s' was expected in a location for test %s" % (prop, testName))
         if location.get("type") == "country":
             for prop in ["area", "code2", "code3", "webExt", "continent"]:
-                self.assertTrue(story.has_key(prop), "Property '%s' was expected in a location for test %s" % (prop, testName))
+                self.assertTrue(location.has_key(prop), "Property '%s' was expected in a location for test %s" % (prop, testName))
         if location.get("type") == "place":
             for prop in ["featureCode", "country"]:
-                self.assertTrue(story.has_key(prop), "Property '%s' was expected in a location for test %s" % (prop, testName))
+                self.assertTrue(location.has_key(prop), "Property '%s' was expected in a location for test %s" % (prop, testName))
 
 
     def createQuery(self):
@@ -85,6 +88,8 @@ class TestQueryEvent(unittest.TestCase):
         res = self.er.execQuery(q)
 
         for event in res.values():
+            if event.has_key("newEventUri"):
+                continue
             for article in event.get("articles").get("results"):
                 self.ensureValidArticle(article, "testArticleList")
 
@@ -95,7 +100,9 @@ class TestQueryEvent(unittest.TestCase):
         res = self.er.execQuery(q)
 
         for event in res.values():
-            self.assertIsNotNone(event.get("articleUris"), "Expected to see 'articleUris'")
+            if event.has_key("newEventUri"):
+                continue
+            self.assertTrue(event.has_key("articleUris"), "Expected to see 'articleUris'")
             
 
     def testKeywords(self):
@@ -104,8 +111,10 @@ class TestQueryEvent(unittest.TestCase):
         res = self.er.execQuery(q)
         
         for event in res.values():
+            if event.has_key("newEventUri"):
+                continue
             self.assertIsNotNone(event.get("keywordAggr"), "Expected to see 'keywordAggr'")
-            if event.get("keywordAggr").has_key("error"):
+            if isinstance(event.get("keywordAggr"), dict) and event.get("keywordAggr").has_key("error"):
                 print "Got error: " + event.get("keywordAggr").get("error")
                 continue;
             for kw in event.get("keywordAggr"):
@@ -118,6 +127,8 @@ class TestQueryEvent(unittest.TestCase):
         res = self.er.execQuery(q)
 
         for event in res.values():
+            if event.has_key("newEventUri"):
+                continue
             self.assertIsNotNone(event.get("sourceAggr"), "Expected to see 'sourceAggr'")
 
 
@@ -127,6 +138,8 @@ class TestQueryEvent(unittest.TestCase):
         res = self.er.execQuery(q)
 
         for event in res.values():
+            if event.has_key("newEventUri"):
+                continue
             self.assertIsNotNone(event.get("articleTrend"), "Expected to see 'articleTrend'")
 
 
@@ -136,6 +149,8 @@ class TestQueryEvent(unittest.TestCase):
         res = self.er.execQuery(q)
 
         for event in res.values():
+            if event.has_key("newEventUri"):
+                continue
             self.assertIsNotNone(event.get("similarEvents"), "Expected to see 'similarEvents'")
             for simEvent in event.get("similarEvents").get("similarEvents"):
                 self.ensureValidEvent(simEvent, "testSimilarEvents")
@@ -148,6 +163,8 @@ class TestQueryEvent(unittest.TestCase):
         res = self.er.execQuery(q)
 
         for event in res.values():
+            if event.has_key("newEventUri"):
+                continue
             self.assertIsNotNone(event.get("similarStories"), "Expected to see 'similarStories'")
             for simStory in event.get("similarStories"):
                 self.ensureValidStory(simStory, "testSimilarStories")

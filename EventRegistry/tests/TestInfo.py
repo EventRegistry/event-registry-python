@@ -2,7 +2,8 @@
 from eventregistry import *
 
 class TestInfo(unittest.TestCase):
-    def setUp(self):
+    @classmethod
+    def setUpClass(self):
         self.er = EventRegistry()
 
     def test_sourcesById(self):
@@ -61,7 +62,7 @@ class TestInfo(unittest.TestCase):
                                          articleCount = True,
                                          tags = True,
                                          details = True)))
-        sources = er.suggestNewsSources("a")
+        sources = self.er.suggestNewsSources("a")
         uris = [source.get("uri") for source in sources]
         q.queryByUri(uris)
         res = self.er.execQuery(q)
@@ -105,9 +106,9 @@ class TestInfo(unittest.TestCase):
             self.assertIsNotNone(item.get("label").get("deu"), "Concept should have a label in german")
             self.assertIsNotNone(item.get("label").get("slv"), "Concept should have a label in slovene")
             self.assertIsNotNone(item.get("description"), "Concept should have a description")
-            self.assertIsNotNone(item.get("image"), "Concept should have an image")
-            self.assertIsNotNone(item.get("synonyms"), "Concept should have synonyms")
-            self.assertIsNotNone(item.get("details"), "Concept should have details")
+            self.assertTrue(item.has_key("image"), "Concept should have an image")
+            self.assertTrue(item.has_key("synonyms"), "Concept should have synonyms")
+            self.assertTrue(item.has_key("details"), "Concept should have details")
             self.assertIsNotNone(item.get("conceptClassMembership"), "Concept should have conceptClassMembership")
             self.assertIsNotNone(item.get("conceptClassMembershipFull"), "Concept should have conceptClassMembershipFull")
             self.assertIsNotNone(item.get("conceptFolderMembership"), "Concept should have conceptFolderMembership")

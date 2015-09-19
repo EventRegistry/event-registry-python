@@ -4,14 +4,17 @@ from eventregistry import *
 
 class TestQueryArticle(unittest.TestCase):
     
-    def setUp(self):
+    @classmethod
+    def setUpClass(self):
         self.er = EventRegistry()
         self.articleInfo = ArticleInfoFlags(bodyLen = -1, concepts = True, storyUri = True, duplicateList = True, originalArticle = True, categories = True,
                 location = True, image = True, extractedDates = True, socialScore = True, details = True)
         self.sourceInfo = SourceInfoFlags(description = True, location = True, importance = True, articleCount = True, tags = True, details = True)
         self.conceptInfo = ConceptInfoFlags(type=["entities"], lang = "spa", synonyms = True, image = True, description = True, details = True, 
                 conceptClassMembership = True, conceptFolderMembership = True, trendingScore = True, trendingHistory = True)
-        self.locationInfo = LocationInfoFlags(wikiUri = True, label = True, geoLocation = True, population = True, countryArea = True, placeFeatureCode = True, placeCountry = True)
+        self.locationInfo = LocationInfoFlags(wikiUri = True, label = True, geoNamesId = True, geoLocation = True, population = True, 
+                countryArea = True, countryDetails = True, countryContinent = True,
+                placeFeatureCode = True, placeCountry = True)
         self.categoryInfo = CategoryInfoFlags(parentUri = True, childrenUris = True, trendingScore = True, trendingHistory = True)
         self.returnInfo = ReturnInfo(articleInfo = self.articleInfo, conceptInfo = self.conceptInfo,
             sourceInfo = self.sourceInfo, locationInfo = self.locationInfo, categoryInfo = self.categoryInfo)
@@ -20,6 +23,8 @@ class TestQueryArticle(unittest.TestCase):
         for prop in ["id", "uri", "label", "synonyms", "image", "description", "details", "conceptClassMembership", "conceptFolderMembership", "trendingScore", "trendingHistory", "details"]:
             self.assertTrue(concept.has_key(prop), "Property '%s' was expected in concept for test %s" % (prop, testName))
         self.assertTrue(concept.get("type") in ["person", "loc", "org"], "Expected concept to be an entity type, but got %s" % (concept.get("type")))
+        if concept.get("location"):
+            self.ensureValidLocation(concept.get("location"), testName)
 
     def ensureValidArticle(self, article, testName):
         for prop in ["id", "url", "uri", "title", "body", "source", "details", "location", "duplicateList", "originalArticle", "time", "date", "categories", "lang", "extractedDates", "concepts", "details"]:
@@ -35,6 +40,16 @@ class TestQueryArticle(unittest.TestCase):
     def ensureValidCategory(self, category, testName):
         for prop in ["id", "uri", "parentUri", "childrenUris", "trendingScore", "trendingHistory"]:
             self.assertTrue(category.has_key(prop), "Property '%s' was expected in source for test %s" % (prop, testName))
+
+    def ensureValidLocation(self, location, testName):
+        for prop in ["wikiUri", "label", "lat", "long", "geoNamesId", "population"]:
+            self.assertTrue(location.has_key(prop), "Property '%s' was expected in a location for test %s" % (prop, testName))
+        if location.get("type") == "country":
+            for prop in ["area", "code2", "code3", "webExt", "continent"]:
+                self.assertTrue(location.has_key(prop), "Property '%s' was expected in a location for test %s" % (prop, testName))
+        if location.get("type") == "place":
+            for prop in ["featureCode", "country"]:
+                self.assertTrue(location.has_key(prop), "Property '%s' was expected in a location for test %s" % (prop, testName))
 
     def createQuery(self):
         q = QueryArticle.queryById(range(1000, 1010))

@@ -4,14 +4,17 @@ from eventregistry import *
 
 class TestQueryEvents(unittest.TestCase):
     
-    def setUp(self):
+    @classmethod
+    def setUpClass(self):
         self.er = EventRegistry()
         self.articleInfo = ArticleInfoFlags(bodyLen = -1, concepts = True, storyUri = True, duplicateList = True, originalArticle = True, categories = True,
                 location = True, image = True, extractedDates = True, socialScore = True, details = True)
         self.sourceInfo = SourceInfoFlags(description = True, location = True, importance = True, articleCount = True, tags = True, details = True)
         self.conceptInfo = ConceptInfoFlags(type=["entities"], lang = "spa", synonyms = True, image = True, description = True, details = True, 
                 conceptClassMembership = True, conceptFolderMembership = True, trendingScore = True, trendingHistory = True)
-        self.locationInfo = LocationInfoFlags(wikiUri = True, label = True, geoLocation = True, population = True, countryArea = True, placeFeatureCode = True, placeCountry = True)
+        self.locationInfo = LocationInfoFlags(wikiUri = True, label = True, geoNamesId = True, geoLocation = True, population = True, 
+                countryArea = True, countryDetails = True, countryContinent = True,
+                placeFeatureCode = True, placeCountry = True)
         self.categoryInfo = CategoryInfoFlags(parentUri = True, childrenUris = True, trendingScore = True, trendingHistory = True)
         self.eventInfo = EventInfoFlags(commonDates = True, stories = True, socialScore = True, details = True, imageCount = 2)
         self.storyInfo = StoryInfoFlags(categories = True, date = True, concepts = True, title = True, summary = True, 
@@ -23,6 +26,8 @@ class TestQueryEvents(unittest.TestCase):
         for prop in ["id", "uri", "label", "synonyms", "image", "description", "details", "conceptClassMembership", "conceptFolderMembership", "trendingScore", "trendingHistory", "details"]:
             self.assertTrue(concept.has_key(prop), "Property '%s' was expected in concept for test %s" % (prop, testName))
         self.assertTrue(concept.get("type") in ["person", "loc", "org"], "Expected concept to be an entity type, but got %s" % (concept.get("type")))
+        if concept.get("location"):
+            self.ensureValidLocation(concept.get("location"), testName)
 
     def ensureValidArticle(self, article, testName):
         for prop in ["id", "url", "uri", "title", "body", "source", "details", "location", "duplicateList", "originalArticle", "time", "date", "categories", "lang", "extractedDates", "concepts", "details"]:
@@ -52,6 +57,8 @@ class TestQueryEvents(unittest.TestCase):
             self.ensureValidStory(story, testName)
         for category in event.get("categories"):
             self.ensureValidCategory(category, testName)
+        if event.get("location"):
+            self.ensureValidLocation(event.get("location"), testName)
 
     def ensureValidStory(self, story, testName):
         for prop in ["uri", "title", "summary", "concepts", "categories", "location", 
@@ -62,20 +69,20 @@ class TestQueryEvents(unittest.TestCase):
 
     def ensureValidLocation(self, location, testName):
         for prop in ["wikiUri", "label", "lat", "long", "geoNamesId", "population"]:
-            self.assertTrue(story.has_key(prop), "Property '%s' was expected in a location for test %s" % (prop, testName))
+            self.assertTrue(location.has_key(prop), "Property '%s' was expected in a location for test %s" % (prop, testName))
         if location.get("type") == "country":
             for prop in ["area", "code2", "code3", "webExt", "continent"]:
-                self.assertTrue(story.has_key(prop), "Property '%s' was expected in a location for test %s" % (prop, testName))
+                self.assertTrue(location.has_key(prop), "Property '%s' was expected in a location for test %s" % (prop, testName))
         if location.get("type") == "place":
             for prop in ["featureCode", "country"]:
-                self.assertTrue(story.has_key(prop), "Property '%s' was expected in a location for test %s" % (prop, testName))
+                self.assertTrue(location.has_key(prop), "Property '%s' was expected in a location for test %s" % (prop, testName))
 
 
     def validateGeneralEventList(self, res):
         self.assertIsNotNone(res.get("events"), "Expected to get 'events'")
         
         events = res.get("events").get("results")
-        self.assertEquals(len(events), 10, "Expected to get 10 events")
+        self.assertEquals(len(events), 10, "Expected to get 10 events but got %d" % (len(events)))
         for event in events:
             self.ensureValidEvent(event, "eventList")
 
@@ -112,6 +119,8 @@ class TestQueryEvents(unittest.TestCase):
         q = QueryEvents(lang = "spa")
         q.addRequestedResult(RequestEventsInfo(count = 10, returnInfo = self.returnInfo))
         res = self.er.execQuery(q)
+        if res.has_key("error"):
+            return
         self.validateGeneralEventList(res)
 
     def testEventListWithMinArtsSearch(self):
@@ -146,7 +155,8 @@ class TestQueryEvents(unittest.TestCase):
         res = self.er.execQuery(q)
 
         self.assertIsNotNone(res.get("conceptAggr"), "Expected to get 'conceptAggr'")
-        self.assertEqual(len(res.get("conceptAggr")), 50, "Expected a different number of concept in conceptAggr")
+        # concept count is per type so we expect 3*50
+        self.assertEqual(len(res.get("conceptAggr")), 3*50, "Expected a different number of concept in conceptAggr")
         for concept in res.get("conceptAggr"):
             self.ensureValidConcept(concept, "conceptAggr")
 

@@ -3,7 +3,8 @@ from eventregistry import *
 
 
 class TestAutoSuggest(unittest.TestCase):
-    def setUp(self):
+    @classmethod
+    def setUpClass(self):
         self.er = EventRegistry()
 
     def testConcepts(self):
