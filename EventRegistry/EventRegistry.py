@@ -119,30 +119,40 @@ class EventRegistry(object):
         self._sleepIfNecessary()
         self._lastException = None
 
-        try:
-            # make the request
-            respInfo = self._getUrlResponse(methodUrl, paramDict)
-            if respInfo != None:
-                respInfo = json.loads(respInfo)
-            return respInfo
-        except Exception as ex:
-            self._lastException = ex
-            return None
+        # make the request
+        respInfo = self._getUrlResponse(methodUrl, paramDict)
+        if respInfo != None:
+            respInfo = json.loads(respInfo)
+        return respInfo
+        
 
-    def suggestConcepts(self, prefix, sources = ["concepts"], lang = "eng", conceptLang = "eng", page = 0, count = 20):
+    def suggestConcepts(self, prefix, sources = ["concepts"], lang = "eng", conceptLang = "eng", page = 0, count = 20, returnInfo = ReturnInfo()):
         """
         return a list of concepts that contain the given prefix
         valid sources: person, loc, org, wiki, entities (== person + loc + org), concepts (== entities + wiki), conceptClass, conceptFolder
         """
-        return self.jsonRequest("/json/suggestConcepts", { "prefix": prefix, "source": sources, "lang": lang, "conceptLang": conceptLang, "page": page, "count": count})
+        params = { "prefix": prefix, "source": sources, "lang": lang, "conceptLang": conceptLang, "page": page, "count": count}
+        params.update(returnInfo.getParams())
+        return self.jsonRequest("/json/suggestConcepts", params)
         
     def suggestNewsSources(self, prefix, page = 0, count = 20):
         """return a list of news sources that match the prefix"""
         return self.jsonRequest("/json/suggestSources", { "prefix": prefix, "page": page, "count": count })
         
-    def suggestLocations(self, prefix, count = 20, lang = "eng", source = ["place", "country"], countryUri = None):
-        """return a list of geo locations (cities or countries) that contain the prefix"""
-        return self.jsonRequest("/json/suggestLocations", { "prefix": prefix, "count": count, "source": source, "lang": lang, "countryUri": countryUri or "" })
+    def suggestLocations(self, prefix, count = 20, lang = "eng", source = ["place", "country"], countryUri = None, sortByDistanceTo = None, returnInfo = ReturnInfo()):
+        """
+        return a list of geo locations (cities or countries) that contain the prefix
+        if countryUri is provided then return only those locations that are inside the specified country
+        if sortByDistanceto is provided then return the locations sorted by the distance to the (lat, long) provided in the tuple
+        """
+        params = { "prefix": prefix, "count": count, "source": source, "lang": lang, "countryUri": countryUri or "" }
+        params.update(returnInfo.getParams())
+        if sortByDistanceTo:
+            assert isinstance(sortByDistanceTo, (tuple, list)), "sortByDistanceTo has to contain a tuple with latitude and longitude of the location"
+            assert len(sortByDistanceTo) == 2, "The sortByDistanceTo should contain two float numbers"
+            params["closeToLat"] = sortByDistanceTo[0]
+            params["closeToLon"] = sortByDistanceTo[1]
+        return self.jsonRequest("/json/suggestLocations", params)
         
     def suggestCategories(self, prefix, page = 0, count = 20):
         """return a list of dmoz categories that contain the prefix"""
@@ -159,9 +169,9 @@ class EventRegistry(object):
             return matches[0]["uri"]
         return None
 
-    def getLocationUri(self, locationLabel, lang = "eng", source = ["place", "country"], countryUri = None):
+    def getLocationUri(self, locationLabel, lang = "eng", source = ["place", "country"], countryUri = None, sortByDistanceTo = None):
         """return a location uri that is the best match for the given location label"""
-        matches = self.suggestLocations(locationLabel, lang = lang, source = source, countryUri = countryUri)
+        matches = self.suggestLocations(locationLabel, lang = lang, source = source, countryUri = countryUri, sortByDistanceTo = sortByDistanceTo)
         if matches != None and isinstance(matches, list) and len(matches) > 0 and matches[0].has_key("wikiUri"):
             return matches[0]["wikiUri"]
         return None

@@ -125,6 +125,7 @@ class StoryInfoFlags(ReturnInfoFlagsBase):
     @param commonDates: dates that were frequently identified in the articles belonging to the story
     @param socialScore: score computed based on how frequently the articles in the story were shared on social media
     @param imageCount: number of images to be returned for a story
+    @param flags: various binary flags related to the story
     """
     def __init__(self,
                  basicStats = True,
@@ -138,6 +139,7 @@ class StoryInfoFlags(ReturnInfoFlagsBase):
                  commonDates = False,
                  socialScore = False,
                  details = False,
+                 flags = False,
                  imageCount = 0):
         self._setFlag("IncludeStoryBasicStats", basicStats, True)
         self._setFlag("IncludeStoryLocation", location, True)
@@ -169,6 +171,7 @@ class EventInfoFlags(ReturnInfoFlagsBase):
     @param stories: return the list of stories (clusters) that are about the event
     @param socialScore: score computed based on how frequently the articles in the event were shared on social media
     @param imageCount: number of images to be returned for an event
+    @param flags: various binary flags related to the event
     """
     def __init__(self,
                  title = True,
@@ -182,6 +185,7 @@ class EventInfoFlags(ReturnInfoFlagsBase):
                  stories = False,
                  socialScore = False,
                  details = False,
+                 flags = False,
                  imageCount = 0):
         self._setFlag("IncludeEventTitle", title, True)
         self._setFlag("IncludeEventSummary", summary, True)
@@ -208,6 +212,7 @@ class SourceInfoFlags(ReturnInfoFlagsBase):
     @param importance: a score of importance assigned to the news source
     @param articleCount: the number of articles from this news source that are stored in Event Registry
     @param tags: custom tags assigned to the news source
+    @param flags: various binary flags related to the news source
     """
     def __init__(self,
                  title = True,
@@ -216,7 +221,8 @@ class SourceInfoFlags(ReturnInfoFlagsBase):
                  importance = False,
                  articleCount = False,
                  tags = False,
-                 details = False):
+                 details = False,
+                 flags = False):
         self._setFlag("IncludeSourceTitle", title, True)
 
         self._setFlag("IncludeSourceDescription", description, False)
@@ -236,6 +242,7 @@ class CategoryInfoFlags(ReturnInfoFlagsBase):
     @param trendingScore: information about how the category is currently trending. The score is computed as Pearson residual by comparing the trending of the category in last 2 days compared to last 14 days
     @param trendingHistory: information about the number of times articles were assigned to the category in last 30 days
     @param trendingSource: source of information to be used when computing the trending score for a category. Relevant only if CategoryInfoFlags.trendingScore == True or CategoryInfoFlags.trendingHistory == True. Valid options: news, social
+    @param flags: various binary flags related to the category
     @type trendingSource: string | list
     """
     def __init__(self,
@@ -244,7 +251,8 @@ class CategoryInfoFlags(ReturnInfoFlagsBase):
                  trendingScore = False,
                  trendingHistory = False,
                  details = False,
-                 trendingSource = "news"):
+                 trendingSource = "news",
+                 flags = False):
         self._setFlag("IncludeCategoryParentUri", parentUri, False)
         self._setFlag("IncludeCategoryChildrenUris", childrenUris, False)
         self._setFlag("IncludeCategoryTrendingScore", trendingScore, False)
@@ -269,6 +277,7 @@ class ConceptInfoFlags(ReturnInfoFlagsBase):
     @param trendingScore: information about how the concept is currently trending. The score is computed as Pearson residual by comparing the trending of the concept in last 2 days compared to last 14 days
     @param trendingHistory: information about the number of times articles were assigned to the concept in last 30 days
     @param trendingSource: source of information to be used when computing the trending score for a concept. Relevant only if ConceptInfoFlags.trendingScore == True or ConceptInfoFlags.trendingHistory == True. Valid options: news, social
+    @param flags: various binary flags related to the concept
     @type conceptType: str | list
     @type conceptLang: str | list
     @type trendingSource: string | list
@@ -286,7 +295,8 @@ class ConceptInfoFlags(ReturnInfoFlagsBase):
                  conceptFolderMembership = False,
                  trendingScore = False,
                  trendingHistory = False,
-                 trendingSource = "news"):
+                 trendingSource = "news",
+                 flags = False):
         self._setVal("ConceptType", type, "concepts")
         self._setVal("ConceptLang", lang, "eng")
         self._setFlag("IncludeConceptLabel", label, True)
@@ -353,11 +363,13 @@ class ConceptClassInfoFlags(ReturnInfoFlagsBase):
     @param parentLabels: return the list of labels of the parent concept classes
     @param concepts: return the list of concepts assigned to the concept class
     @param details: return additional details about the concept class
+    @param flags: various binary flags related to the concept class
     """
     def __init__(self,
                  parentLabels = True,
                  concepts = False,
-                 details = False):
+                 details = False,
+                 flags = False):
         self._setFlag("IncludeConceptClassParentLabels", parentLabels, True)
         self._setFlag("IncludeConceptClassConcepts", concepts, False)
         self._setFlag("IncludeConceptClassDetails", details, False)
@@ -370,11 +382,13 @@ class ConceptFolderInfoFlags(ReturnInfoFlagsBase):
     @param definition: return the complete definition of the concept folder
     @param owner: return information about the owner of the concept folder
     @param details: return additional details about the concept folder
+    @param flags: various binary flags related to the concept folder
     """
     def __init__(self,
                  definition = False,
                  owner = False,
-                 details = False):
+                 details = False,
+                 flags = False):
         self._setFlag("IncludeConceptFolderDefinition", definition, False)
         self._setFlag("IncludeConceptFolderOwner", owner, False)
         self._setFlag("IncludeConceptFolderDetails", details, False)

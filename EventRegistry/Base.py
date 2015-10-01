@@ -105,18 +105,22 @@ class QueryParamsBase(object):
         if val != defVal:
             self.queryParams[propName] = val
 
-    def _setDateVal(self, propName, val):
-        """set a property value that represents date. Value can be string in YYYY-MM-DD format, datetime.date or datetime.datetime"""
+    def _encodeDate(self, val):
+        """encode val that can be a date in different forms as a date that can be sent to Er"""
         if isinstance(val, datetime.date):
-            self._setVal(propName, val.isoformat())
+            return val.isoformat()
         elif isinstance(val, datetime.datetime):
-            self._setVal(propName, val.date().isoformat())
+            return val.date().isoformat()
         elif isinstance(val, (str, unicode)):
             assert re.match("\d{4}-\d{2}-\d{2}", val)
-            self._setVal(propName, val)
-        else:
-            raise AssertionError("date was not in the expected format")
+            return val
+        raise AssertionError("date was not in the expected format")
 
+    def _setDateVal(self, propName, val):
+        """set a property value that represents date. Value can be string in YYYY-MM-DD format, datetime.date or datetime.datetime"""
+        encodedVal = self._encodeDate(val)
+        self._setVal(propName, encodedVal)
+        
     def _addArrayVal(self, propName, val):
         """add a value to an array of values for a property"""
         if isinstance(val, unicode):
