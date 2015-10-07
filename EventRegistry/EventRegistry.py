@@ -1,7 +1,9 @@
 ﻿"""
 classes responsible for obtaining results from the Event Registry
 """
-import os, sys, urllib2, urllib, json, re, requests, time
+import os, sys, traceback, urllib2, urllib, json, re, requests, time
+import urllib, urllib2, threading
+#from cookielib import CookieJar
 from Base import *
 from EventForText import *
 from ReturnInfo import *
@@ -36,6 +38,9 @@ class EventRegistry(object):
         self._cookies = None
         self._dailyAvailableRequests = -1
         self._remainingAvailableRequests = -1
+
+        # lock for making sure we make one request at a time - requests module otherwise sometimes returns incomplete json objects
+        self._lock = threading.Lock()
                        
         # if there is a settings.json file in the directory then try using it to login to ER
         # and to read the host name from it (if custom host is not specified)
@@ -49,6 +54,9 @@ class EventRegistry(object):
         else:
             self._host = host or "http://eventregistry.org"
         self._requestLogFName = os.path.join(currPath, "requests_log.txt")
+
+        #cj = CookieJar()
+        #self._reqOpener = urllib2.build_opener(urllib2.HTTPCookieProcessor(cj))
 
         print "Event Registry host: %s" % (self._host)
 
@@ -224,30 +232,53 @@ class EventRegistry(object):
         make the request - repeat it _repeatFailedRequestCount times, 
         if they fail (indefinitely if _repeatFailedRequestCount = -1)
         """
+        self._lock.acquire()
         if self._logRequests:
-            with open(self._requestLogFName, "a") as log:
-                if data != None:
-                    log.write("# " + json.dumps(data) + "\n")
-                log.write(methodUrl + "\n")                
+            try:
+                with open(self._requestLogFName, "a") as log:
+                    if data != None:
+                        log.write("# " + json.dumps(data) + "\n")
+                    log.write(methodUrl + "\n")                
+            except Exception as ex:
+                self._lastException = ex
+        
         tryCount = 0
+        respInfoContent = None
         while self._repeatFailedRequestCount < 0 or tryCount < self._repeatFailedRequestCount:
             tryCount += 1
             try:
                 startT = datetime.datetime.now()
                 url = self._host + methodUrl;
-                respInfo = requests.get(url, data = data, cookies = self._cookies)
+                
+                #data = urllib.urlencode(data, True)
+                #req = urllib2.Request(url, data)
+                #respInfoContent = self._reqOpener.open(req).read()
+                
                 # remember the available requests
+                respInfo = requests.post(url, json = data, cookies = self._cookies)
                 self._dailyAvailableRequests = tryParseInt(respInfo.headers.get("x-ratelimit-limit", ""), val = -1)
                 self._remainingAvailableRequests = tryParseInt(respInfo.headers.get("x-ratelimit-remaining", ""), val = -1)
                 respInfoContent = respInfo.text
                 if respInfo.status_code != requests.codes.ok:
                     raise requests.exceptions.HTTPError("Status code %d: %s" % (respInfo.status_code, respInfo.content), response = respInfo)
+                
                 endT = datetime.datetime.now()
                 if self._verboseOutput:
                     self.printConsole("request took %.3f sec. Response size: %.2fKB" % ((endT-startT).total_seconds(), len(respInfoContent) / 1024.0))
-                return respInfoContent
+                break
+
+                #try:
+                #    if respInfoContent != None:
+                #        respInfo = json.loads(respInfoContent)
+                #        break
+                #except Exception as ex:
+                #    traceback.print_exc(file = open("errorLog.txt", "a"));
+                #    type, val, tb = sys.exc_info()
+                #    sys.excepthook(type, val, tb)
+
             except Exception as ex:
                 self._lastException = ex
                 self.printLastException()
                 time.sleep(5)   # sleep for 5 seconds on error
-        return None
+        self._lock.release()
+        return respInfoContent

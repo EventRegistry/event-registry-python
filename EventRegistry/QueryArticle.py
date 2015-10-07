@@ -57,6 +57,7 @@ class RequestArticle:
     def __init__(self):
         self.resultType = None
 
+
 class RequestArticleInfo(RequestArticle):
     """
     return details about the article
@@ -65,6 +66,7 @@ class RequestArticleInfo(RequestArticle):
         self.resultType = "info"
         self.__dict__.update(returnInfo.getParams("info"))
         
+
 class RequestArticleSimilarArticles(RequestArticle):
     """
     return a list of similar articles based on the CCA
@@ -85,6 +87,7 @@ class RequestArticleSimilarArticles(RequestArticle):
         self.similarArticlesSortByAsc = sortByAsc
         self.__dict__.update(returnInfo.getParams("similarArticles"))
 
+
 class RequestArticleDuplicatedArticles(RequestArticle):
     """
     return a list of duplicated articles of the current article
@@ -99,6 +102,7 @@ class RequestArticleDuplicatedArticles(RequestArticle):
         self.duplicatedArticlesSortBy = sortBy
         self.duplicatedArticlesSortByAsc = sortByAsc      
         self.__dict__.update(returnInfo.getParams("duplicatedArticles"))
+
 
 class RequestArticleOriginalArticle(RequestArticle):
     """

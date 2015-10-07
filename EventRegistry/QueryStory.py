@@ -38,6 +38,7 @@ class RequestStory:
     def __init__(self):
         self.resultType = None
         
+
 class RequestStoryInfo(RequestStory):
     """
     return details about a story
@@ -45,6 +46,7 @@ class RequestStoryInfo(RequestStory):
     def __init__(self, returnInfo = ReturnInfo()):
         self.resultType = "info"
         self.__dict__.update(returnInfo.getParams("info"))
+
 
 class RequestStoryArticles(RequestStory):
     """
@@ -65,6 +67,7 @@ class RequestStoryArticles(RequestStory):
         self.articlesSortByAsc = sortByAsc
         self.__dict__.update(returnInfo.getParams("articles"))
         
+
 class RequestStoryArticleUris(RequestStory):
     """
     return a list of article uris
@@ -78,6 +81,7 @@ class RequestStoryArticleUris(RequestStory):
         self.articleUrisSortByAsc = sortByAsc
         self.resultType = "articleUris"
         
+
 class RequestStoryArticleTrend(RequestStory):
     """
     return trending information for the articles about the story

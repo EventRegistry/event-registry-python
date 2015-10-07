@@ -124,6 +124,7 @@ class RequestArticles:
     def __init__(self):
         self.resultType = None
 
+
 class RequestArticlesInfo(RequestArticles):
     """
     return articlel details for resulting articles
@@ -145,6 +146,7 @@ class RequestArticlesInfo(RequestArticles):
     def setCount(self, count):
         self.articlesCount = count
         
+
 class RequestArticlesUriList(RequestArticles):
     """
     return a list of article uris
@@ -152,12 +154,14 @@ class RequestArticlesUriList(RequestArticles):
     def __init__(self):
         self.resultType = "uriList"
 
+
 class RequestArticlesIdList(RequestArticles):
     """
     return a list of article ids
     """
     def __init__(self):
         self.resultType = "articleIds"
+
 
 class RequestArticlesTimeAggr(RequestArticles):
     """

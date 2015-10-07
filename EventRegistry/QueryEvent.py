@@ -29,6 +29,7 @@ class RequestEvent:
     def __init__(self):
         self.resultType = None
         
+
 class RequestEventInfo(RequestEvent):
     """
     return details about an event
@@ -36,6 +37,7 @@ class RequestEventInfo(RequestEvent):
     def __init__(self, returnInfo = ReturnInfo()):
         self.resultType = "info"
         self.__dict__.update(returnInfo.getParams("info"))
+
 
 class RequestEventArticles(RequestEvent):
     """
@@ -56,6 +58,7 @@ class RequestEventArticles(RequestEvent):
         self.articlesSortByAsc = sortByAsc
         self.__dict__.update(returnInfo.getParams("articles"))
         
+
 class RequestEventArticleUris(RequestEvent):
     """
     return a list of article uris
@@ -69,23 +72,23 @@ class RequestEventArticleUris(RequestEvent):
         self.articleUrisSortByAsc = sortByAsc
         self.resultType = "articleUris"
 
+
 class RequestEventKeywordAggr(RequestEvent):
     """
     return keyword aggregate (tag-cloud) from articles in the event
     """
-    def __init__(self, lang = "eng",        # the lang parameter should match one of the languages for which we have articles in the event. 
-                 eventSampleSize = 500):
-        assert eventSampleSize <= 1000
+    def __init__(self, lang = "eng"):        # the lang parameter should match one of the languages for which we have articles in the event. 
         self.resultType = "keywordAggr"
         self.keywordAggrLang = lang
-        self.keywordAggrSampleSize = eventSampleSize
         
+
 class RequestEventSourceAggr(RequestEvent):
     """
     get news source distribution of articles in the event
     """
     def __init__(self):
         self.resultType = "sourceAggr"
+
 
 class RequestEventDateMentionAggr(RequestEvent):
     """
@@ -94,6 +97,7 @@ class RequestEventDateMentionAggr(RequestEvent):
     def __init__(self):
         self.resultType = "dateMentionAggr"
         
+
 class RequestEventArticleTrend(RequestEvent):
     """
     return trending information for the articles about the event

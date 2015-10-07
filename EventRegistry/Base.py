@@ -38,6 +38,7 @@ def tryParseInt(s, base=10, val=None):
     except ValueError:
         return val
 
+
 class Struct(object):
     """
     helper class for converting dict to a native python object
