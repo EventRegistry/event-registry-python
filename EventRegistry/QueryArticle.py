@@ -24,16 +24,7 @@ class QueryArticle(Query):
         q = QueryArticle([])
         q.queryParams["articleId"] = articleIdOrIdList
         return q
-
-    @staticmethod
-    def queryByUrl(articleUrlOrUrlList):
-        """
-        obtain information about one or more articles by providing their web urls
-        """
-        q = QueryArticle([])
-        q.queryParams["articleUrl"] = articleUrlOrUrlList
-        return q
-
+    
     @staticmethod
     def queryByUri(articleUriOrUriList):
         """

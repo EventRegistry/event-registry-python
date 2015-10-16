@@ -13,6 +13,8 @@ class CountsBase(QueryParamsBase):
 class GetCounts(CountsBase):
     """
     obtain information about how frequently a concept or category is mentioned in the articles on particular dates
+    by specifying source="custom" one can obtain counts for custom concepts, such as stocks, macroeconomic indicators, etc. The uri
+    for these can be found using EventRegistry.getCustomConceptUri() method.
     Usage example:
         q = GetCounts([er.getConceptUri("Obama"), er.getConceptUri("ebola")])
         ret = er.execQuery(q)
@@ -40,7 +42,7 @@ class GetCounts(CountsBase):
     """
     def __init__(self,
                  uriOrUriList = None, # concept/category uri or a list of uris
-                 source = "news",   # input source information from which to compute top trends. Options: "news", "social"
+                 source = "news",   # input source information from which to compute top trends. Options: "news", "social", "custom", "geo" or "sentiment"
                  type = "concept",  # what do the uris represent? "concept" or "category"
                  startDate = None,  # starting date from which to provide counts onwards (either None, datetime.date or "YYYY-MM-DD")
                  endDate = None,    # ending date until which to provide counts (either None, datetime.date or "YYYY-MM-DD")

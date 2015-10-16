@@ -18,3 +18,17 @@ q = GetCountsEx(type = "category")
 q.queryById(range(10))  # return trends of first 10 categories
 ret = er.execQuery(q)
 print er.format(ret)
+
+# get geographic spreadness of the concept Obama
+obamaUri = er.getConceptUri("Obama")
+q = GetCounts(obamaUri, source="geo")
+ret = er.execQuery(q)
+
+# get the sentiment expressed about Obama
+q = GetCounts(obamaUri, source="sentiment")
+ret = er.execQuery(q)
+
+# get the stock prices for Apple
+apple = er.getCustomConceptUri("apple")
+q = GetCounts(apple, source="custom")
+ret = er.execQuery(q)

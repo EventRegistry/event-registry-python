@@ -41,6 +41,7 @@ class EventRegistry(object):
 
         # lock for making sure we make one request at a time - requests module otherwise sometimes returns incomplete json objects
         self._lock = threading.Lock()
+        self._reqSession = requests.Session()
                        
         # if there is a settings.json file in the directory then try using it to login to ER
         # and to read the host name from it (if custom host is not specified)
@@ -94,7 +95,7 @@ class EventRegistry(object):
         """
         respInfoObj = None
         try:
-            respInfo = requests.post(self._host + "/login", data = { "email": username, "pass": password })
+            respInfo = self._reqSession.post(self._host + "/login", data = { "email": username, "pass": password })
             self._cookies = respInfo.cookies
             respInfoText = respInfo.text
             respInfoObj = json.loads(respInfoText)
@@ -108,36 +109,70 @@ class EventRegistry(object):
         finally:
             return respInfoObj
             
-    def execQuery(self, query, parseJSON = True):
+    def execQuery(self, query):
         """main method for executing the search queries."""
         # don't modify original query params
         allParams = query._getQueryParams()
         # make the request
-        respInfo = self.jsonRequest(query._getPath(), allParams, parseJSON)
+        respInfo = self.jsonRequest(query._getPath(), allParams)
         return respInfo
 
 
-    def jsonRequest(self, methodUrl, paramDict, parseJSON = True):
+    def jsonRequest(self, methodUrl, paramDict):
         """
-        make a request for json data
+        make a request for json data. repeat it _repeatFailedRequestCount times, if they fail (indefinitely if _repeatFailedRequestCount = -1)
         @param methodUrl: url on er (e.g. "/json/article")
         @param paramDict: optional object containing the parameters to include in the request (e.g. { "articleUri": "123412342" }).
-        @param parseJSON: should the returned result be first parsed to a python object?
         """
         self._sleepIfNecessary()
         self._lastException = None
 
-        # make the request
-        respInfo = self._getUrlResponse(methodUrl, paramDict)
-        if respInfo != None:
-            respInfo = json.loads(respInfo)
-        return respInfo
+        self._lock.acquire()
+        if self._logRequests:
+            try:
+                with open(self._requestLogFName, "a") as log:
+                    if paramDict != None:
+                        log.write("# " + json.dumps(paramDict) + "\n")
+                    log.write(methodUrl + "\n")                
+            except Exception as ex:
+                self._lastException = ex
         
+        tryCount = 0
+        returnData = None
+        while self._repeatFailedRequestCount < 0 or tryCount < self._repeatFailedRequestCount:
+            tryCount += 1
+            try:
+                startT = datetime.datetime.now()
+                url = self._host + methodUrl;
+                
+                #data = urllib.urlencode(data, True)
+                #req = urllib2.Request(url, data)
+                #respInfoContent = self._reqOpener.open(req).read()
+                
+                # make the request
+                respInfo = self._reqSession.post(url, json = paramDict, cookies = self._cookies)
+                if respInfo.status_code in [500, 503]:
+                    raise Exception(respInfo.text)
+                # remember the available requests
+                self._dailyAvailableRequests = tryParseInt(respInfo.headers.get("x-ratelimit-limit", ""), val = -1)
+                self._remainingAvailableRequests = tryParseInt(respInfo.headers.get("x-ratelimit-remaining", ""), val = -1)
+                endT = datetime.datetime.now()
+                if self._verboseOutput:
+                    self.printConsole("request took %.3f sec. Response size: %.2fKB" % ((endT-startT).total_seconds(), len(respInfo.text) / 1024.0))
+                returnData = respInfo.json()
+                break
+            except Exception as ex:
+                self._lastException = ex
+                self.printLastException()
+                time.sleep(5)   # sleep for 5 seconds on error
+        self._lock.release()
+        return returnData
 
     def suggestConcepts(self, prefix, sources = ["concepts"], lang = "eng", conceptLang = "eng", page = 0, count = 20, returnInfo = ReturnInfo()):
         """
         return a list of concepts that contain the given prefix
         valid sources: person, loc, org, wiki, entities (== person + loc + org), concepts (== entities + wiki), conceptClass, conceptFolder
+        returned matching concepts are sorted based on their frequency of occurence in news (from most to least frequent)
         """
         params = { "prefix": prefix, "source": sources, "lang": lang, "conceptLang": conceptLang, "page": page, "count": count}
         params.update(returnInfo.getParams())
@@ -169,9 +204,21 @@ class EventRegistry(object):
     def suggestConceptClasses(self, prefix, lang = "eng", conceptLang = "eng", page = 0, count = 20):
         """return a list of dmoz categories that contain the prefix"""
         return self.jsonRequest("/json/suggestConceptClasses", { "prefix": prefix, "lang": lang, "conceptLang": conceptLang, "page": page, "count": count })
+
+    def suggestCustomConcepts(self, prefix, lang = "eng", conceptLang = "eng", page = 0, count = 20, returnInfo = ReturnInfo()):
+        """
+        return a list of custom concepts that contain the given prefix
+        custom concepts are the things (indicators, stock prices, ...) for which we import daily trending values that can be obtained using GetCounts class
+        """
+        params = { "prefix": prefix, "lang": lang, "conceptLang": conceptLang, "page": page, "count": count}
+        params.update(returnInfo.getParams())
+        return self.jsonRequest("/json/suggestCustomConcepts", params)
         
     def getConceptUri(self, conceptLabel, lang = "eng", sources = ["concepts"]):
-        """return a concept uri that is the best match for the given concept label"""
+        """
+        return a concept uri that is the best match for the given concept label
+        if there are multiple matches for the given conceptLabel, they are sorted based on their frequency of occurence in news (most to least frequent)
+        """
         matches = self.suggestConcepts(conceptLabel, lang = lang, sources = sources)
         if matches != None and isinstance(matches, list) and len(matches) > 0 and matches[0].has_key("uri"):
             return matches[0]["uri"]
@@ -213,10 +260,31 @@ class EventRegistry(object):
         params.update({"uri": conceptUri, "action": "getInfo" })
         return self.jsonRequest("/json/concept", params)
 
+    def getCustomConceptUri(self, label, lang = "eng"):
+        """
+        return a custom concept uri that is the best match for the given custom concept label
+        note that for the custom concepts we don't have a sensible way of sorting the candidates that match the label
+        if multiple candidates match the label we cannot guarantee which one will be returned
+        """
+        matches = self.suggestCustomConcepts(label, lang = lang)
+        if matches != None and isinstance(matches, list) and len(matches) > 0 and matches[0].has_key("uri"):
+            return matches[0]["uri"]
+        return None
+
     def getRecentStats(self):
         """get some stats about recently imported articles and events"""
         return self.jsonRequest("/json/overview", { "action": "getRecentStats"})
 
+    
+    def getArticleUris(self, articleUrls):
+        """ 
+        if you have article urls and you want to query them in ER you first have to
+        obtain their uris in the ER. 
+        @param articleUrls a single article url or a list of article urls
+        @returns dict where key is article url and value is None (if article not found) or article uri
+        """
+        assert isinstance(articleUrls, (str, list)), "Expected a single article url or a list of urls"
+        return self.jsonRequest("/json/articleMapper", { "articleUrl": articleUrls })
     
     # utility methods
 
@@ -227,58 +295,24 @@ class EventRegistry(object):
             time.sleep(self._minDelayBetweenRequests - (t - self._lastQueryTime))
         self._lastQueryTime = t
 
-    def _getUrlResponse(self, methodUrl, data = None):
-        """
-        make the request - repeat it _repeatFailedRequestCount times, 
-        if they fail (indefinitely if _repeatFailedRequestCount = -1)
-        """
-        self._lock.acquire()
-        if self._logRequests:
-            try:
-                with open(self._requestLogFName, "a") as log:
-                    if data != None:
-                        log.write("# " + json.dumps(data) + "\n")
-                    log.write(methodUrl + "\n")                
-            except Exception as ex:
-                self._lastException = ex
+
+
+class ArticleMapper:
+    """ 
+    create instance of article mapper
+    it will map from article urls to article uris
+    the mappings can be remembered so it will not repeat requests for the same article urls
+    """
+    def __init__(self, er, rememberMappings = True):
+        self._er = er
+        self._articleUrlToUri = {}
+        self._rememberMappings = rememberMappings
         
-        tryCount = 0
-        respInfoContent = None
-        while self._repeatFailedRequestCount < 0 or tryCount < self._repeatFailedRequestCount:
-            tryCount += 1
-            try:
-                startT = datetime.datetime.now()
-                url = self._host + methodUrl;
-                
-                #data = urllib.urlencode(data, True)
-                #req = urllib2.Request(url, data)
-                #respInfoContent = self._reqOpener.open(req).read()
-                
-                # remember the available requests
-                respInfo = requests.post(url, json = data, cookies = self._cookies)
-                self._dailyAvailableRequests = tryParseInt(respInfo.headers.get("x-ratelimit-limit", ""), val = -1)
-                self._remainingAvailableRequests = tryParseInt(respInfo.headers.get("x-ratelimit-remaining", ""), val = -1)
-                respInfoContent = respInfo.text
-                if respInfo.status_code != requests.codes.ok:
-                    raise requests.exceptions.HTTPError("Status code %d: %s" % (respInfo.status_code, respInfo.content), response = respInfo)
-                
-                endT = datetime.datetime.now()
-                if self._verboseOutput:
-                    self.printConsole("request took %.3f sec. Response size: %.2fKB" % ((endT-startT).total_seconds(), len(respInfoContent) / 1024.0))
-                break
-
-                #try:
-                #    if respInfoContent != None:
-                #        respInfo = json.loads(respInfoContent)
-                #        break
-                #except Exception as ex:
-                #    traceback.print_exc(file = open("errorLog.txt", "a"));
-                #    type, val, tb = sys.exc_info()
-                #    sys.excepthook(type, val, tb)
-
-            except Exception as ex:
-                self._lastException = ex
-                self.printLastException()
-                time.sleep(5)   # sleep for 5 seconds on error
-        self._lock.release()
-        return respInfoContent
+    def getArticleUri(self, articleUrl):
+        if self._articleUrlToUri.has_key(articleUrl):
+            return self._articleUrlToUri[articleUrl]
+        res = self._er.getArticleUris(articleUrl)
+        if res and res.has_key(articleUrl):
+            if self._rememberMappings:
+                self._articleUrlToUri[articleUrl] = res[articleUrl]
+            return res[articleUrl]
