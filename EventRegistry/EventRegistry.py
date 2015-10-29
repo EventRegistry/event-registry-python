@@ -61,9 +61,12 @@ class EventRegistry(object):
 
         print "Event Registry host: %s" % (self._host)
 
-    def setLogging(val):
+    def setLogging(self, val):
         """should all requests be logged to a file or not?"""
         self._logRequests = val
+
+    def getHost(self):
+        return self._host
 
     def getLastException(self):
         """return the last exception"""
@@ -285,6 +288,19 @@ class EventRegistry(object):
         """
         assert isinstance(articleUrls, (str, list)), "Expected a single article url or a list of urls"
         return self.jsonRequest("/json/articleMapper", { "articleUrl": articleUrls })
+
+    def getLatestArticle(self, returnInfo = ReturnInfo()):
+        """
+        return information about the latest imported article
+        """
+        stats = self.getRecentStats()
+        latestId = stats["totalArticleCount"]-1
+        q = QueryArticle.queryById(latestId)
+        q.addRequestedResult(RequestArticleInfo(returnInfo))
+        ret = self.execQuery(q)
+        if ret and len(ret.keys()) > 0:
+            return ret[ret.keys()[0]].get("info")
+        return None
     
     # utility methods
 

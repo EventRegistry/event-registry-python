@@ -8,7 +8,10 @@ q.addRequestedResult(RequestArticleInfo())                 # get all info about 
 res = er.execQuery(q)
 
 # search article by url
-q = QueryArticle.queryByUrl("http://www.bbc.co.uk/news/world-europe-31763789#sa-ns_mchannel%3Drss%26ns_source%3DPublicRSS20-sa")
+artMapper = ArticleMapper(er)
+#artUri = artMapper.getArticleUri("http://www.bbc.co.uk/news/world-europe-31763789#sa-ns_mchannel%3Drss%26ns_source%3DPublicRSS20-sa")
+artUri = artMapper.getArticleUri("http://www.mynet.com/haber/guncel/share-2058597-1")
+q = QueryArticle.queryByUri(artUri)
 q.addRequestedResult(RequestArticleInfo())                 # get all info about the specified article
 res = er.execQuery(q)
 
