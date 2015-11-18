@@ -1,4 +1,4 @@
-"""
+﻿"""
 provides classes needed to identify concepts or categories that trend the most with a concept, category or a custom time series
 """
 
@@ -113,7 +113,7 @@ class GetTopCorrelations(QueryParamsBase):
         @param returnInfo: specifies the details about the concepts that should be returned in the output result
         """
 
-        self._clearVal("contextConceptId")
+        self._clearVal("contextConceptIds")
 
         # generate all necessary parameters (but don't update the params of the self)
         params = QueryParamsBase.copy(self)
@@ -126,7 +126,7 @@ class GetTopCorrelations(QueryParamsBase):
             candidateConceptsQuery._setVal("conceptAggrConceptIdOnly", True)
             ret = self._er.execQuery(candidateConceptsQuery)
             if ret and ret.has_key("conceptAggr"):
-                params._setVal("contextConceptId", ",".join([str(x) for x in ret["conceptAggr"]]))
+                params._setVal("contextConceptIds", ",".join([str(x) for x in ret["conceptAggr"]]))
             else:
                 print "Warning: Failed to compute a candidate set of concepts"
 
@@ -181,7 +181,7 @@ class GetTopCorrelations(QueryParamsBase):
         # generate all necessary parameters (but don't update the params of the self)
         params = QueryParamsBase.copy(self)
         # don't send unnecessary data
-        params._clearVal("contextConceptId")
+        params._clearVal("contextConceptIds")
         params._setVal("exactCount", exactCount)
         params._setVal("approxCount", approxCount)
         params._setVal("sourceType", "news-category")

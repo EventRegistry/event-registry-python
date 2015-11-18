@@ -118,6 +118,10 @@ class QueryArticles(Query):
     def setArticleIdList(self, idList):
         """set a custom list of article ids. the results will be then computed on this list - no query will be done"""
         self.queryParams = { "action": "getArticles", "articleIdList": ",".join([str(val) for val in idList])}
+
+    def setArticleUriList(self, uriList):
+        """set a custom list of article uris. the results will be then computed on this list - no query will be done"""
+        self.queryParams = { "action": "getArticles", "articleUri": uriList }
     
 
 class RequestArticles:
