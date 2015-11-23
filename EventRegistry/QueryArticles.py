@@ -36,6 +36,19 @@ class QueryArticles(Query):
     @param ignoreLang: ignore articles that are written in *any* of the provided languages
     @param categoryIncludeSub: when a category is specified using categoryUri, should also all subcategories be included?
     @param ignoreCategoryIncludeSub: when a category is specified using ignoreCategoryUri, should also all subcategories be included?
+    @param isDuplicateFilter: some articles can be duplicates of other articles. What should be done with them. Possible values are:
+            "skipDuplicates" (skip the resulting articles that are duplicates of other articles)
+            "keepOnlyDuplicates" (return only the duplicate articles)
+            "keepAll" (no filtering)
+    @param hasDuplicateFilter: some articles are later copied by others. What should be done with such articles. Possible values are:
+            "skipHasDuplicates" (skip the resulting articles that have been later copied by others)
+            "keepOnlyHasDuplicates" (return only the articles that have been later copied by others)
+            "keepAll" (no filtering)
+    @param eventFilter: some articles describe a known event and some don't. This filter allows you to filter the resulting articles based on this criteria.
+            Possible values are:
+            "skipArticlesWithoutEvent" (skip articles that are not describing any known event in ER)
+            "keepOnlyArticlesWithoutEvent" (return only the articles that are not describing any known event in ER)
+            "keepAll" (no filtering)
     """
     def __init__(self, 
                  keywords = "",
@@ -55,7 +68,10 @@ class QueryArticles(Query):
                  ignoreCategoryUri = [],
                  ignoreLang = [],
                  categoryIncludeSub = True,
-                 ignoreCategoryIncludeSub = True):
+                 ignoreCategoryIncludeSub = True,
+                 isDuplicateFilter = "allArticles",
+                 hasDuplicateFilter = "allArticles",
+                 eventFilter = "allArticles"):
         super(QueryArticles, self).__init__()
         self._setVal("action", "getArticles")
 
@@ -79,6 +95,10 @@ class QueryArticles(Query):
         self._setValIfNotDefault("ignoreSourceUri", ignoreSourceUri, [])
         self._setValIfNotDefault("ignoreCategoryUri", ignoreCategoryUri, [])
         self._setValIfNotDefault("ignoreCategoryIncludeSub", ignoreCategoryIncludeSub, True)
+
+        self._setValIfNotDefault("isDuplicateFilter", isDuplicateFilter, "keepAll")
+        self._setValIfNotDefault("hasDuplicateFilter", hasDuplicateFilter, "keepAll")
+        self._setValIfNotDefault("eventFilter", eventFilter, "keepAll")
         
     def _getPath(self):
         return "/json/article"
