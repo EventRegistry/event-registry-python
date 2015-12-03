@@ -3,9 +3,11 @@ from ReturnInfo import *
 
 class QueryStory(Query):
     """
-    Class for obtaining available info for one or more stories in the Event Registry 
+    Class for obtaining available info for one or more stories (clusters) in the Event Registry 
+    NOTE: Story in our terminology is a cluster of articles (and not a single article). An event is
+    then something that consists of one or more stories (typically in different languages).
 
-    @param eventUriOrUriList: a single story uri or a list of story uris
+    @param storyUriOrList: a single story uri or a list of story uris
     """
     def __init__(self, storyUriOrList = None):
         super(QueryStory, self).__init__()
