@@ -154,7 +154,7 @@ class EventRegistry(object):
                 
                 # make the request
                 respInfo = self._reqSession.post(url, json = paramDict, cookies = self._cookies)
-                if respInfo.status_code in [500, 503]:
+                if respInfo.status_code in [401, 429, 500, 503]:
                     raise Exception(respInfo.text)
                 # remember the available requests
                 self._dailyAvailableRequests = tryParseInt(respInfo.headers.get("x-ratelimit-limit", ""), val = -1)
@@ -200,20 +200,24 @@ class EventRegistry(object):
             params["closeToLon"] = sortByDistanceTo[1]
         return self.jsonRequest("/json/suggestLocations", params)
         
-    def suggestCategories(self, prefix, page = 0, count = 20):
+    def suggestCategories(self, prefix, page = 0, count = 20, returnInfo = ReturnInfo()):
         """return a list of dmoz categories that contain the prefix"""
-        return self.jsonRequest("/json/suggestCategories", { "prefix": prefix, "page": page, "count": count })
+        params = { "prefix": prefix, "page": page, "count": count }
+        params.update(returnInfo.getParams())
+        return self.jsonRequest("/json/suggestCategories", params)
 
-    def suggestConceptClasses(self, prefix, lang = "eng", conceptLang = "eng", page = 0, count = 20):
+    def suggestConceptClasses(self, prefix, lang = "eng", conceptLang = "eng", source = ["dbpedia", "custom"], page = 0, count = 20, returnInfo = ReturnInfo()):
         """return a list of dmoz categories that contain the prefix"""
-        return self.jsonRequest("/json/suggestConceptClasses", { "prefix": prefix, "lang": lang, "conceptLang": conceptLang, "page": page, "count": count })
+        params = { "prefix": prefix, "lang": lang, "conceptLang": conceptLang, source: source, "page": page, "count": count }
+        params.update(returnInfo.getParams())
+        return self.jsonRequest("/json/suggestConceptClasses", params)
 
     def suggestCustomConcepts(self, prefix, lang = "eng", conceptLang = "eng", page = 0, count = 20, returnInfo = ReturnInfo()):
         """
         return a list of custom concepts that contain the given prefix
         custom concepts are the things (indicators, stock prices, ...) for which we import daily trending values that can be obtained using GetCounts class
         """
-        params = { "prefix": prefix, "lang": lang, "conceptLang": conceptLang, "page": page, "count": count}
+        params = { "prefix": prefix, "lang": lang, "conceptLang": conceptLang, "page": page, "count": count }
         params.update(returnInfo.getParams())
         return self.jsonRequest("/json/suggestCustomConcepts", params)
         
