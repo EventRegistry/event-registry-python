@@ -47,7 +47,7 @@ class RequestEventArticles(RequestEvent):
                  page = 0,              # page of the articles
                  count = 20,            # number of articles to return
                  lang = mainLangs,      # return articles in specified language(s)
-                 sortBy = "cosSim", sortByAsc = False,              # order in which event articles are sorted. Options: id (internal id), date (published date), cosSim (closeness to event centroid), socialScore (total shares in social media), facebookShares (shares on fb), twitterShares (shares on twitter)
+                 sortBy = "cosSim", sortByAsc = False,              # order in which event articles are sorted. Options: id (internal id), date (published date), cosSim (closeness to event centroid), socialScore (total shares in social media)
                  returnInfo = ReturnInfo(articleInfo = ArticleInfoFlags(bodyLen = 200))):
         assert count <= 200
         self.resultType = "articles"
@@ -65,7 +65,7 @@ class RequestEventArticleUris(RequestEvent):
     """
     def __init__(self, 
                  lang = mainLangs, 
-                 sortBy = "cosSim", sortByAsc = False  # order in which event articles are sorted. Options: id (internal id), date (published date), cosSim (closeness to event centroid), socialScore (total shares in social media), facebookShares (shares on fb), twitterShares (shares on twitter)
+                 sortBy = "cosSim", sortByAsc = False  # order in which event articles are sorted. Options: id (internal id), date (published date), cosSim (closeness to event centroid), socialScore (total shares in social media)
                  ):
         self.articleUrisLang = lang
         self.articleUrisSortBy = sortBy          

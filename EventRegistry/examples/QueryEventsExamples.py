@@ -15,6 +15,19 @@ q.addRequestedResult(RequestEventsConceptAggr(conceptCount = 5,
 res = er.execQuery(q)
 obj = createStructFromDict(res)
 
+# use OR operator between concepts
+# find events where either Sandra Bullock or Gerge Clooney are relevant. since we use OR, res3 should have more results than res1 and res2
+res1 = er.execQuery(QueryEvents(conceptUri = er.getConceptUri("sandra bullock"), requestedResult = RequestEventsInfo(count = 0)))
+res2 = er.execQuery(QueryEvents(conceptUri = er.getConceptUri("george clooney"), requestedResult = RequestEventsInfo(count = 0)))
+res3 = er.execQuery(QueryEvents(conceptUri = [er.getConceptUri("sandra bullock"), er.getConceptUri("george clooney")], 
+                                conceptOper = "OR", 
+                                requestedResult = RequestEventsInfo(count = 0)))
+c1 = res1["events"]["resultCount"]
+c2 = res2["events"]["resultCount"]
+c3 = res3["events"]["resultCount"]
+assert c3 > c1
+assert c3 > c2
+
 # find events that occured in Berlin between 2014-04-16 and 2014-04-28
 # from the resulting events produce
 # - the trending information about the top people involved in these events

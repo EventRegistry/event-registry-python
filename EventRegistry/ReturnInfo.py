@@ -276,6 +276,7 @@ class ConceptInfoFlags(ReturnInfoFlagsBase):
     @param conceptFolderMembership: provide a list of publicly visible concept folders where the concept is a member
     @param trendingScore: information about how the concept is currently trending. The score is computed as Pearson residual by comparing the trending of the concept in last 2 days compared to last 14 days
     @param trendingHistory: information about the number of times articles were assigned to the concept in last 30 days
+    @param totalCount: the total number of times the concept appeared in the news articles
     @param trendingSource: source of information to be used when computing the trending score for a concept. Relevant only if ConceptInfoFlags.trendingScore == True or ConceptInfoFlags.trendingHistory == True. Valid options: news, social
     @param flags: various binary flags related to the concept
     @type conceptType: str | list
@@ -296,6 +297,8 @@ class ConceptInfoFlags(ReturnInfoFlagsBase):
                  trendingScore = False,
                  trendingHistory = False,
                  trendingSource = "news",
+                 totalCount = False,
+                 maxConceptsPerType = 20,
                  flags = False):
         self._setVal("ConceptType", type, "concepts")
         self._setVal("ConceptLang", lang, "eng")
@@ -309,7 +312,9 @@ class ConceptInfoFlags(ReturnInfoFlagsBase):
         self._setFlag("IncludeConceptConceptFolderMembership", conceptFolderMembership, False)
         self._setFlag("IncludeConceptTrendingScore", trendingScore, False)
         self._setFlag("IncludeConceptTrendingHistory", trendingHistory, False)
+        self._setFlag("IncludeConceptTotalCount", totalCount, False)
         self._setVal("ConceptTrendingSource", trendingSource, "news")
+        self._setVal("MaxConceptsPerType", maxConceptsPerType, 20)
 
 
 class LocationInfoFlags(ReturnInfoFlagsBase):

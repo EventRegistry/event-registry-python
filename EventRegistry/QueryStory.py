@@ -12,7 +12,7 @@ class QueryStory(Query):
     def __init__(self, storyUriOrList = None):
         super(QueryStory, self).__init__()
         self._setVal("action", "getStory")
-        if storyUriOrList:
+        if storyUriOrList != None:
             self.queryByUri(storyUriOrList)
         
     def _getPath(self):

@@ -32,7 +32,7 @@ class GetTopCorrelations(QueryParamsBase):
         """
         # clear any past test data values
         self._clearVal("testData")
-        for (date, count) in inputDataArr:
+        for (date, val) in inputDataArr:
             assert isinstance(val, (int, float)), "Value is expected to be a number"
             dateStr = None
             if isinstance(val, datetime.date):
@@ -44,7 +44,7 @@ class GetTopCorrelations(QueryParamsBase):
                 dateStr = date
             else:
                 assert False, "First argument in the tuple is not a valid date"
-            self._addArrayVal("testData", {"date": dateStr, "count": count})
+            self._addArrayVal("testData", {"date": dateStr, "count": val})
 
 
     def loadInputDataWithQuery(self, queryArticles):

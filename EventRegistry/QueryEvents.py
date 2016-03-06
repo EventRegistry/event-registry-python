@@ -29,8 +29,8 @@ class QueryEvents(Query):
     @param dateEnd: find events that occured before or on dateEnd. Date should be provided in YYYY-MM-DD format, datetime.time or datetime.datetime.
     @param minArticlesInEvent: find events that have been reported in at least minArticlesInEvent articles (regardless of language)
     @param maxArticlesInEvent: find events that have not been reported in more than maxArticlesInEvent articles (regardless of language)
-    @param dateMentionStart: find events where articles explicitely mention a date that is equal or greater than dateMentionStart.
-    @param dateMentionEnd: find events where articles explicitely mention a date that is lower or equal to dateMentionEnd.
+    @param dateMentionStart: find events where articles explicitly mention a date that is equal or greater than dateMentionStart.
+    @param dateMentionEnd: find events where articles explicitly mention a date that is lower or equal to dateMentionEnd.
     @param ignoreKeywords: ignore events where articles about the event mention all provided keywords
     @param ignoreConceptUri: ignore events that are about all provided concepts
     @param ignoreLang: ignore events that are reported in any of the provided languages
@@ -38,6 +38,9 @@ class QueryEvents(Query):
     @param ignoreSourceUri: ignore events that have have articles which have been written by all specified news sources
     @param categoryIncludeSub: when a category is specified using categoryUri, should also all subcategories be included?
     @param ignoreCategoryIncludeSub: when a category is specified using ignoreCategoryUri, should also all subcategories be included?
+    @param conceptOper: Boolean operator to use in cases when multiple concepts are specified. Possible values are:
+            "AND" if all concepts should be mentioned in the resulting events
+            "OR" if any of the concept should be mentioned in the resulting events
     """
     def __init__(self, 
                  keywords = "",
@@ -59,7 +62,9 @@ class QueryEvents(Query):
                  ignoreCategoryUri = [],
                  ignoreLang = [],
                  categoryIncludeSub = True,
-                 ignoreCategoryIncludeSub = True):
+                 ignoreCategoryIncludeSub = True,
+                 conceptOper = "AND", 
+                 requestedResult = None):
         super(QueryEvents, self).__init__()
         
         self._setVal("action", "getEvents")
@@ -90,8 +95,11 @@ class QueryEvents(Query):
 
         self._setValIfNotDefault("categoryIncludeSub", categoryIncludeSub, True)
         self._setValIfNotDefault("ignoreCategoryIncludeSub", ignoreCategoryIncludeSub, True)
-        
+        self._setValIfNotDefault("conceptOper", conceptOper, "AND")
 
+        if requestedResult:
+            self.addRequestedResult(requestedResult)
+        
     def _getPath(self):
         return "/json/event"
 
@@ -164,8 +172,12 @@ class RequestEventsUriList(RequestEvents):
     """
     return a simple list of event uris for resulting events
     """
-    def __init__(self):
+    def __init__(self, page = 0, 
+                 count = 1000):
+        assert count <= 10000
         self.resultType = "uriList"
+        self.uriListPage = page
+        self.uriListCount = count
 
 
 class RequestEventsTimeAggr(RequestEvents):

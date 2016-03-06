@@ -27,8 +27,8 @@ class QueryArticles(Query):
         If more than one language is specified, resulting articles has to be written in *any* of the languages. 
     @param dateStart: find articles that were written on or after dateStart. Date should be provided in YYYY-MM-DD format, datetime.time or datetime.datetime.
     @param dateEnd: find articles that occured before or on dateEnd. Date should be provided in YYYY-MM-DD format, datetime.time or datetime.datetime.
-    @param dateMentionStart: find articles that explicitely mention a date that is equal or greater than dateMentionStart.
-    @param dateMentionEnd: find articles that explicitely mention a date that is lower or equal to dateMentionEnd.
+    @param dateMentionStart: find articles that explicitly mention a date that is equal or greater than dateMentionStart.
+    @param dateMentionEnd: find articles that explicitly mention a date that is lower or equal to dateMentionEnd.
     @param ignoreKeywords: ignore articles that mention all provided keywords
     @param ignoreConceptUri: ignore articles that mention all provided concepts
     @param ignoreLocationUri: ignore articles that occured in any of the provided locations. A location can be a city or a place
@@ -36,6 +36,9 @@ class QueryArticles(Query):
     @param ignoreLang: ignore articles that are written in *any* of the provided languages
     @param categoryIncludeSub: when a category is specified using categoryUri, should also all subcategories be included?
     @param ignoreCategoryIncludeSub: when a category is specified using ignoreCategoryUri, should also all subcategories be included?
+    @param conceptOper: Boolean operator to use in cases when multiple concepts are specified. Possible values are:
+            "AND" if all concepts should be mentioned in the resulting articles
+            "OR" if any of the concept should be mentioned in the resulting articles
     @param isDuplicateFilter: some articles can be duplicates of other articles. What should be done with them. Possible values are:
             "skipDuplicates" (skip the resulting articles that are duplicates of other articles)
             "keepOnlyDuplicates" (return only the duplicate articles)
@@ -68,6 +71,7 @@ class QueryArticles(Query):
                  ignoreCategoryUri = [],
                  ignoreLang = [],
                  categoryIncludeSub = True,
+                 conceptOper = "AND",
                  ignoreCategoryIncludeSub = True,
                  isDuplicateFilter = "allArticles",
                  hasDuplicateFilter = "allArticles",
@@ -95,6 +99,7 @@ class QueryArticles(Query):
         self._setValIfNotDefault("ignoreSourceUri", ignoreSourceUri, [])
         self._setValIfNotDefault("ignoreCategoryUri", ignoreCategoryUri, [])
         self._setValIfNotDefault("ignoreCategoryIncludeSub", ignoreCategoryIncludeSub, True)
+        self._setValIfNotDefault("conceptOper", conceptOper, "AND")
 
         self._setValIfNotDefault("isDuplicateFilter", isDuplicateFilter, "keepAll")
         self._setValIfNotDefault("hasDuplicateFilter", hasDuplicateFilter, "keepAll")
@@ -154,7 +159,7 @@ class RequestArticlesInfo(RequestArticles):
     return articlel details for resulting articles
     """
     def __init__(self, page = 0, count = 20, 
-                 sortBy = "date", sortByAsc = False,    # how are articles sorted. Options: id (internal id), date (publishing date), cosSim (closeness to the event centroid), fq (relevance to the query), socialScore (total shares on social media), facebookShares (fb shares), twitterShares (twitter shares)
+                 sortBy = "date", sortByAsc = False,    # how are articles sorted. Options: id (internal id), date (publishing date), cosSim (closeness to the event centroid), fq (relevance to the query), socialScore (total shares on social media)
                  returnInfo = ReturnInfo()):
         assert count <= 200
         self.resultType = "articles"
@@ -175,16 +180,36 @@ class RequestArticlesUriList(RequestArticles):
     """
     return a list of article uris
     """
-    def __init__(self):
+    def __init__(self, page = 0, 
+                 count = 1000):
+        assert count <= 10000
         self.resultType = "uriList"
+        self.uriListPage = page
+        self.uriListCount = count
 
 
 class RequestArticlesIdList(RequestArticles):
     """
     return a list of article ids
     """
-    def __init__(self):
-        self.resultType = "articleIds"
+    def __init__(self, page = 0, 
+                 count = 1000):
+        assert count <= 10000
+        self.resultType = "idList"
+        self.idListPage = page
+        self.idListCount = count
+
+
+class RequestArticlesUrlList(RequestArticles):
+    """
+    return a list of article ids
+    """
+    def __init__(self, page = 0, 
+                 count = 1000):
+        assert count <= 10000
+        self.resultType = "urlList"
+        self.urlListPage = page
+        self.urlListCount = count
 
 
 class RequestArticlesTimeAggr(RequestArticles):
