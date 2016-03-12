@@ -219,7 +219,7 @@ class TestQueryEvents(unittest.TestCase):
         q = QueryEvents()
         q.addNewsSource(self.er.getNewsSourceUri("bbc"))             # and have been reported by BBC
         q.addRequestedResult(RequestEventsUriList())            # return uris of all events
-        q.addRequestedResult(RequestEventsInfo(page = 0, count = 100, sortBy = "size", sortByAsc = True, 
+        q.addRequestedResult(RequestEventsInfo(page = 1, count = 100, sortBy = "size", sortByAsc = True, 
             returnInfo = ReturnInfo(
                 conceptInfo = ConceptInfoFlags(lang = "deu", type = "wiki"),
                 eventInfo = EventInfoFlags(concepts = True, articleCounts = True, title = True, summary = True, categories = True, location = True, stories = True, imageCount = 1)

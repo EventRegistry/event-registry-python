@@ -158,9 +158,10 @@ class RequestArticlesInfo(RequestArticles):
     """
     return articlel details for resulting articles
     """
-    def __init__(self, page = 0, count = 20, 
+    def __init__(self, page = 1, count = 20, 
                  sortBy = "date", sortByAsc = False,    # how are articles sorted. Options: id (internal id), date (publishing date), cosSim (closeness to the event centroid), fq (relevance to the query), socialScore (total shares on social media)
                  returnInfo = ReturnInfo()):
+        assert page >= 1, "page has to be >= 1"
         assert count <= 200
         self.resultType = "articles"
         self.articlesPage = page
@@ -170,6 +171,7 @@ class RequestArticlesInfo(RequestArticles):
         self.__dict__.update(returnInfo.getParams("articles"))
         
     def setPage(self, page):
+        assert page >= 1, "page has to be >= 1"
         self.articlesPage = page
 
     def setCount(self, count):
@@ -180,9 +182,10 @@ class RequestArticlesUriList(RequestArticles):
     """
     return a list of article uris
     """
-    def __init__(self, page = 0, 
-                 count = 1000):
-        assert count <= 10000
+    def __init__(self, page = 1, 
+                 count = 10000):
+        assert page >= 1, "page has to be >= 1"
+        assert count <= 50000
         self.resultType = "uriList"
         self.uriListPage = page
         self.uriListCount = count
@@ -192,9 +195,10 @@ class RequestArticlesIdList(RequestArticles):
     """
     return a list of article ids
     """
-    def __init__(self, page = 0, 
-                 count = 1000):
-        assert count <= 10000
+    def __init__(self, page = 1,
+                 count = 10000):
+        assert page >= 1, "page has to be >= 1"
+        assert count <= 50000
         self.resultType = "idList"
         self.idListPage = page
         self.idListCount = count
@@ -204,9 +208,10 @@ class RequestArticlesUrlList(RequestArticles):
     """
     return a list of article ids
     """
-    def __init__(self, page = 0, 
-                 count = 1000):
-        assert count <= 10000
+    def __init__(self, page = 1,
+                 count = 10000):
+        assert page >= 1, "page has to be >= 1"
+        assert count <= 50000
         self.resultType = "urlList"
         self.urlListPage = page
         self.urlListCount = count
@@ -225,10 +230,10 @@ class RequestArticlesConceptAggr(RequestArticles):
     get aggreate of concepts of resulting articles
     """
     def __init__(self, conceptCount = 25, 
-                 articlesSampleSize = 1000, 
+                 articlesSampleSize = 10000, 
                  returnInfo = ReturnInfo()):
         assert conceptCount <= 500
-        assert articlesSampleSize <= 10000
+        assert articlesSampleSize <= 20000
         self.resultType = "conceptAggr"
         self.conceptAggrConceptCount = conceptCount
         self.conceptAggrSampleSize = articlesSampleSize  
@@ -239,7 +244,8 @@ class RequestArticlesCategoryAggr(RequestArticles):
     """
     return aggreate of categories of resulting articles
     """
-    def __init__(self, articlesSampleSize = 20000,
+    def __init__(self, 
+                 articlesSampleSize = 20000,
                  returnInfo = ReturnInfo()):
         assert articlesSampleSize <= 50000
         self.resultType = "categoryAggr"
@@ -252,8 +258,10 @@ class RequestArticlesSourceAggr(RequestArticles):
     get aggreate of news sources of resulting articles
     """
     def __init__(self, 
+                 articlesSampleSize = 20000,
                  returnInfo = ReturnInfo()):
         self.resultType = "sourceAggr"
+        self.sourceAggrSampleSize = articlesSampleSize
         self.__dict__.update(returnInfo.getParams("sourceAggr"))
 
 
@@ -261,8 +269,10 @@ class RequestArticlesKeywordAggr(RequestArticles):
     """
     get aggreate of sources of resulting articles
     """
-    def __init__(self, lang = "eng", articlesSampleSize = 500):
-        assert articlesSampleSize <= 1000
+    def __init__(self, 
+                 lang = "eng", 
+                 articlesSampleSize = 10000):
+        assert articlesSampleSize <= 50000
         self.resultType = "keywordAggr"
         self.keywordAggrLang = lang
         self.keywordAggrSampleSize = articlesSampleSize
@@ -274,15 +284,15 @@ class RequestArticlesConceptGraph(RequestArticles):
     """
     def __init__(self, conceptCount = 25, 
                  linkCount = 50, 
-                 sampleSize = 500, 
+                 articlesSampleSize = 10000, 
                  returnInfo = ReturnInfo()):
         assert count <= 1000
         assert linkCount <= 2000
-        assert sampleSize <= 20000
+        assert articlesSampleSize <= 50000
         self.resultType = "conceptGraph"
         self.conceptGraphConceptCount = conceptCount
         self.conceptGraphLinkCount = linkCount
-        self.conceptGraphSampleSize = sampleSize
+        self.conceptGraphSampleSize = articlesSampleSize
         self.__dict__.update(returnInfo.getParams("conceptGraph"))
         
             
@@ -292,14 +302,14 @@ class RequestArticlesConceptMatrix(RequestArticles):
     """
     def __init__(self, conceptCount = 25, 
                  measure = "pmi",    # measure options: pmi (pointwise mutual information), pairTfIdf (pair frequence * IDF of individual concepts), chiSquare
-                 sampleSize = 500, 
+                 articlesSampleSize = 10000, 
                  returnInfo = ReturnInfo()):
         assert conceptCount <= 200
-        assert sampleSize <= 10000
+        assert articlesSampleSize <= 50000
         self.resultType = "conceptMatrix"
         self.conceptMatrixConceptCount = conceptCount
         self.conceptMatrixMeasure = measure
-        self.conceptMatrixSampleSize = sampleSize
+        self.conceptMatrixSampleSize = articlesSampleSize
         self.__dict__.update(returnInfo.getParams("conceptMatrix"))
       
 
@@ -308,10 +318,13 @@ class RequestArticlesConceptTrends(RequestArticles):
     get trending of concepts in the resulting articles
     """
     def __init__(self, count = 25,
+                 articlesSampleSize = 10000, 
                  returnInfo = ReturnInfo()):
         assert count <= 50
+        assert articlesSampleSize <= 50000
         self.resultType = "conceptTrends"
         self.conceptTrendsConceptCount = count
+        self.conceptTrendsSampleSize = articlesSampleSize
         self.__dict__.update(returnInfo.getParams("conceptTrends"))
 
 

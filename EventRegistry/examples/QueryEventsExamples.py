@@ -8,7 +8,7 @@ q.addConcept(er.getConceptUri("Obama"))                 # get events related to 
 #q.addCategory(er.getCategoryUri("society issues"))      # and are related to issues in society
 #q.addNewsSource(er.getNewsSourceUri("bbc"))             # and have been reported by BBC
 q.addRequestedResult(RequestEventsUriList())            # return uris of all events
-q.addRequestedResult(RequestEventsInfo(page = 0, count = 30, sortBy = "size", sortByAsc = True, 
+q.addRequestedResult(RequestEventsInfo(count = 30, sortBy = "size", sortByAsc = True, 
     returnInfo = ReturnInfo(conceptInfo = ConceptInfoFlags(lang = "deu", type = ["person", "wiki"]))))   # return event details for first 30 events
 q.addRequestedResult(RequestEventsConceptAggr(conceptCount = 5, 
     returnInfo = ReturnInfo(conceptInfo = ConceptInfoFlags(type = ["org", "loc"]))))        # compute concept aggregate on the events
@@ -22,9 +22,9 @@ res2 = er.execQuery(QueryEvents(conceptUri = er.getConceptUri("george clooney"),
 res3 = er.execQuery(QueryEvents(conceptUri = [er.getConceptUri("sandra bullock"), er.getConceptUri("george clooney")], 
                                 conceptOper = "OR", 
                                 requestedResult = RequestEventsInfo(count = 0)))
-c1 = res1["events"]["resultCount"]
-c2 = res2["events"]["resultCount"]
-c3 = res3["events"]["resultCount"]
+c1 = res1["events"]["totalResults"]
+c2 = res2["events"]["totalResults"]
+c3 = res3["events"]["totalResults"]
 assert c3 > c1
 assert c3 > c2
 

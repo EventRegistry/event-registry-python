@@ -91,6 +91,7 @@ class EventRegistry(object):
         """get the total number of requests that the user can make in a day"""
         return self._dailyAvailableRequests;
 
+
     def login(self, username, password, throwExceptOnFailure = True):
         """
         login the user. without logging in, the user is limited to 10.000 queries per day. 
@@ -111,7 +112,8 @@ class EventRegistry(object):
                 raise ex
         finally:
             return respInfoObj
-            
+         
+           
     def execQuery(self, query):
         """main method for executing the search queries."""
         # don't modify original query params
@@ -162,29 +164,39 @@ class EventRegistry(object):
                 endT = datetime.datetime.now()
                 if self._verboseOutput:
                     self.printConsole("request took %.3f sec. Response size: %.2fKB" % ((endT-startT).total_seconds(), len(respInfo.text) / 1024.0))
-                returnData = respInfo.json()
+                try:
+                    returnData = respInfo.json()
+                except Exception as ex:
+                    print "EventRegistry.jsonRequest(): Exception while parsing the returned json object"
+                    open("invalidJsonResponse.json", "w").write(respInfo.text)
                 break
             except Exception as ex:
                 self._lastException = ex
+                print "EventRegistry.jsonRequest(): Exception while executing the request"
                 self.printLastException()
                 time.sleep(5)   # sleep for 5 seconds on error
         self._lock.release()
         return returnData
 
-    def suggestConcepts(self, prefix, sources = ["concepts"], lang = "eng", conceptLang = "eng", page = 0, count = 20, returnInfo = ReturnInfo()):
+
+    def suggestConcepts(self, prefix, sources = ["concepts"], lang = "eng", conceptLang = "eng", page = 1, count = 20, returnInfo = ReturnInfo()):
         """
         return a list of concepts that contain the given prefix
         valid sources: person, loc, org, wiki, entities (== person + loc + org), concepts (== entities + wiki), conceptClass, conceptFolder
         returned matching concepts are sorted based on their frequency of occurence in news (from most to least frequent)
         """
+        assert page > 0, "page parameter should be above 0"
         params = { "prefix": prefix, "source": sources, "lang": lang, "conceptLang": conceptLang, "page": page, "count": count}
         params.update(returnInfo.getParams())
         return self.jsonRequest("/json/suggestConcepts", params)
         
-    def suggestNewsSources(self, prefix, page = 0, count = 20):
+
+    def suggestNewsSources(self, prefix, page = 1, count = 20):
         """return a list of news sources that match the prefix"""
+        assert page > 0, "page parameter should be above 0"
         return self.jsonRequest("/json/suggestSources", { "prefix": prefix, "page": page, "count": count })
         
+
     def suggestLocations(self, prefix, count = 20, lang = "eng", source = ["place", "country"], countryUri = None, sortByDistanceTo = None, returnInfo = ReturnInfo()):
         """
         return a list of geo locations (cities or countries) that contain the prefix
@@ -200,27 +212,34 @@ class EventRegistry(object):
             params["closeToLon"] = sortByDistanceTo[1]
         return self.jsonRequest("/json/suggestLocations", params)
         
-    def suggestCategories(self, prefix, page = 0, count = 20, returnInfo = ReturnInfo()):
+
+    def suggestCategories(self, prefix, page = 1, count = 20, returnInfo = ReturnInfo()):
         """return a list of dmoz categories that contain the prefix"""
+        assert page > 0, "page parameter should be above 0"
         params = { "prefix": prefix, "page": page, "count": count }
         params.update(returnInfo.getParams())
         return self.jsonRequest("/json/suggestCategories", params)
 
-    def suggestConceptClasses(self, prefix, lang = "eng", conceptLang = "eng", source = ["dbpedia", "custom"], page = 0, count = 20, returnInfo = ReturnInfo()):
+
+    def suggestConceptClasses(self, prefix, lang = "eng", conceptLang = "eng", source = ["dbpedia", "custom"], page = 1, count = 20, returnInfo = ReturnInfo()):
         """return a list of dmoz categories that contain the prefix"""
+        assert page > 0, "page parameter should be above 0"
         params = { "prefix": prefix, "lang": lang, "conceptLang": conceptLang, source: source, "page": page, "count": count }
         params.update(returnInfo.getParams())
         return self.jsonRequest("/json/suggestConceptClasses", params)
 
-    def suggestCustomConcepts(self, prefix, lang = "eng", conceptLang = "eng", page = 0, count = 20, returnInfo = ReturnInfo()):
+
+    def suggestCustomConcepts(self, prefix, lang = "eng", conceptLang = "eng", page = 1, count = 20, returnInfo = ReturnInfo()):
         """
         return a list of custom concepts that contain the given prefix
         custom concepts are the things (indicators, stock prices, ...) for which we import daily trending values that can be obtained using GetCounts class
         """
+        assert page > 0, "page parameter should be above 0"
         params = { "prefix": prefix, "lang": lang, "conceptLang": conceptLang, "page": page, "count": count }
         params.update(returnInfo.getParams())
         return self.jsonRequest("/json/suggestCustomConcepts", params)
         
+
     def getConceptUri(self, conceptLabel, lang = "eng", sources = ["concepts"]):
         """
         return a concept uri that is the best match for the given concept label
@@ -231,12 +250,14 @@ class EventRegistry(object):
             return matches[0]["uri"]
         return None
 
+
     def getLocationUri(self, locationLabel, lang = "eng", source = ["place", "country"], countryUri = None, sortByDistanceTo = None):
         """return a location uri that is the best match for the given location label"""
         matches = self.suggestLocations(locationLabel, lang = lang, source = source, countryUri = countryUri, sortByDistanceTo = sortByDistanceTo)
         if matches != None and isinstance(matches, list) and len(matches) > 0 and matches[0].has_key("wikiUri"):
             return matches[0]["wikiUri"]
         return None
+
 
     def getCategoryUri(self, categoryLabel):
         """return a category uri that is the best match for the given label"""
@@ -245,6 +266,7 @@ class EventRegistry(object):
             return matches[0]["uri"]
         return None
 
+
     def getNewsSourceUri(self, sourceName):
         """return the news source that best matches the source name"""
         matches = self.suggestNewsSources(sourceName)
@@ -252,12 +274,14 @@ class EventRegistry(object):
             return matches[0]["uri"]
         return None
     
+
     def getConceptClassUri(self, classLabel, lang = "eng"):
         """return a uri of the concept class that is the best match for the given label"""
         matches = self.suggestConceptClasses(classLabel, lang = lang)
         if matches != None and isinstance(matches, list) and len(matches) > 0 and matches[0].has_key("uri"):
             return matches[0]["uri"]
         return None    
+
 
     def getConceptInfo(self, conceptUri, 
                        returnInfo = ReturnInfo(conceptInfo = ConceptInfoFlags(
@@ -266,6 +290,7 @@ class EventRegistry(object):
         params = returnInfo.getParams()
         params.update({"uri": conceptUri, "action": "getInfo" })
         return self.jsonRequest("/json/concept", params)
+
 
     def getCustomConceptUri(self, label, lang = "eng"):
         """
@@ -277,6 +302,7 @@ class EventRegistry(object):
         if matches != None and isinstance(matches, list) and len(matches) > 0 and matches[0].has_key("uri"):
             return matches[0]["uri"]
         return None
+
 
     def getRecentStats(self):
         """get some stats about recently imported articles and events"""
@@ -292,6 +318,7 @@ class EventRegistry(object):
         """
         assert isinstance(articleUrls, (str, list)), "Expected a single article url or a list of urls"
         return self.jsonRequest("/json/articleMapper", { "articleUrl": articleUrls })
+
 
     def getLatestArticle(self, returnInfo = ReturnInfo()):
         """

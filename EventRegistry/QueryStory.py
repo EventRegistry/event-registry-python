@@ -55,11 +55,12 @@ class RequestStoryArticles(RequestStory):
     return articles about the story
     """
     def __init__(self, 
-                 page = 0,              # page of the articles
+                 page = 1,              # page of the articles
                  count = 20,            # number of articles to return
                  lang = mainLangs,      # return articles in specified language(s)
                  sortBy = "cosSim", sortByAsc = False,              # order in which story articles are sorted. Options: id (internal id), date (published date), cosSim (closeness to story centroid), socialScore (total shares in social media), facebookShares (shares on fb), twitterShares (shares on twitter)
                  returnInfo = ReturnInfo(articleInfo = ArticleInfoFlags(bodyLen = 200))):
+        assert page >= 1, "page has to be >= 1"
         assert count <= 200
         self.resultType = "articles"
         self.articlesPage = page

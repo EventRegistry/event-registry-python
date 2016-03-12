@@ -149,10 +149,11 @@ class RequestEventsInfo(RequestEvents):
     """
     return event details for resulting events
     """
-    def __init__(self, page = 0, 
+    def __init__(self, page = 1,
                  count = 20, 
                  sortBy = "date", sortByAsc = False,    # how should the resulting events be sorted. Options: date (by event date), rel (relevance to the query), size (number of articles), socialScore (amount of shares in social media)
                  returnInfo = ReturnInfo()):
+        assert page >= 1, "page has to be >= 1"
         assert count <= 200
         self.resultType = "events"
         self.eventsPage = page
@@ -162,6 +163,7 @@ class RequestEventsInfo(RequestEvents):
         self.__dict__.update(returnInfo.getParams("events"))
 
     def setPage(self, page):
+        assert page >= 1, "page has to be >= 1"
         self.eventsPage = page
 
     def setCount(self, count):
@@ -172,9 +174,10 @@ class RequestEventsUriList(RequestEvents):
     """
     return a simple list of event uris for resulting events
     """
-    def __init__(self, page = 0, 
-                 count = 1000):
-        assert count <= 10000
+    def __init__(self, page = 1,
+                 count = 500000):
+        assert page >= 1, "page has to be >= 1"
+        assert count <= 1000000
         self.resultType = "uriList"
         self.uriListPage = page
         self.uriListCount = count
@@ -201,8 +204,12 @@ class RequestEventsLocAggr(RequestEvents):
     """
     return aggreate of locations of resulting events
     """
-    def __init__(self, returnInfo = ReturnInfo()):
+    def __init__(self, 
+                 eventsSampleSize = 500000,
+                 returnInfo = ReturnInfo()):
+        assert eventsSampleSize <= 1000000
         self.resultType = "locAggr"
+        self.locAggrSampleSize = eventsSampleSize
         self.__dict__.update(returnInfo.getParams("locAggr"))
 
 
@@ -210,8 +217,12 @@ class RequestEventsLocTimeAggr(RequestEvents):
     """
     return aggreate of locations and times of resulting events
     """
-    def __init__(self, returnInfo = ReturnInfo()):
+    def __init__(self, 
+                 eventsSampleSize = 500000,
+                 returnInfo = ReturnInfo()):
+        assert eventsSampleSize <= 1000000
         self.resultType = "locTimeAggr"
+        self.locTimeAggrSampleSize = eventsSampleSize
         self.__dict__.update(returnInfo.getParams("locTimeAggr"))
 
 
@@ -221,10 +232,13 @@ class RequestEventsConceptAggr(RequestEvents):
     """
     def __init__(self, 
                  conceptCount = 20, 
+                 eventsSampleSize = 100000,
                  returnInfo = ReturnInfo()):
         assert conceptCount <= 200
+        assert eventsSampleSize <= 3000000
         self.resultType = "conceptAggr"
         self.conceptAggrConceptCount = conceptCount
+        self.conceptAggrSampleSize = eventsSampleSize
         self.__dict__.update(returnInfo.getParams("conceptAggr"))
 
 
@@ -235,11 +249,11 @@ class RequestEventsConceptGraph(RequestEvents):
     def __init__(self, 
                  conceptCount = 25, 
                  linkCount = 50, 
-                 eventsSampleSize = 500, 
+                 eventsSampleSize = 100000, 
                  returnInfo = ReturnInfo()):
         assert conceptCount <= 1000
         assert linkCount <= 2000
-        assert eventsSampleSize <= 20000
+        assert eventsSampleSize <= 300000
         self.resultType = "conceptGraph"
         self.conceptGraphConceptCount = conceptCount
         self.conceptGraphLinkCount = linkCount
@@ -256,10 +270,10 @@ class RequestEventsConceptMatrix(RequestEvents):
     def __init__(self, 
                  conceptCount = 25, 
                  measure = "pmi", 
-                 eventsSampleSize = 500, 
+                 eventsSampleSize = 100000, 
                  returnInfo = ReturnInfo()):
         assert conceptCount <= 200
-        assert eventsSampleSize <= 10000
+        assert eventsSampleSize <= 300000
         self.resultType = "conceptMatrix"
         self.conceptMatrixConceptCount = conceptCount
         self.conceptMatrixMeasure = measure
@@ -285,9 +299,13 @@ class RequestEventsSourceAggr(RequestEvents):
     return top news sources that report about the events that match the search conditions
     """
     def __init__(self, sourceCount = 30,
+                 eventsSampleSize = 100000, 
                  returnInfo = ReturnInfo()):
+        assert sourceCount <= 200
+        assert eventsSampleSize <= 300000
         self.resultType = "sourceAggr"
         self.sourceAggrSourceCount = sourceCount
+        self.sourceAggrSampleSize = eventsSampleSize
         self.__dict__.update(returnInfo.getParams("sourceAggr"))
 
 
@@ -297,10 +315,13 @@ class RequestEventsDateMentionAggr(RequestEvents):
     """
     def __init__(self, 
                  minDaysApart = 0, 
-                 minDateMentionCount = 5):
+                 minDateMentionCount = 5,
+                 eventsSampleSize = 100000):
+        assert eventsSampleSize <= 300000
         self.resultType = "dateMentionAggr"
         self.dateMentionAggrMinDaysApart = minDaysApart
         self.dateMentionAggrMinDateMentionCount = minDateMentionCount
+        self.dateMentionAggrSampleSize = eventsSampleSize
         
 
 class RequestEventsEventClusters(RequestEvents):

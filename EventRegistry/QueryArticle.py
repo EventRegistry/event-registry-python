@@ -62,12 +62,13 @@ class RequestArticleSimilarArticles(RequestArticle):
     """
     return a list of similar articles based on the CCA
     """
-    def __init__(self, page = 0,                            # page of the articles
+    def __init__(self, page = 1,                            # page of the articles
                  count = 20,                                # number of articles to return
                  lang = ["eng"],                            # in which language(s) should be the similar articles
                  limitPerLang = -1,                         # max number of articles per language to return (-1 for no limit)
                  sortBy = "cosSim", sortByAsc = False,      # how are the similar articles sorted. Options: id, date, cosSim, fq, socialScore, facebookShares, twitterShares
                  returnInfo = ReturnInfo(articleInfo = ArticleInfoFlags(bodyLen = -1))):
+        assert page >= 1, "page has to be >= 1"
         assert count <= 200
         self.resultType = "similarArticles"
         self.similarArticlesPage = page                 
@@ -83,10 +84,11 @@ class RequestArticleDuplicatedArticles(RequestArticle):
     """
     return a list of duplicated articles of the current article
     """
-    def __init__(self, page = 0,        # page of the articles
+    def __init__(self, page = 1,        # page of the articles
                  count = 20,            # number of articles to return
                  sortBy = "cosSim", sortByAsc = False,              # how are the articles sorted. Options: id, date, cosSim, fq, socialScore, facebookShares, twitterShares
                  returnInfo = ReturnInfo(articleInfo = ArticleInfoFlags(bodyLen = -1))):
+        assert page >= 1, "page has to be >= 1"
         self.resultType = "duplicatedArticles"
         self.duplicatedArticlesPage = page
         self.duplicatedArticlesCount = count
