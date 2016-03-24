@@ -5,7 +5,7 @@ def readme():
         return f.read()
 
 setup(name='eventregistry',
-      version='6.0.6',
+      version='6.0.7',
       description = "A package that can be used to query information in Event Registry (http://eventregistry.org/)",
       classifiers=[
         'Development Status :: 4 - Beta',

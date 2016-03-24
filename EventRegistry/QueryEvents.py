@@ -175,9 +175,9 @@ class RequestEventsUriList(RequestEvents):
     return a simple list of event uris for resulting events
     """
     def __init__(self, page = 1,
-                 count = 500000):
+                 count = 100000):
         assert page >= 1, "page has to be >= 1"
-        assert count <= 1000000
+        assert count <= 300000
         self.resultType = "uriList"
         self.uriListPage = page
         self.uriListCount = count
@@ -205,9 +205,9 @@ class RequestEventsLocAggr(RequestEvents):
     return aggreate of locations of resulting events
     """
     def __init__(self, 
-                 eventsSampleSize = 500000,
+                 eventsSampleSize = 100000,
                  returnInfo = ReturnInfo()):
-        assert eventsSampleSize <= 1000000
+        assert eventsSampleSize <= 300000
         self.resultType = "locAggr"
         self.locAggrSampleSize = eventsSampleSize
         self.__dict__.update(returnInfo.getParams("locAggr"))
@@ -218,9 +218,9 @@ class RequestEventsLocTimeAggr(RequestEvents):
     return aggreate of locations and times of resulting events
     """
     def __init__(self, 
-                 eventsSampleSize = 500000,
+                 eventsSampleSize = 100000,
                  returnInfo = ReturnInfo()):
-        assert eventsSampleSize <= 1000000
+        assert eventsSampleSize <= 300000
         self.resultType = "locTimeAggr"
         self.locTimeAggrSampleSize = eventsSampleSize
         self.__dict__.update(returnInfo.getParams("locTimeAggr"))
