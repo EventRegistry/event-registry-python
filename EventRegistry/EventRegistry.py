@@ -316,7 +316,7 @@ class EventRegistry(object):
         @param articleUrls a single article url or a list of article urls
         @returns dict where key is article url and value is None (if article not found) or article uri
         """
-        assert isinstance(articleUrls, (str, list)), "Expected a single article url or a list of urls"
+        assert isinstance(articleUrls, (str, unicode, list)), "Expected a single article url or a list of urls"
         return self.jsonRequest("/json/articleMapper", { "articleUrl": articleUrls })
 
 
