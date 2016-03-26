@@ -258,7 +258,7 @@ class CategoryInfoFlags(ReturnInfoFlagsBase):
         self._setFlag("IncludeCategoryTrendingScore", trendingScore, False)
         self._setFlag("IncludeCategoryTrendingHistory", trendingHistory, False)
         self._setFlag("IncludeCategoryDetails", details, False)
-        self._setVal("CategoryTrendingSource", trendingSource, "news")
+        self._setVal("CategoryTrendingSource", trendingSource, None)
 
 
 class ConceptInfoFlags(ReturnInfoFlagsBase):
@@ -313,7 +313,7 @@ class ConceptInfoFlags(ReturnInfoFlagsBase):
         self._setFlag("IncludeConceptTrendingScore", trendingScore, False)
         self._setFlag("IncludeConceptTrendingHistory", trendingHistory, False)
         self._setFlag("IncludeConceptTotalCount", totalCount, False)
-        self._setVal("ConceptTrendingSource", trendingSource, "news")
+        self._setVal("ConceptTrendingSource", trendingSource, None)
         self._setVal("MaxConceptsPerType", maxConceptsPerType, 20)
 
 

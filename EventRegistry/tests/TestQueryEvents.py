@@ -6,12 +6,12 @@ class TestQueryEvents(unittest.TestCase):
     
     @classmethod
     def setUpClass(self):
-        self.er = EventRegistry()
+        self.er = EventRegistry(host = "http://beta.eventregistry.org")
         self.articleInfo = ArticleInfoFlags(bodyLen = -1, concepts = True, storyUri = True, duplicateList = True, originalArticle = True, categories = True,
                 location = True, image = True, extractedDates = True, socialScore = True, details = True)
         self.sourceInfo = SourceInfoFlags(description = True, location = True, importance = True, articleCount = True, tags = True, details = True)
-        self.conceptInfo = ConceptInfoFlags(type=["entities"], lang = "spa", synonyms = True, image = True, description = True, details = True, 
-                conceptClassMembership = True, conceptFolderMembership = True, trendingScore = True, trendingHistory = True)
+        self.conceptInfo = ConceptInfoFlags(type=["entities"], lang = ["eng", "spa"], synonyms = True, image = True, description = True, details = True, 
+                conceptClassMembership = True, conceptFolderMembership = True, trendingScore = True, trendingHistory = True, )
         self.locationInfo = LocationInfoFlags(wikiUri = True, label = True, geoNamesId = True, geoLocation = True, population = True, 
                 countryArea = True, countryDetails = True, countryContinent = True,
                 placeFeatureCode = True, placeCountry = True)
@@ -49,6 +49,8 @@ class TestQueryEvents(unittest.TestCase):
             self.assertTrue(category.has_key(prop), "Property '%s' was expected in source for test %s" % (prop, testName))
 
     def ensureValidEvent(self, event, testName):
+        if event.has_key("newEventUri"):
+            return
         for prop in ["uri", "title", "summary", "articleCounts", "concepts", "categories", "location", "eventDate", "commonDates", "stories", "socialScore", "details", "images"]:
             self.assertTrue(event.has_key(prop), "Property '%s' was expected in event for test %s" % (prop, testName))
         for concept in event.get("concepts"):
@@ -155,9 +157,10 @@ class TestQueryEvents(unittest.TestCase):
         res = self.er.execQuery(q)
 
         self.assertIsNotNone(res.get("conceptAggr"), "Expected to get 'conceptAggr'")
+        concepts = res.get("conceptAggr", {}).get("results", [])
         # concept count is per type so we expect 3*50
-        self.assertEqual(len(res.get("conceptAggr")), 3*50, "Expected a different number of concept in conceptAggr")
-        for concept in res.get("conceptAggr"):
+        self.assertEqual(len(concepts), 3*50, "Expected a different number of concept in conceptAggr")
+        for concept in concepts:
             self.ensureValidConcept(concept, "conceptAggr")
 
         
@@ -167,7 +170,7 @@ class TestQueryEvents(unittest.TestCase):
         res = self.er.execQuery(q)
 
         self.assertIsNotNone(res.get("keywordAggr"), "Expected to get 'keywordAggr'")
-        keywords = res.get("keywordAggr")
+        keywords = res.get("keywordAggr", {}).get("results")
         self.assertTrue(len(keywords) > 0, "Expected to get some keywords")
         for kw in keywords:
             self.assertTrue(kw.has_key("keyword"), "Expected a keyword property")
@@ -180,7 +183,7 @@ class TestQueryEvents(unittest.TestCase):
         res = self.er.execQuery(q)
 
         self.assertIsNotNone(res.get("categoryAggr"), "Expected to get 'categoryAggr'")
-        categories = res.get("categoryAggr")
+        categories = res.get("categoryAggr", {}).get("results")
         self.assertTrue(len(categories) > 0, "Expected to get a non empty category aggr")
         for cat in categories:
             self.ensureValidCategory(cat, "categoryAggr")
@@ -207,8 +210,9 @@ class TestQueryEvents(unittest.TestCase):
         res = self.er.execQuery(q)
         
         self.assertIsNotNone(res.get("sourceAggr"), "Expected to get 'sourceAggr'")
-        self.assertEquals(len(res.get("sourceAggr")), 15, "Expected 15 sources")
-        for sourceInfo in res.get("sourceAggr"):
+        sources = res.get("sourceAggr",{}).get("results")
+        self.assertEquals(len(sources), 15, "Expected 15 sources")
+        for sourceInfo in sources:
             self.ensureValidSource(sourceInfo.get("source"), "sourceAggr")
             self.assertTrue(sourceInfo.get("counts"), "Source info should contain counts object")
             self.assertIsNotNone(sourceInfo.get("counts").get("frequency"), "Counts should contain a frequency")
@@ -233,8 +237,9 @@ class TestQueryEvents(unittest.TestCase):
         self.assertTrue(hasattr(obj, "events"), "Results should contain events")
         self.assertTrue(hasattr(obj, "uriList"), "Results should contain uriList")
 
-        self.assertTrue(len(obj.conceptAggr) <= 10, "Received a list of concepts that is too long")
-        for concept in obj.conceptAggr:
+        concepts = obj.conceptAggr.results
+        self.assertTrue(len(concepts) <= 10, "Received a list of concepts that is too long")
+        for concept in concepts:
             self.assertTrue(concept.type == "loc" or concept.type == "org", "Got concept of invalid type")
 
         lastArtCount = 0
@@ -250,8 +255,8 @@ class TestQueryEvents(unittest.TestCase):
             self.assertTrue(hasattr(event, "images"), "Event should contain images")
             self.assertTrue(hasattr(event, "location"), "Event should contain location")
 
-            self.assertTrue(event.articleCounts.total >= lastArtCount, "Events were not sorted by increasing size")
-            lastArtCount = event.articleCounts.total
+            #self.assertTrue(event.totalArticleCount >= lastArtCount, "Events were not sorted by increasing size")
+            lastArtCount = event.totalArticleCount
             for concept in event.concepts:
                 self.assertTrue(hasattr(concept.label, "deu"), "Concept should contain label in german language")
                 self.assertTrue(concept.type == "wiki", "Got concept of invalid type")

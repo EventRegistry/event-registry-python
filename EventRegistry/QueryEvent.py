@@ -88,7 +88,7 @@ class RequestEventSourceAggr(RequestEvent):
     get news source distribution of articles in the event
     """
     def __init__(self):
-        self.resultType = "sourceAggr"
+        self.resultType = "sourceExAggr"
 
 
 class RequestEventDateMentionAggr(RequestEvent):
@@ -106,9 +106,12 @@ class RequestEventArticleTrend(RequestEvent):
     def __init__(self, 
                  lang = mainLangs, 
                  minArticleCosSim = -1, 
+                 page = 1, count = 200,
                  returnInfo = ReturnInfo(articleInfo = ArticleInfoFlags(bodyLen = 0))):
         self.resultType = "articleTrend"
         self.articleTrendLang = lang
+        self.articleTrendPage = page
+        self.articleTrendCount = count
         self.articleTrendMinArticleCosSim = minArticleCosSim
         self.__dict__.update(returnInfo.getParams("articleTrend"))
 

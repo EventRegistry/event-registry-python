@@ -5,7 +5,7 @@ from eventregistry import *
 class TestQueryArticles(unittest.TestCase):
     @classmethod
     def setUpClass(self):
-        self.er = EventRegistry()
+        self.er = EventRegistry(host = "http://beta.eventregistry.org")
         self.articleInfo = ArticleInfoFlags(bodyLen = -1, concepts = True, storyUri = True, duplicateList = True, originalArticle = True, categories = True,
                 location = True, image = True, extractedDates = True, socialScore = True, details = True)
         self.sourceInfo = SourceInfoFlags(description = True, location = True, importance = True, articleCount = True, tags = True, details = True)
@@ -136,8 +136,9 @@ class TestQueryArticles(unittest.TestCase):
         res = self.er.execQuery(q)
 
         self.assertIsNotNone(res.get("conceptAggr"), "Expected to get 'conceptAggr'")
-        self.assertEqual(len(res.get("conceptAggr")), 50, "Expected a different number of concept in conceptAggr")
-        for concept in res.get("conceptAggr"):
+        concepts = res.get("conceptAggr").get("results")
+        self.assertEqual(len(concepts), 50, "Expected a different number of concept in conceptAggr")
+        for concept in concepts:
             self.ensureValidConcept(concept, "conceptAggr")
 
 
@@ -147,7 +148,7 @@ class TestQueryArticles(unittest.TestCase):
         res = self.er.execQuery(q)
 
         self.assertIsNotNone(res.get("keywordAggr"), "Expected to get 'keywordAggr'")
-        keywords = res.get("keywordAggr")
+        keywords = res.get("keywordAggr").get("results", [])
         self.assertTrue(len(keywords) > 0, "Expected to get some keywords")
         for kw in keywords:
             self.assertTrue(kw.has_key("keyword"), "Expected a keyword property")
@@ -160,7 +161,7 @@ class TestQueryArticles(unittest.TestCase):
         res = self.er.execQuery(q)
 
         self.assertIsNotNone(res.get("categoryAggr"), "Expected to get 'categoryAggr'")
-        categories = res.get("categoryAggr")
+        categories = res.get("categoryAggr").get("results")
         self.assertTrue(len(categories) > 0, "Expected to get a non empty category aggr")
         for cat in categories:
             self.ensureValidCategory(cat, "categoryAggr")
@@ -187,13 +188,13 @@ class TestQueryArticles(unittest.TestCase):
         res = self.er.execQuery(q)
         
         self.assertIsNotNone(res.get("sourceAggr"), "Expected to get 'sourceAggr'")
-        for sourceInfo in res.get("sourceAggr"):
+        for sourceInfo in res.get("sourceAggr").get("results"):
             self.assertTrue(sourceInfo.get("counts"), "Source info should contain counts object")
-            for count in sourceInfo.get("counts"):
-                self.assertIsNotNone(count.get("date"), "Counts should contain a date")
-                self.assertIsNotNone(count.get("count"), "Counts should contain a count")
             self.ensureValidSource(sourceInfo.get("source"), "sourceAggr")
-
+            counts = sourceInfo.get("counts")
+            self.assertIsNotNone(counts.get("frequency"), "Counts should contain a frequency")
+            self.assertIsNotNone(counts.get("ratio"), "Counts should contain a ratio")
+            
 
 if __name__ == "__main__":
     suite = unittest.TestLoader().loadTestsFromTestCase(TestQueryArticles)

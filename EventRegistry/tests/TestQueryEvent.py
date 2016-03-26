@@ -6,7 +6,7 @@ class TestQueryEvent(unittest.TestCase):
     
     @classmethod
     def setUpClass(self):
-        self.er = EventRegistry()
+        self.er = EventRegistry(host = "http://beta.eventregistry.org")
         self.articleInfo = ArticleInfoFlags(bodyLen = -1, concepts = True, storyUri = True, duplicateList = True, originalArticle = True, categories = True,
                 location = True, image = True, extractedDates = True, socialScore = True, details = True)
         self.sourceInfo = SourceInfoFlags(description = True, location = True, importance = True, articleCount = True, tags = True, details = True)
@@ -117,7 +117,7 @@ class TestQueryEvent(unittest.TestCase):
             if isinstance(event.get("keywordAggr"), dict) and event.get("keywordAggr").has_key("error"):
                 print "Got error: " + event.get("keywordAggr").get("error")
                 continue;
-            for kw in event.get("keywordAggr"):
+            for kw in event.get("keywordAggr").get("results"):
                 self.assertIsNotNone(kw.get("keyword"), "Keyword expected")
                 self.assertIsNotNone(kw.get("weight"), "Weight expected")
 
@@ -129,7 +129,7 @@ class TestQueryEvent(unittest.TestCase):
         for event in res.values():
             if event.has_key("newEventUri"):
                 continue
-            self.assertIsNotNone(event.get("sourceAggr"), "Expected to see 'sourceAggr'")
+            self.assertIsNotNone(event.get("sourceExAggr"), "Expected to see 'sourceExAggr'")
 
 
     def testArticleTrend(self):
@@ -166,7 +166,7 @@ class TestQueryEvent(unittest.TestCase):
             if event.has_key("newEventUri"):
                 continue
             self.assertIsNotNone(event.get("similarStories"), "Expected to see 'similarStories'")
-            for simStory in event.get("similarStories"):
+            for simStory in event.get("similarStories").get("results"):
                 self.ensureValidStory(simStory, "testSimilarStories")
           
 

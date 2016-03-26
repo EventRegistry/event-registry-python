@@ -6,7 +6,7 @@ class TestQueryArticle(unittest.TestCase):
     
     @classmethod
     def setUpClass(self):
-        self.er = EventRegistry()
+        self.er = EventRegistry(host = "http://beta.eventregistry.org")
         self.articleInfo = ArticleInfoFlags(bodyLen = -1, concepts = True, storyUri = True, duplicateList = True, originalArticle = True, categories = True,
                 location = True, image = True, extractedDates = True, socialScore = True, details = True)
         self.sourceInfo = SourceInfoFlags(description = True, location = True, importance = True, articleCount = True, tags = True, details = True)
@@ -67,7 +67,9 @@ class TestQueryArticle(unittest.TestCase):
         uris = [article.get("info").get("uri") for article in res.values()]
         urls = [article.get("info").get("url") for article in res.values()]
 
-        q = QueryArticle.queryByUrl(urls)
+        mapper = ArticleMapper(self.er)
+        mappedUris = [mapper.getArticleUri(url) for url in urls]
+        q = QueryArticle.queryByUri(mappedUris)
         q.addRequestedResult(RequestArticleInfo(returnInfo = self.returnInfo))
         res = self.er.execQuery(q)
         self.assertEquals(len(res), 10, "Expected to get a list of 10 articles when searching by urls")

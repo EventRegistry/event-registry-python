@@ -66,7 +66,6 @@ class RequestArticleSimilarArticles(RequestArticle):
                  count = 20,                                # number of articles to return
                  lang = ["eng"],                            # in which language(s) should be the similar articles
                  limitPerLang = -1,                         # max number of articles per language to return (-1 for no limit)
-                 sortBy = "cosSim", sortByAsc = False,      # how are the similar articles sorted. Options: id, date, cosSim, fq, socialScore, facebookShares, twitterShares
                  returnInfo = ReturnInfo(articleInfo = ArticleInfoFlags(bodyLen = -1))):
         assert page >= 1, "page has to be >= 1"
         assert count <= 200
@@ -75,8 +74,6 @@ class RequestArticleSimilarArticles(RequestArticle):
         self.similarArticlesCount = count               
         self.similarArticlesLang = lang                 
         self.similarArticlesLimitPerLang = limitPerLang 
-        self.similarArticlesSortBy = sortBy
-        self.similarArticlesSortByAsc = sortByAsc
         self.__dict__.update(returnInfo.getParams("similarArticles"))
 
 
