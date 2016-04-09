@@ -2,31 +2,72 @@
 
 er = EventRegistry()
 
-# query for events related to Barack obama
-q = QueryEvents()
-q.addConcept(er.getConceptUri("Obama"))                 # get events related to obama
-#q.addCategory(er.getCategoryUri("society issues"))      # and are related to issues in society
-#q.addNewsSource(er.getNewsSourceUri("bbc"))             # and have been reported by BBC
-q.addRequestedResult(RequestEventsUriList())            # return uris of all events
-q.addRequestedResult(RequestEventsInfo(count = 30, sortBy = "size", sortByAsc = True, 
-    returnInfo = ReturnInfo(conceptInfo = ConceptInfoFlags(lang = "deu", type = ["person", "wiki"]))))   # return event details for first 30 events
-q.addRequestedResult(RequestEventsConceptAggr(conceptCount = 5, 
-    returnInfo = ReturnInfo(conceptInfo = ConceptInfoFlags(type = ["org", "loc"]))))        # compute concept aggregate on the events
-res = er.execQuery(q)
-obj = createStructFromDict(res)
+#
+# query for events related to Barack Obama 
+#
 
-# use OR operator between concepts
-# find events where either Sandra Bullock or Gerge Clooney are relevant. since we use OR, res3 should have more results than res1 and res2
-res1 = er.execQuery(QueryEvents(conceptUri = er.getConceptUri("sandra bullock"), requestedResult = RequestEventsInfo(count = 0)))
-res2 = er.execQuery(QueryEvents(conceptUri = er.getConceptUri("george clooney"), requestedResult = RequestEventsInfo(count = 0)))
-res3 = er.execQuery(QueryEvents(conceptUri = [er.getConceptUri("sandra bullock"), er.getConceptUri("george clooney")], 
-                                conceptOper = "OR", 
-                                requestedResult = RequestEventsInfo(count = 0)))
-c1 = res1["events"]["totalResults"]
-c2 = res2["events"]["totalResults"]
-c3 = res3["events"]["totalResults"]
-assert c3 > c1
-assert c3 > c2
+# get the concept URI that matches label "Barack Obama"
+obamaConceptUri = er.getConceptUri("Obama")
+print "Concept uri for 'Obama' is " + obamaConceptUri
+
+# make a query for events
+q = QueryEvents()
+q.addConcept(obamaConceptUri)                 # get events related to obama
+# return a list of event URIs
+q.addRequestedResult(RequestEventsUriList())
+# return details about 30 events that are most related to Obama
+q.addRequestedResult(RequestEventsInfo(count = 30, sortBy = "rel", sortByAsc = False, 
+    returnInfo = ReturnInfo(conceptInfo = ConceptInfoFlags(lang = "deu", type = ["person", "wiki"]))))
+# compute most relevant concepts of type organization or location extracted from events about Obama
+q.addRequestedResult(RequestEventsConceptAggr(conceptCount = 20, 
+    returnInfo = ReturnInfo(conceptInfo = ConceptInfoFlags(type = ["org", "loc"]))))
+#res = er.execQuery(q)
+
+
+#
+# query for events reported by BBC News
+#
+
+# get the news source URI that matches label "BBC"
+bbcSourceUri = er.getNewsSourceUri("BBC")
+print "Source uri for 'BBC' is " + bbcSourceUri
+
+# make a query for events
+q = QueryEvents()
+q.addNewsSource(bbcSourceUri)
+# return details about 30 events that have been most recently reported by BBC
+q.addRequestedResult(RequestEventsInfo(count = 30, sortBy = "date", sortByAsc = False))
+#res = er.execQuery(q)
+
+
+#
+# query for events related to issues in society
+#
+
+# get the category URI that matches label "society issues"
+issuesCategoryUri = er.getCategoryUri("society issues")
+print "Category uri for 'society issues' is " + issuesCategoryUri
+
+# make a query for events
+q = QueryEvents()
+q.addCategory(issuesCategoryUri)
+# return 30 events that were reported in the highest number of articles
+q.addRequestedResult(RequestEventsInfo(count = 30, sortBy = "size", sortByAsc = False))
+#res = er.execQuery(q)
+
+
+## use OR operator between concepts
+## find events where either Sandra Bullock or Gerge Clooney are relevant. since we use OR, res3 should have more results than res1 and res2
+#res1 = er.execQuery(QueryEvents(conceptUri = er.getConceptUri("sandra bullock"), requestedResult = RequestEventsInfo(count = 0)))
+#res2 = er.execQuery(QueryEvents(conceptUri = er.getConceptUri("george clooney"), requestedResult = RequestEventsInfo(count = 0)))
+#res3 = er.execQuery(QueryEvents(conceptUri = [er.getConceptUri("sandra bullock"), er.getConceptUri("george clooney")], 
+#                                conceptOper = "OR", 
+#                                requestedResult = RequestEventsInfo(count = 0)))
+#c1 = res1["events"]["totalResults"]
+#c2 = res2["events"]["totalResults"]
+#c3 = res3["events"]["totalResults"]
+#assert c3 > c1
+#assert c3 > c2
 
 # find events that occured in Berlin between 2014-04-16 and 2014-04-28
 # from the resulting events produce
@@ -35,7 +76,7 @@ assert c3 > c2
 # - general information about the 20 most recent events in that time span
 q = QueryEvents()
 q.addLocation(er.getLocationUri("Berlin"))
-q.setDateLimit(datetime.date(2014, 4, 16), datetime.date(2014, 4, 28))
+q.setDateLimit(datetime.date(2015, 4, 16), datetime.date(2015, 4, 28))
 q.addRequestedResult(RequestEventsConceptTrends(conceptCount = 40, 
     returnInfo = ReturnInfo(conceptInfo = ConceptInfoFlags(type = ["person"]))))
 q.addRequestedResult(RequestEventsCategoryAggr())

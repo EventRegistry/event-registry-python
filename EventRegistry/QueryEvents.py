@@ -139,6 +139,11 @@ class QueryEvents(Query):
         assert isinstance(requestEvents, RequestEvents), "QueryEvents class can only accept result requests that are of type RequestEvents"
         self.resultTypeList.append(requestEvents)
 
+    @staticmethod
+    def initWithEventUriList(uriList):
+        q = QueryEvents()
+        q.setEventUriList(uriList)
+        return q
 
 class RequestEvents:
     def __init__(self):
@@ -175,11 +180,21 @@ class RequestEventsUriList(RequestEvents):
     return a simple list of event uris for resulting events
     """
     def __init__(self, page = 1,
-                 count = 100000):
+                 count = 100000,
+                 sortBy = "date", sortByAsc = False):    # how should the resulting events be sorted. Options: date (by event date), rel (relevance to the query), size (number of articles), socialScore (amount of shares in social media)
         assert page >= 1, "page has to be >= 1"
         assert count <= 300000
         self.resultType = "uriList"
         self.uriListPage = page
+        self.uriListCount = count
+        self.uriListSortBy = sortBy
+        self.uriListSortByAsc = sortByAsc
+
+    def setPage(self, page):
+        assert page >= 1, "page has to be >= 1"
+        self.uriListPage = page
+
+    def setCount(self, count):
         self.uriListCount = count
 
 

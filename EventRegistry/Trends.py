@@ -19,11 +19,13 @@ class GetTrendingConcepts(TrendsBase):
     def __init__(self, 
                  source = "news",   # source information from which to compute top trends. Options: "news", "social"
                  count = 20,        # number of top trends to return
+                 conceptType = ["person", "org", "loc"],    # which types of concepts are we interested in
                  returnInfo = ReturnInfo()):     # specify the details of the concepts to return
         QueryParamsBase.__init__(self)
         self._setVal("action", "getTrendingConcepts")
         self._setVal("source", source)
         self._setVal("conceptCount", count)
+        self._setVal("conceptType", conceptType)
         self._update(returnInfo.getParams())
 
 
@@ -71,11 +73,11 @@ class GetTrendingConceptGroups(TrendsBase):
         self._setVal("conceptCount", count)
         self._update(returnInfo.getParams())
 
-    def getConceptTypeGroups(types = ["person", "org", "loc", "wiki"]):
+    def getConceptTypeGroups(self, types = ["person", "org", "loc"]):
         """request trending of concepts of specified types"""
         self._setVal("conceptType", types)
 
-    def getConceptClassUris(conceptClassUris):
+    def getConceptClassUris(self, conceptClassUris):
         """request trending of concepts assigned to the specified concept classes"""
         self._setVal("conceptClassUri", conceptClassUris)
 

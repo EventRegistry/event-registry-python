@@ -15,22 +15,18 @@ recentQ = GetRecentEvents(maxEventCount = 200)
 while True:
     ret = recentQ.getUpdates(er)
     if ret.has_key("eventInfo") and isinstance(ret["eventInfo"], dict):
-        print "%d events updated since last call" % len(ret["activity"])
+        print "==========\n%d events updated since last call" % len(ret["eventInfo"])
         
-        # get URIs of the events that are new/updated
-        uris = ret["eventInfo"].keys()
-        
-        
-        size = 50
-        for i in range(0, len(uris), size):
-            uriChunk = uris[i:i+size]
-            q = QueryEvent(uriChunk)
-            # get the list of articles assigned to event
-            q.addRequestedResult(RequestEventArticles(
-                returnInfo = ReturnInfo(articleInfo = ArticleInfoFlags(bodyLen = 0, title = False))))
-            eventRet = er.execQuery(q)
-            if eventRet != None and isinstance(eventRet, dict):
-                print "obtained details about %d events" % len(eventRet)
-            else:
-                print "failed to obtain event information"
+        # get the list of event URIs, sorted from the most recently changed backwards
+        activity = ret["activity"]
+        # for each updated event print the URI and the title
+        # NOTE: the same event can appear multiple times in the activity array - this means that more than one article
+        # about it was recently written about it
+        for eventUri in activity:
+            event = ret["eventInfo"][eventUri]
+            print u"Event %s ('%s') was changed" % (eventUri, event["title"][event["title"].keys()[0]].encode("ascii", "ignore"))
+    
+    # wait a bit for new content to be added to Event Registry
+    print "sleeping for 20 seconds..."
     time.sleep(20)
+

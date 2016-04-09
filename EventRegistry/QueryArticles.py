@@ -147,7 +147,18 @@ class QueryArticles(Query):
     def setArticleUriList(self, uriList):
         """set a custom list of article uris. the results will be then computed on this list - no query will be done"""
         self.queryParams = { "action": "getArticles", "articleUri": uriList }
+
+    @staticmethod
+    def initWithArticleUriList(uriList):
+        q = QueryArticles()
+        q.setArticleUriList(uriList)
+        return q
     
+    @staticmethod
+    def initWithArticleIdList(idList):
+        q = QueryArticles()
+        q.setArticleIdList(idList)
+        return q
 
 class RequestArticles:
     def __init__(self):
@@ -183,12 +194,15 @@ class RequestArticlesUriList(RequestArticles):
     return a list of article uris
     """
     def __init__(self, page = 1, 
-                 count = 10000):
+                 count = 10000,
+                 sortBy = "fq", sortByAsc = False):   # how are articles sorted. Options: id (internal id), date (publishing date), cosSim (closeness to the event centroid), fq (relevance to the query), socialScore (total shares on social media)
         assert page >= 1, "page has to be >= 1"
         assert count <= 50000
         self.resultType = "uriList"
         self.uriListPage = page
         self.uriListCount = count
+        self.uriListSortBy = sortBy
+        self.uriListSortByAsc = sortByAsc
 
 
 class RequestArticlesIdList(RequestArticles):
@@ -196,12 +210,15 @@ class RequestArticlesIdList(RequestArticles):
     return a list of article ids
     """
     def __init__(self, page = 1,
-                 count = 10000):
+                 count = 10000,
+                 sortBy = "fq", sortByAsc = False):   # how are articles sorted. Options: id (internal id), date (publishing date), cosSim (closeness to the event centroid), fq (relevance to the query), socialScore (total shares on social media)
         assert page >= 1, "page has to be >= 1"
         assert count <= 50000
         self.resultType = "idList"
         self.idListPage = page
         self.idListCount = count
+        self.idListSortBy = sortBy
+        self.idListSortByAsc = sortByAsc
 
 
 class RequestArticlesUrlList(RequestArticles):
@@ -209,12 +226,15 @@ class RequestArticlesUrlList(RequestArticles):
     return a list of article ids
     """
     def __init__(self, page = 1,
-                 count = 10000):
+                 count = 10000,
+                 sortBy = "fq", sortByAsc = False):   # how are articles sorted. Options: id (internal id), date (publishing date), cosSim (closeness to the event centroid), fq (relevance to the query), socialScore (total shares on social media)
         assert page >= 1, "page has to be >= 1"
         assert count <= 50000
         self.resultType = "urlList"
         self.urlListPage = page
         self.urlListCount = count
+        self.urlListSortBy = sortBy
+        self.urlListSortByAsc = sortByAsc
 
 
 class RequestArticlesTimeAggr(RequestArticles):
