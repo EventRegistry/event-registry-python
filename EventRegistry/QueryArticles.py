@@ -42,16 +42,16 @@ class QueryArticles(Query):
     @param isDuplicateFilter: some articles can be duplicates of other articles. What should be done with them. Possible values are:
             "skipDuplicates" (skip the resulting articles that are duplicates of other articles)
             "keepOnlyDuplicates" (return only the duplicate articles)
-            "keepAll" (no filtering)
+            "keepAll" (no filtering, default)
     @param hasDuplicateFilter: some articles are later copied by others. What should be done with such articles. Possible values are:
             "skipHasDuplicates" (skip the resulting articles that have been later copied by others)
             "keepOnlyHasDuplicates" (return only the articles that have been later copied by others)
-            "keepAll" (no filtering)
+            "keepAll" (no filtering, default)
     @param eventFilter: some articles describe a known event and some don't. This filter allows you to filter the resulting articles based on this criteria.
             Possible values are:
             "skipArticlesWithoutEvent" (skip articles that are not describing any known event in ER)
             "keepOnlyArticlesWithoutEvent" (return only the articles that are not describing any known event in ER)
-            "keepAll" (no filtering)
+            "keepAll" (no filtering, default)
     """
     def __init__(self, 
                  keywords = "",
@@ -73,9 +73,9 @@ class QueryArticles(Query):
                  categoryIncludeSub = True,
                  conceptOper = "AND",
                  ignoreCategoryIncludeSub = True,
-                 isDuplicateFilter = "allArticles",
-                 hasDuplicateFilter = "allArticles",
-                 eventFilter = "allArticles"):
+                 isDuplicateFilter = "keepAll",
+                 hasDuplicateFilter = "keepAll",
+                 eventFilter = "keepAll"):
         super(QueryArticles, self).__init__()
         self._setVal("action", "getArticles")
 

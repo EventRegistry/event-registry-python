@@ -156,7 +156,7 @@ class RequestEventsInfo(RequestEvents):
     """
     def __init__(self, page = 1,
                  count = 20, 
-                 sortBy = "date", sortByAsc = False,    # how should the resulting events be sorted. Options: date (by event date), rel (relevance to the query), size (number of articles), socialScore (amount of shares in social media)
+                 sortBy = "rel", sortByAsc = False,    # how should the resulting events be sorted. Options: date (by event date), rel (relevance to the query), size (number of articles), socialScore (amount of shares in social media)
                  returnInfo = ReturnInfo()):
         assert page >= 1, "page has to be >= 1"
         assert count <= 200
@@ -181,7 +181,7 @@ class RequestEventsUriList(RequestEvents):
     """
     def __init__(self, page = 1,
                  count = 100000,
-                 sortBy = "date", sortByAsc = False):    # how should the resulting events be sorted. Options: date (by event date), rel (relevance to the query), size (number of articles), socialScore (amount of shares in social media)
+                 sortBy = "rel", sortByAsc = False):    # how should the resulting events be sorted. Options: date (by event date), rel (relevance to the query), size (number of articles), socialScore (amount of shares in social media)
         assert page >= 1, "page has to be >= 1"
         assert count <= 300000
         self.resultType = "uriList"
