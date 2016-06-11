@@ -24,7 +24,7 @@ class EventRegistry(object):
     the core object that is used to access any data in Event Registry
     it is used to send all the requests and queries
     """
-    def __init__(self, host = None, logging = False, 
+    def __init__(self, host = None, logging = False,
                  minDelayBetweenRequests = 0.5,     # the minimum number of seconds between individual api calls
                  repeatFailedRequestCount = -1,    # if a request fails (for example, because ER is down), what is the max number of times the request should be repeated (-1 for indefinitely)
                  verboseOutput = False):            # if true, additional info about query times etc will be printed to console
@@ -46,6 +46,7 @@ class EventRegistry(object):
         # if there is a settings.json file in the directory then try using it to login to ER
         # and to read the host name from it (if custom host is not specified)
         currPath = os.path.split(__file__)[0]
+        print currPath
         settPath = os.path.join(currPath, "settings.json")
         if os.path.exists(settPath):
             settings = json.load(open(settPath))
@@ -123,7 +124,7 @@ class EventRegistry(object):
         return respInfo
 
 
-    def jsonRequest(self, methodUrl, paramDict):
+    def jsonRequest(self, methodUrl, paramDict, customLogFName = None):
         """
         make a request for json data. repeat it _repeatFailedRequestCount times, if they fail (indefinitely if _repeatFailedRequestCount = -1)
         @param methodUrl: url on er (e.g. "/json/article")
@@ -135,7 +136,7 @@ class EventRegistry(object):
         self._lock.acquire()
         if self._logRequests:
             try:
-                with open(self._requestLogFName, "a") as log:
+                with open(customLogFName or self._requestLogFName, "a") as log:
                     if paramDict != None:
                         log.write("# " + json.dumps(paramDict) + "\n")
                     log.write(methodUrl + "\n")                
@@ -166,10 +167,10 @@ class EventRegistry(object):
                     self.printConsole("request took %.3f sec. Response size: %.2fKB" % ((endT-startT).total_seconds(), len(respInfo.text) / 1024.0))
                 try:
                     returnData = respInfo.json()
+                    break
                 except Exception as ex:
-                    print "EventRegistry.jsonRequest(): Exception while parsing the returned json object"
+                    print "EventRegistry.jsonRequest(): Exception while parsing the returned json object. Repeating the query..."
                     open("invalidJsonResponse.json", "w").write(respInfo.text)
-                break
             except Exception as ex:
                 self._lastException = ex
                 print "EventRegistry.jsonRequest(): Exception while executing the request"
