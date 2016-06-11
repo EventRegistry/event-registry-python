@@ -46,7 +46,6 @@ class EventRegistry(object):
         # if there is a settings.json file in the directory then try using it to login to ER
         # and to read the host name from it (if custom host is not specified)
         currPath = os.path.split(__file__)[0]
-        print currPath
         settPath = os.path.join(currPath, "settings.json")
         if os.path.exists(settPath):
             settings = json.load(open(settPath))
