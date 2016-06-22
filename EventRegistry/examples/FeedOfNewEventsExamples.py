@@ -8,7 +8,7 @@ core languages (eng, deu, spa, zho, slv)
 from eventregistry import *
 import time
 
-er = EventRegistry("http://beta.eventregistry.org", verboseOutput = True)
+er = EventRegistry("http://eventregistry.org", verboseOutput = True)
 
 recentQ = GetRecentEvents(maxEventCount = 200)
 

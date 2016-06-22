@@ -7,7 +7,7 @@ from eventregistry import *
 import time
 
 #er = EventRegistry()
-er = EventRegistry("http://beta.eventregistry.org", verboseOutput = True)
+er = EventRegistry("http://eventregistry.org", verboseOutput = True)
 
 recentQ = GetRecentArticles(maxArticleCount = 200)
 

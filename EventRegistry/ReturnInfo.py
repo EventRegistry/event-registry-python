@@ -67,6 +67,7 @@ class ArticleInfoFlags(ReturnInfoFlagsBase):
     @param basicInfo: core article information -
     @param title: article title
     @param body: article body
+    @param url: article url
     @param eventUri: uri of the event to which the article belongs
     @param concepts: the list of concepts mentioned in the article
     @param storyUri: uri of the story (cluster) to which the article belongs
@@ -75,6 +76,7 @@ class ArticleInfoFlags(ReturnInfoFlagsBase):
     @param categories: the list of categories assigned to the article
     @param location: the geographic location that the event mentioned in the article is about
     @param image: url to the image associated with the article
+    @param dates: the dates when the articles was crawled and the date when it was published (based on the rss feed date)
     @param extractedDates: the list of dates found mentioned in the article
     @param socialScore: information about the number of times the article was shared on facebook and twitter
     @param details: potential additional details
@@ -84,6 +86,7 @@ class ArticleInfoFlags(ReturnInfoFlagsBase):
                  basicInfo = True, 
                  title = True,
                  body = True,
+                 url = True,
                  eventUri = True,
                  concepts = False,
                  storyUri = False,
@@ -92,6 +95,7 @@ class ArticleInfoFlags(ReturnInfoFlagsBase):
                  categories = False,
                  location = False,
                  image = False,
+                 dates = False,
                  extractedDates = False,
                  socialScore = False,
                  details = False):
@@ -99,6 +103,7 @@ class ArticleInfoFlags(ReturnInfoFlagsBase):
         self._setFlag("IncludeArticleBasicInfo", basicInfo, True)
         self._setFlag("IncludeArticleTitle", title, True)
         self._setFlag("IncludeArticleBody", body, True)
+        self._setFlag("IncludeArticleUrl", url, True)
         self._setFlag("IncludeArticleEventUri", eventUri, True)
         self._setFlag("IncludeArticleConcepts", concepts, False)
         self._setFlag("IncludeArticleStoryUri", storyUri, False)
@@ -107,6 +112,7 @@ class ArticleInfoFlags(ReturnInfoFlagsBase):
         self._setFlag("IncludeArticleCategories", categories, False)
         self._setFlag("IncludeArticleLocation", location, False)
         self._setFlag("IncludeArticleImage", image, False)
+        self._setFlag("IncludeArticleDates", dates, False)
         self._setFlag("IncludeArticleExtractedDates", extractedDates, False)
         self._setFlag("IncludeArticleSocialScore", socialScore, False)
         self._setFlag("IncludeArticleDetails", details, False)
