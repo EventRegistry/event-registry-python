@@ -16,7 +16,7 @@ class GetTrendingConcepts(TrendsBase):
     """
     get currently top trending concepts
     """
-    def __init__(self, 
+    def __init__(self,
                  source = "news",   # source information from which to compute top trends. Options: "news", "social"
                  count = 20,        # number of top trends to return
                  conceptType = ["person", "org", "loc"],    # which types of concepts are we interested in
@@ -33,7 +33,7 @@ class GetTrendingCategories(TrendsBase):
     """
     get currently top trending categories
     """
-    def __init__(self, 
+    def __init__(self,
                  source = "news",   # source information from which to compute top trends. Options: "news", "social"
                  count = 20,        # number of top trends to return
                  returnInfo = ReturnInfo()):     # specify the details of the categories to return
@@ -42,14 +42,14 @@ class GetTrendingCategories(TrendsBase):
         self._setVal("source", source)
         self._setVal("categoryCount", count)
         self._update(returnInfo.getParams())
-        
+
 
 class GetTrendingCustomItems(TrendsBase):
     """
     get currently top trending items for which the users provided the data
     this data can be stock prices, energy prices, etc...
     """
-    def __init__(self, 
+    def __init__(self,
                  count = 20,        # number of top trends to return
                  returnInfo = ReturnInfo()):     # specify the details of the concepts to return
         QueryParamsBase.__init__(self)
@@ -63,7 +63,7 @@ class GetTrendingConceptGroups(TrendsBase):
     get currently top trending groups of concepts
     a group can be identified by the concept type or by a concept class uri
     """
-    def __init__(self, 
+    def __init__(self,
                  source = "news",   # source information from which to compute top trends. Options: "news", "social"
                  count = 20,        # number of top trends to return
                  returnInfo = ReturnInfo()):     # specify the details of the concepts to return

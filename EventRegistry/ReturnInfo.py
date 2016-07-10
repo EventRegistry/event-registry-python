@@ -2,7 +2,7 @@
 the classes here represent all the types of information that can be returned
 from Event Registry requests
 
-the ReturnInfo class specifies all types of these parameters and is needed as 
+the ReturnInfo class specifies all types of these parameters and is needed as
 a parameter in all query requests
 """
 
@@ -51,7 +51,7 @@ class ReturnInfoFlagsBase(object):
         dict = {}
         for key in self.vals.keys():
             # if no prefix then lower the first letter
-            if prefix == "": 
+            if prefix == "":
                 newkey = key[:1].lower() + key[1:] if key else ""
                 dict[newkey] = self.vals[key]
             else:
@@ -83,7 +83,7 @@ class ArticleInfoFlags(ReturnInfoFlagsBase):
     """
     def __init__(self,
                  bodyLen = 300,
-                 basicInfo = True, 
+                 basicInfo = True,
                  title = True,
                  body = True,
                  url = True,
@@ -149,7 +149,7 @@ class StoryInfoFlags(ReturnInfoFlagsBase):
                  imageCount = 0):
         self._setFlag("IncludeStoryBasicStats", basicStats, True)
         self._setFlag("IncludeStoryLocation", location, True)
-        
+
         self._setFlag("IncludeStoryCategories", categories, False)
         self._setFlag("IncludeStoryDate", date, False)
         self._setFlag("IncludeStoryConcepts", concepts, False)
@@ -206,7 +206,7 @@ class EventInfoFlags(ReturnInfoFlagsBase):
         self._setFlag("IncludeEventSocialScore", socialScore, False)
         self._setFlag("IncludeEventDetails", details, False)
         self._setVal("EventImageCount", imageCount, 0)
-        
+
 
 class SourceInfoFlags(ReturnInfoFlagsBase):
     """
@@ -340,7 +340,7 @@ class LocationInfoFlags(ReturnInfoFlagsBase):
     @param placeFeatureCode: return the geonames feature code of the place
     @param placeCountry: return information about the country where the place is located
     """
-    def __init__(self, 
+    def __init__(self,
                  label = True,
                  wikiUri = False,
                  geoNamesId = False,
@@ -350,7 +350,7 @@ class LocationInfoFlags(ReturnInfoFlagsBase):
                  countryArea = False,
                  countryDetails = False,
                  countryContinent = False,
-                 
+
                  placeFeatureCode = False,
                  placeCountry = True):
         self._setFlag("IncludeLocationLabel", label, True)
@@ -384,7 +384,7 @@ class ConceptClassInfoFlags(ReturnInfoFlagsBase):
         self._setFlag("IncludeConceptClassParentLabels", parentLabels, True)
         self._setFlag("IncludeConceptClassConcepts", concepts, False)
         self._setFlag("IncludeConceptClassDetails", details, False)
-        
+
 
 class ConceptFolderInfoFlags(ReturnInfoFlagsBase):
     """
@@ -419,7 +419,7 @@ class ReturnInfo:
     @param locationInfo: what details about the locations should be returned (locations are sub-types of concepts so their information will be a property inside the concept information)
     @param conceptClassInfo: what details about the concept classes should be returned (concept classes are sub-types of concepts so their information will be a property inside the concept information)
     @param conceptFolderInfo: what details about the concept folders should be returned (concept folders are sub-types of concepts so their information will be a property inside the concept information)
-    
+
     @type articleInfo: ArticleInfoFlags
     @type eventInfo: EventInfoFlags
     @type sourceInfo: SourceInfoFlags
@@ -428,7 +428,7 @@ class ReturnInfo:
     @type conceptInfo: ConceptInfoFlags
     @type locationInfo: LocationInfoFlags
     @type conceptClassInfo: ConceptClassInfoFlags
-    @type conceptFolderInfo: ConceptFolderInfoFlags    
+    @type conceptFolderInfo: ConceptFolderInfoFlags
     """
     def __init__(self,
                  articleInfo = ArticleInfoFlags(),

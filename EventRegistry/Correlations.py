@@ -10,7 +10,7 @@ from QueryArticles import *
 from Counts import *
 
 class GetTopCorrelations(QueryParamsBase):
-    def __init__(self, 
+    def __init__(self,
                  eventRegistry):    # instance of EventRegistry class
         QueryParamsBase.__init__(self)
         self._er = eventRegistry
@@ -27,7 +27,7 @@ class GetTopCorrelations(QueryParamsBase):
         """
         specify the user defined array of input data
 
-        @param inputDataArr: array of tuples (date, val) where date is a date object or string in YYYY-MM-DD format 
+        @param inputDataArr: array of tuples (date, val) where date is a date object or string in YYYY-MM-DD format
                 and val is the value/counts for that date
         """
         # clear any past test data values
@@ -65,7 +65,7 @@ class GetTopCorrelations(QueryParamsBase):
         if res.has_key("timeAggr"):
             for obj in res["timeAggr"]:
                 self._addArrayVal("testData", json.dumps(obj))
-             
+
     def loadInputDataWithCounts(self, getCounts):
         """
         use GetCounts class to obtain daily counts information for concept/category of interest
@@ -91,8 +91,8 @@ class GetTopCorrelations(QueryParamsBase):
     #
     # computing correlations
     #
-    def getTopConceptCorrelations(self, 
-            candidateConceptsQuery = None, 
+    def getTopConceptCorrelations(self,
+            candidateConceptsQuery = None,
             candidatesPerType = 1000,
             conceptType = None,
             exactCount = 10,
@@ -100,7 +100,7 @@ class GetTopCorrelations(QueryParamsBase):
             returnInfo = ReturnInfo()):
         """
         compute concepts that correlate the most with the input data. If candidateConceptsQuery is provided we first identify the
-        concepts that are potentially returned as top correlations. Candidates are obtained by making the query and analyzing the 
+        concepts that are potentially returned as top correlations. Candidates are obtained by making the query and analyzing the
         concepts that appear in the resulting articles. The top concepts are used as candidates among which we return the top correlations.
         If conceptType is provided then only concepts of the specified type can be provided as the result.
 
@@ -136,7 +136,7 @@ class GetTopCorrelations(QueryParamsBase):
         params._setVal("approxCount", approxCount)
         params._setVal("sourceType", "news-concept")
 
-        # 
+        #
         # compute the correlations
         ret = self._er.jsonRequest(self._getPath(), params.queryParams)
 
@@ -161,23 +161,23 @@ class GetTopCorrelations(QueryParamsBase):
             if ret and ret["news-concept"]["approximateCorrelations"]:
                 for item in ret["news-concept"]["approximateCorrelations"]:
                     item["conceptInfo"] = conceptInfos.get(str(item["id"]), {})
-        
+
         # return result
         return ret
 
 
-    def getTopCategoryCorrelations(self, 
+    def getTopCategoryCorrelations(self,
             exactCount = 10,
             approxCount = 0,
             returnInfo = ReturnInfo()):
         """
-        compute categories that correlate the most with the input data. 
+        compute categories that correlate the most with the input data.
 
         @param exactCount: the number of returned categories for which the exact value of the correlation is computed
         @param approxCount: the number of returned categories for which only an approximate value of the correlation is computed
         @param returnInfo: specifies the details about the categories that should be returned in the output result
         """
-        
+
         # generate all necessary parameters (but don't update the params of the self)
         params = QueryParamsBase.copy(self)
         # don't send unnecessary data
@@ -186,7 +186,7 @@ class GetTopCorrelations(QueryParamsBase):
         params._setVal("approxCount", approxCount)
         params._setVal("sourceType", "news-category")
 
-        # 
+        #
         # compute the correlations
         ret = self._er.jsonRequest(self._getPath(), params.queryParams)
 
@@ -211,6 +211,6 @@ class GetTopCorrelations(QueryParamsBase):
             if ret and ret["news-category"]["approximateCorrelations"]:
                 for item in ret["news-category"]["approximateCorrelations"]:
                     item["categoryInfo"] = categoryInfos.get(str(item["id"]), {})
-        
+
         # return result
         return ret

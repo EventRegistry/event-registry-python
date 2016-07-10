@@ -3,19 +3,19 @@ from ReturnInfo import *
 
 class QueryArticle(Query):
     """
-    Class for obtaining available info for one or more articles in the Event Registry 
+    Class for obtaining available info for one or more articles in the Event Registry
 
     @param articleUriOrUriList: a single article uri or a list of article uris
     """
-    def __init__(self, 
+    def __init__(self,
                  articleUriOrUriList):
         super(QueryArticle, self).__init__()
-        self._setVal("articleUri", articleUriOrUriList)      
+        self._setVal("articleUri", articleUriOrUriList)
         self._setVal("action", "getArticle")
 
     def _getPath(self):
-        return "/json/article" 
-   
+        return "/json/article"
+
     @staticmethod
     def queryById(articleIdOrIdList):
         """
@@ -24,7 +24,7 @@ class QueryArticle(Query):
         q = QueryArticle([])
         q.queryParams["articleId"] = articleIdOrIdList
         return q
-    
+
     @staticmethod
     def queryByUri(articleUriOrUriList):
         """
@@ -33,7 +33,7 @@ class QueryArticle(Query):
         q = QueryArticle([])
         q.queryParams["articleUri"] = articleUriOrUriList
         return q
-    
+
     def addRequestedResult(self, requestArticle):
         """
         Add a result type that you would like to be returned.
@@ -53,10 +53,10 @@ class RequestArticleInfo(RequestArticle):
     """
     return details about the article
     """
-    def __init__(self, returnInfo = ReturnInfo(articleInfo = ArticleInfoFlags(bodyLen = -1))):        
+    def __init__(self, returnInfo = ReturnInfo(articleInfo = ArticleInfoFlags(bodyLen = -1))):
         self.resultType = "info"
         self.__dict__.update(returnInfo.getParams("info"))
-        
+
 
 class RequestArticleSimilarArticles(RequestArticle):
     """
@@ -70,10 +70,10 @@ class RequestArticleSimilarArticles(RequestArticle):
         assert page >= 1, "page has to be >= 1"
         assert count <= 200
         self.resultType = "similarArticles"
-        self.similarArticlesPage = page                 
-        self.similarArticlesCount = count               
-        self.similarArticlesLang = lang                 
-        self.similarArticlesLimitPerLang = limitPerLang 
+        self.similarArticlesPage = page
+        self.similarArticlesCount = count
+        self.similarArticlesLang = lang
+        self.similarArticlesLimitPerLang = limitPerLang
         self.__dict__.update(returnInfo.getParams("similarArticles"))
 
 
@@ -90,7 +90,7 @@ class RequestArticleDuplicatedArticles(RequestArticle):
         self.duplicatedArticlesPage = page
         self.duplicatedArticlesCount = count
         self.duplicatedArticlesSortBy = sortBy
-        self.duplicatedArticlesSortByAsc = sortByAsc      
+        self.duplicatedArticlesSortByAsc = sortByAsc
         self.__dict__.update(returnInfo.getParams("duplicatedArticles"))
 
 
@@ -101,7 +101,7 @@ class RequestArticleOriginalArticle(RequestArticle):
     def __init__(self, returnInfo = ReturnInfo(articleInfo = ArticleInfoFlags(bodyLen = -1))):
         self.resultType = "originalArticle"
         self.__dict__.update(returnInfo.getParams("originalArticle"))
-        
-        
+
+
 
 

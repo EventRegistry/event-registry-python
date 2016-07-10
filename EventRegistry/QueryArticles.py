@@ -6,25 +6,25 @@ class QueryArticles(Query):
     Query class for searching for individual articles in the Event Registry.
     The resulting articles have to match all specified conditions. If a parameter value equals "" or [], then it is ignored.
     In order for query to be valid, it has to have at least one positive condition (condition that does not start with ignore*).
-     
-    @param keywords: find articles that mention all the specified keywords. 
+
+    @param keywords: find articles that mention all the specified keywords.
         In case of multiple keywords, separate them with space. Example: "apple iphone".
-    @param conceptUri: find articles where the concept with concept uri is mentioned. 
+    @param conceptUri: find articles where the concept with concept uri is mentioned.
         A single concept uri can be provided as a string, multiple concept uris can be provided as a list of strings.
         If multiple concept uris are provided, resulting articles have to mention *all* of them.
         To obtain a concept uri using a concept label use EventRegistry.getConceptUri().
     @param sourceUri: find articles that were written by a news source sourceUri.
         If multiple sources are provided, resulting articles have to be written by *any* of the provided news sources.
         Source uri for a given news source name can be obtained using EventRegistry.getNewsSourceUri().
-    @param locationUri: find articles that describe an event that occured at a particular location. 
-        Location uri can either be a city or a country. 
+    @param locationUri: find articles that describe an event that occured at a particular location.
+        Location uri can either be a city or a country.
         If multiple locations are provided, resulting articles have to match *any* of the locations.
         Location uri for a given name can be obtained using EventRegistry.getLocationUri().
     @param categoryUri: find articles that are assigned into a particular category.
         If multiple categories are provided, resulting articles have to be assigned to *any* of the categories.
         A category uri can be obtained from a category name using EventRegistry.getCategoryUri().
-    @param lang: find articles that are written in the specified language. 
-        If more than one language is specified, resulting articles has to be written in *any* of the languages. 
+    @param lang: find articles that are written in the specified language.
+        If more than one language is specified, resulting articles has to be written in *any* of the languages.
     @param dateStart: find articles that were written on or after dateStart. Date should be provided in YYYY-MM-DD format, datetime.time or datetime.datetime.
     @param dateEnd: find articles that occured before or on dateEnd. Date should be provided in YYYY-MM-DD format, datetime.time or datetime.datetime.
     @param dateMentionStart: find articles that explicitly mention a date that is equal or greater than dateMentionStart.
@@ -53,7 +53,7 @@ class QueryArticles(Query):
             "keepOnlyArticlesWithoutEvent" (return only the articles that are not describing any known event in ER)
             "keepAll" (no filtering, default)
     """
-    def __init__(self, 
+    def __init__(self,
                  keywords = "",
                  conceptUri = [],
                  sourceUri = [],
@@ -104,10 +104,10 @@ class QueryArticles(Query):
         self._setValIfNotDefault("isDuplicateFilter", isDuplicateFilter, "keepAll")
         self._setValIfNotDefault("hasDuplicateFilter", hasDuplicateFilter, "keepAll")
         self._setValIfNotDefault("eventFilter", eventFilter, "keepAll")
-        
+
     def _getPath(self):
         return "/json/article"
-    
+
     def addConcept(self, conceptUri):
         self._addArrayVal("conceptUri", conceptUri)
 
@@ -129,7 +129,7 @@ class QueryArticles(Query):
 
     def setDateMentionLimit(self, startDate, endDate):
         self._setDateVal("dateMentionStart", startDate)
-        self._setDateVal("dateMentionEnd", endDate)          
+        self._setDateVal("dateMentionEnd", endDate)
 
     def addRequestedResult(self, requestArticles):
         """
@@ -153,7 +153,7 @@ class QueryArticles(Query):
         q = QueryArticles()
         q.setArticleUriList(uriList)
         return q
-    
+
     @staticmethod
     def initWithArticleIdList(idList):
         q = QueryArticles()
@@ -169,7 +169,7 @@ class RequestArticlesInfo(RequestArticles):
     """
     return articlel details for resulting articles
     """
-    def __init__(self, page = 1, count = 20, 
+    def __init__(self, page = 1, count = 20,
                  sortBy = "date", sortByAsc = False,    # how are articles sorted. Options: id (internal id), date (publishing date), cosSim (closeness to the event centroid), fq (relevance to the query), socialScore (total shares on social media)
                  returnInfo = ReturnInfo()):
         assert page >= 1, "page has to be >= 1"
@@ -180,20 +180,20 @@ class RequestArticlesInfo(RequestArticles):
         self.articlesSortBy = sortBy
         self.articlesSortByAsc = sortByAsc
         self.__dict__.update(returnInfo.getParams("articles"))
-        
+
     def setPage(self, page):
         assert page >= 1, "page has to be >= 1"
         self.articlesPage = page
 
     def setCount(self, count):
         self.articlesCount = count
-        
+
 
 class RequestArticlesUriList(RequestArticles):
     """
     return a list of article uris
     """
-    def __init__(self, page = 1, 
+    def __init__(self, page = 1,
                  count = 10000,
                  sortBy = "fq", sortByAsc = False):   # how are articles sorted. Options: id (internal id), date (publishing date), cosSim (closeness to the event centroid), fq (relevance to the query), socialScore (total shares on social media)
         assert page >= 1, "page has to be >= 1"
@@ -243,41 +243,41 @@ class RequestArticlesTimeAggr(RequestArticles):
     """
     def __init__(self):
         self.resultType = "timeAggr"
-        
-        
+
+
 class RequestArticlesConceptAggr(RequestArticles):
     """
     get aggreate of concepts of resulting articles
     """
-    def __init__(self, conceptCount = 25, 
-                 articlesSampleSize = 10000, 
+    def __init__(self, conceptCount = 25,
+                 articlesSampleSize = 10000,
                  returnInfo = ReturnInfo()):
         assert conceptCount <= 500
         assert articlesSampleSize <= 20000
         self.resultType = "conceptAggr"
         self.conceptAggrConceptCount = conceptCount
-        self.conceptAggrSampleSize = articlesSampleSize  
+        self.conceptAggrSampleSize = articlesSampleSize
         self.__dict__.update(returnInfo.getParams("conceptAggr"))
-    
+
 
 class RequestArticlesCategoryAggr(RequestArticles):
     """
     return aggreate of categories of resulting articles
     """
-    def __init__(self, 
+    def __init__(self,
                  articlesSampleSize = 20000,
                  returnInfo = ReturnInfo()):
         assert articlesSampleSize <= 50000
         self.resultType = "categoryAggr"
         self.categoryAggrSampleSize = articlesSampleSize
         self.__dict__.update(returnInfo.getParams("categoryAggr"))
-        
-            
+
+
 class RequestArticlesSourceAggr(RequestArticles):
     """
     get aggreate of news sources of resulting articles
     """
-    def __init__(self, 
+    def __init__(self,
                  articlesSampleSize = 20000,
                  returnInfo = ReturnInfo()):
         self.resultType = "sourceAggr"
@@ -289,22 +289,22 @@ class RequestArticlesKeywordAggr(RequestArticles):
     """
     get aggreate of sources of resulting articles
     """
-    def __init__(self, 
-                 lang = "eng", 
+    def __init__(self,
+                 lang = "eng",
                  articlesSampleSize = 10000):
         assert articlesSampleSize <= 50000
         self.resultType = "keywordAggr"
         self.keywordAggrLang = lang
         self.keywordAggrSampleSize = articlesSampleSize
-                   
-           
+
+
 class RequestArticlesConceptGraph(RequestArticles):
     """
     get concept graph of resulting articles
     """
-    def __init__(self, conceptCount = 25, 
-                 linkCount = 50, 
-                 articlesSampleSize = 10000, 
+    def __init__(self, conceptCount = 25,
+                 linkCount = 50,
+                 articlesSampleSize = 10000,
                  returnInfo = ReturnInfo()):
         assert count <= 1000
         assert linkCount <= 2000
@@ -314,15 +314,15 @@ class RequestArticlesConceptGraph(RequestArticles):
         self.conceptGraphLinkCount = linkCount
         self.conceptGraphSampleSize = articlesSampleSize
         self.__dict__.update(returnInfo.getParams("conceptGraph"))
-        
-            
+
+
 class RequestArticlesConceptMatrix(RequestArticles):
     """
     get aggreate of sources of resulting articles
     """
-    def __init__(self, conceptCount = 25, 
+    def __init__(self, conceptCount = 25,
                  measure = "pmi",    # measure options: pmi (pointwise mutual information), pairTfIdf (pair frequence * IDF of individual concepts), chiSquare
-                 articlesSampleSize = 10000, 
+                 articlesSampleSize = 10000,
                  returnInfo = ReturnInfo()):
         assert conceptCount <= 200
         assert articlesSampleSize <= 50000
@@ -331,14 +331,14 @@ class RequestArticlesConceptMatrix(RequestArticles):
         self.conceptMatrixMeasure = measure
         self.conceptMatrixSampleSize = articlesSampleSize
         self.__dict__.update(returnInfo.getParams("conceptMatrix"))
-      
+
 
 class RequestArticlesConceptTrends(RequestArticles):
     """
     get trending of concepts in the resulting articles
     """
     def __init__(self, count = 25,
-                 articlesSampleSize = 10000, 
+                 articlesSampleSize = 10000,
                  returnInfo = ReturnInfo()):
         assert count <= 50
         assert articlesSampleSize <= 50000

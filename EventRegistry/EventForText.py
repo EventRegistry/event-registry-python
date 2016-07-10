@@ -1,7 +1,7 @@
 """
-the GetEventForText class can be used to find the event(s) that best matches the given input text. 
+the GetEventForText class can be used to find the event(s) that best matches the given input text.
 The request is performed asynchronously.
- 
+
 Note: The functionality can only be used to find the events in the last 5 days. Older events cannot
 be matched in this way
 
@@ -20,9 +20,9 @@ Return info from the compute() method is in the form:
     ...
 ]
 
-where 
+where
 * cosSim represents the cosine similarity of the document to the cluster
-* eventUri is the uri of the corresponding event in the Event Registry 
+* eventUri is the uri of the corresponding event in the Event Registry
 * storyUri is the uri of the story in the Event Registry
 You can use QueryEvent or QueryStory to obtain more information about these events/stories
 """
@@ -31,15 +31,15 @@ from Base import *
 from ReturnInfo import *
 
 class GetEventForText(QueryParamsBase):
-    def __init__(self, 
+    def __init__(self,
                  eventRegistry,             # instance of EventRegistry class
-                 nrOfEventsToReturn = 5):   # number of events to return for the given text 
+                 nrOfEventsToReturn = 5):   # number of events to return for the given text
         QueryParamsBase.__init__(self)
         self._er = eventRegistry
         self._nrOfEventsToReturn = nrOfEventsToReturn;
         self._setVal("action", "findTopCorrelations")
 
-    def compute(self, 
+    def compute(self,
                 text,           # text for which to find the most similar event
                 lang = "eng"):  # language in which the text is written
         """
