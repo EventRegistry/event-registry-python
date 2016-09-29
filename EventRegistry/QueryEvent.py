@@ -123,7 +123,7 @@ class RequestEventSimilarEvents(RequestEvent):
     def __init__(self, 
                  count = 20,                    # number of similar events to return
                  source = "concept",            # how to compute similarity. Options: concept cca
-                 maxDayDiff = sys.maxint,       # what is the maximum time difference between the similar events and this one
+                 maxDayDiff = sys.maxsize,       # what is the maximum time difference between the similar events and this one
                  addArticleTrendInfo = False,   # add info how the articles in the similar events are distributed over time
                  aggrHours = 6,                 # if similarEventsAddArticleTrendInfo == True then this is the aggregating window
                  includeSelf = False,           # should the info about the event itself be included among the results
@@ -147,7 +147,7 @@ class RequestEventSimilarStories(RequestEvent):
                  count = 20,                # number of similar stories to return
                  source = "concept",        # how to compute similarity. Options: concept, cca
                  lang = ["eng"],            # in which language should be the similar stories
-                 maxDayDiff = sys.maxint,   # what is the maximum time difference between the similar stories and this one
+                 maxDayDiff = sys.maxsize,   # what is the maximum time difference between the similar stories and this one
                  returnInfo = ReturnInfo()):
         assert count <= 200
         self.resultType = "similarStories"

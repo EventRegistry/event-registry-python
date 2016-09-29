@@ -15,10 +15,10 @@ class TestInfo(unittest.TestCase):
                                          articleCount = True,
                                          tags = True,
                                          details = True)))
-        q.queryById(range(10))
+        q.queryById(list(range(10)))
         res = self.er.execQuery(q)
         self.assertEqual(len(res), 10, "Expected 10 sources")
-        for item in res.values():
+        for item in list(res.values()):
             self.assertIsNotNone(item.get("id"), "Source id is missing")
             self.assertIsNotNone(item.get("uri"), "Source uri is missing")
             self.assertIsNotNone(item.get("title"), "Source title is missing")
@@ -27,8 +27,8 @@ class TestInfo(unittest.TestCase):
             self.assertIsNotNone(item.get("articleCount"), "Source articleCount is missing")
             self.assertIsNotNone(item.get("tags"), "Source tags is missing")
             self.assertIsNotNone(item.get("details"), "Source tags is missing")
-        if True not in [source.has_key("location") for source in res.values()]:
-            print "Warning: none of the sources has a location set"
+        if True not in ["location" in source for source in list(res.values())]:
+            print("Warning: none of the sources has a location set")
 
         q = GetSourceInfo(returnInfo = ReturnInfo(
             sourceInfo = SourceInfoFlags(title = False,
@@ -38,10 +38,10 @@ class TestInfo(unittest.TestCase):
                                          articleCount = False,
                                          tags = False,
                                          details = False)))
-        q.queryById(range(10))
+        q.queryById(list(range(10)))
         res = self.er.execQuery(q)
         self.assertEqual(len(res), 10, "Expected 10 sources")
-        for item in res.values():
+        for item in list(res.values()):
             self.assertIsNotNone(item.get("id"), "Source id is missing")
             self.assertIsNotNone(item.get("uri"), "Source uri is missing")
             self.assertIsNone(item.get("title"), "Source title should be missing")
@@ -67,7 +67,7 @@ class TestInfo(unittest.TestCase):
         q.queryByUri(uris)
         res = self.er.execQuery(q)
         self.assertEqual(len(res), len(uris), "Expected different number of sources")
-        for item in res.values():
+        for item in list(res.values()):
             self.assertIsNotNone(item.get("id"), "Source id is missing")
             self.assertIsNotNone(item.get("uri"), "Source uri is missing")
             self.assertIsNotNone(item.get("title"), "Source title is missing")
@@ -93,10 +93,10 @@ class TestInfo(unittest.TestCase):
                                            trendingScore = True,
                                            trendingHistory = True,
                                            trendingSource = ["news", "social"])))
-        q.queryById(range(10))
+        q.queryById(list(range(10)))
         res = self.er.execQuery(q)
         self.assertEqual(len(res), 10, "Expected 10 concepts")
-        for item in res.values():
+        for item in list(res.values()):
             self.assertIsNotNone(item.get("id"), "Concept id is missing")
             self.assertIsNotNone(item.get("uri"), "Concept uri is missing")
             self.assertIsNotNone(item.get("type"), "Concept type is missing")
@@ -106,9 +106,9 @@ class TestInfo(unittest.TestCase):
             self.assertIsNotNone(item.get("label").get("deu"), "Concept should have a label in german")
             self.assertIsNotNone(item.get("label").get("slv"), "Concept should have a label in slovene")
             self.assertIsNotNone(item.get("description"), "Concept should have a description")
-            self.assertTrue(item.has_key("image"), "Concept should have an image")
-            self.assertTrue(item.has_key("synonyms"), "Concept should have synonyms")
-            self.assertTrue(item.has_key("details"), "Concept should have details")
+            self.assertTrue("image" in item, "Concept should have an image")
+            self.assertTrue("synonyms" in item, "Concept should have synonyms")
+            self.assertTrue("details" in item, "Concept should have details")
             self.assertIsNotNone(item.get("conceptClassMembership"), "Concept should have conceptClassMembership")
             self.assertIsNotNone(item.get("conceptClassMembershipFull"), "Concept should have conceptClassMembershipFull")
             self.assertIsNotNone(item.get("conceptFolderMembership"), "Concept should have conceptFolderMembership")
@@ -132,10 +132,10 @@ class TestInfo(unittest.TestCase):
                                            trendingScore = False,
                                            trendingHistory = False),
             locationInfo = LocationInfoFlags(label = False, placeCountry = False)))
-        q.queryById(range(10))
+        q.queryById(list(range(10)))
         res = self.er.execQuery(q)
         self.assertEqual(len(res), 10, "Expected 10 concepts")
-        for item in res.values():
+        for item in list(res.values()):
             self.assertIsNotNone(item.get("id"), "Concept id is missing")
             self.assertIsNotNone(item.get("uri"), "Concept uri is missing")
             self.assertIsNotNone(item.get("type"), "Concept type is missing")
@@ -161,13 +161,13 @@ class TestInfo(unittest.TestCase):
                 trendingScore = True,
                 trendingHistory = True,
                 trendingSource = ["news", "social"])))
-        q.queryById(range(10))
+        q.queryById(list(range(10)))
         res = self.er.execQuery(q)
         self.assertEqual(len(res), 10, "Expected 10 categories")
-        for item in res.values():
+        for item in list(res.values()):
             self.assertIsNotNone(item.get("id"), "Category id is missing")
             self.assertIsNotNone(item.get("uri"), "Category uri is missing")
-            self.assertTrue(item.has_key("parentUri"), "Category parent uri is missing")
+            self.assertTrue("parentUri" in item, "Category parent uri is missing")
             self.assertIsNotNone(item.get("childrenUris"), "Category children uris are missing")
             self.assertIsNotNone(item.get("trendingScore"), "Category trending score is missing")
             self.assertIsNotNone(item.get("trendingHistory"), "Category trending history is missing")

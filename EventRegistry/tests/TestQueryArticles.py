@@ -20,35 +20,35 @@ class TestQueryArticles(unittest.TestCase):
 
     def ensureValidConcept(self, concept, testName):
         for prop in ["id", "uri", "label", "synonyms", "image", "description", "details", "conceptClassMembership", "conceptFolderMembership", "trendingScore", "trendingHistory", "details"]:
-            self.assertTrue(concept.has_key(prop), "Property '%s' was expected in concept for test %s" % (prop, testName))
+            self.assertTrue(prop in concept, "Property '%s' was expected in concept for test %s" % (prop, testName))
         self.assertTrue(concept.get("type") in ["person", "loc", "org"], "Expected concept to be an entity type, but got %s" % (concept.get("type")))
         if concept.get("location"):
             self.ensureValidLocation(concept.get("location"), testName)
 
     def ensureValidArticle(self, article, testName):
         for prop in ["id", "url", "uri", "title", "body", "source", "details", "location", "duplicateList", "originalArticle", "time", "date", "categories", "lang", "extractedDates", "concepts", "details"]:
-            self.assertTrue(article.has_key(prop), "Property '%s' was expected in article for test %s" % (prop, testName))
+            self.assertTrue(prop in article, "Property '%s' was expected in article for test %s" % (prop, testName))
         for concept in article.get("concepts"):
             self.ensureValidConcept(concept, testName)
-        self.assertTrue(article.get("isDuplicate") or article.has_key("eventUri"), "Nonduplicates should have event uris")
+        self.assertTrue(article.get("isDuplicate") or "eventUri" in article, "Nonduplicates should have event uris")
 
     def ensureValidSource(self, source, testName):
         for prop in ["id", "uri", "location", "importance", "articleCount", "tags", "details"]:
-            self.assertTrue(source.has_key(prop), "Property '%s' was expected in source for test %s" % (prop, testName))
+            self.assertTrue(prop in source, "Property '%s' was expected in source for test %s" % (prop, testName))
 
     def ensureValidCategory(self, category, testName):
         for prop in ["id", "uri", "parentUri", "childrenUris", "trendingScore", "trendingHistory"]:
-            self.assertTrue(category.has_key(prop), "Property '%s' was expected in source for test %s" % (prop, testName))
+            self.assertTrue(prop in category, "Property '%s' was expected in source for test %s" % (prop, testName))
 
     def ensureValidLocation(self, location, testName):
         for prop in ["wikiUri", "label", "lat", "long", "geoNamesId", "population"]:
-            self.assertTrue(location.has_key(prop), "Property '%s' was expected in a location for test %s" % (prop, testName))
+            self.assertTrue(prop in location, "Property '%s' was expected in a location for test %s" % (prop, testName))
         if location.get("type") == "country":
             for prop in ["area", "code2", "code3", "webExt", "continent"]:
-                self.assertTrue(location.has_key(prop), "Property '%s' was expected in a location for test %s" % (prop, testName))
+                self.assertTrue(prop in location, "Property '%s' was expected in a location for test %s" % (prop, testName))
         if location.get("type") == "place":
             for prop in ["featureCode", "country"]:
-                self.assertTrue(location.has_key(prop), "Property '%s' was expected in a location for test %s" % (prop, testName))
+                self.assertTrue(prop in location, "Property '%s' was expected in a location for test %s" % (prop, testName))
 
     def createQuery(self):
         q = QueryArticles()
@@ -59,7 +59,7 @@ class TestQueryArticles(unittest.TestCase):
         self.assertIsNotNone(res.get("articles"), "Expected to get 'articles'")
         
         articles = res.get("articles").get("results")
-        self.assertEquals(len(articles), 30, "Expected to get 30 articles")
+        self.assertEqual(len(articles), 30, "Expected to get 30 articles")
         for article in articles:
             self.ensureValidArticle(article, "articleList")
 
@@ -105,7 +105,7 @@ class TestQueryArticles(unittest.TestCase):
         q = QueryArticles(locationUri = location)
         q.addRequestedResult(RequestArticlesInfo(count = 30,  returnInfo = self.returnInfo))
         res = self.er.execQuery(q)
-        if res.has_key("error"):
+        if "error" in res:
             return
         self.validateGeneralArticleList(res)
 
@@ -122,9 +122,9 @@ class TestQueryArticles(unittest.TestCase):
         trends = res["conceptTrends"]["trends"]
         self.assertTrue(len(trends) > 0, "Expected to get trends for some days")
         for trend in trends:
-            self.assertTrue(trend.has_key("date"), "A trend should have a date")
-            self.assertTrue(trend.has_key("conceptFreq"), "A trend should have a conceptFreq")
-            self.assertTrue(trend.has_key("totArts"), "A trend should have a totArts property")
+            self.assertTrue("date" in trend, "A trend should have a date")
+            self.assertTrue("conceptFreq" in trend, "A trend should have a conceptFreq")
+            self.assertTrue("totArts" in trend, "A trend should have a totArts property")
             self.assertTrue(len(trend.get("conceptFreq")), "Concept frequencies should contain 5 elements - one for each concept")
         for concept in res.get("conceptTrends").get("conceptInfo"):
             self.ensureValidConcept(concept, "conceptTrends")
@@ -151,8 +151,8 @@ class TestQueryArticles(unittest.TestCase):
         keywords = res.get("keywordAggr").get("results", [])
         self.assertTrue(len(keywords) > 0, "Expected to get some keywords")
         for kw in keywords:
-            self.assertTrue(kw.has_key("keyword"), "Expected a keyword property")
-            self.assertTrue(kw.has_key("weight"), "Expected a weight property")
+            self.assertTrue("keyword" in kw, "Expected a keyword property")
+            self.assertTrue("weight" in kw, "Expected a weight property")
 
 
     def testCategoryAggr(self):
@@ -174,10 +174,10 @@ class TestQueryArticles(unittest.TestCase):
         
         self.assertIsNotNone(res.get("conceptMatrix"), "Expected to get 'conceptMatrix'")
         matrix = res.get("conceptMatrix")
-        self.assertTrue(matrix.has_key("sampleSize"), "Expecting 'sampleSize' property in conceptMatrix")
-        self.assertTrue(matrix.has_key("freqMatrix"), "Expecting 'freqMatrix' property in conceptMatrix")
-        self.assertTrue(matrix.has_key("concepts"), "Expecting 'concepts' property in conceptMatrix")
-        self.assertEquals(len(matrix.get("concepts")), 20, "Expected 20 concepts")
+        self.assertTrue("sampleSize" in matrix, "Expecting 'sampleSize' property in conceptMatrix")
+        self.assertTrue("freqMatrix" in matrix, "Expecting 'freqMatrix' property in conceptMatrix")
+        self.assertTrue("concepts" in matrix, "Expecting 'concepts' property in conceptMatrix")
+        self.assertEqual(len(matrix.get("concepts")), 20, "Expected 20 concepts")
         for concept in matrix.get("concepts"):
             self.ensureValidConcept(concept, "conceptMatrix")
 

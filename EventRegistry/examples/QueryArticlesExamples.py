@@ -4,7 +4,7 @@ er = EventRegistry()
 
 q = QueryArticles()
 # articles published on 2016-03-22 or 2016-03-23
-q.setDateLimit(datetime.date(2016, 03, 22), datetime.date(2016, 03, 23))
+q.setDateLimit(datetime.date(2016, 0o3, 22), datetime.date(2016, 0o3, 23))
 # related to Brussels
 q.addConcept(er.getConceptUri("Brussels"))
 # published by New York Times

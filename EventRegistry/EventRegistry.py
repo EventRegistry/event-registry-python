@@ -1,8 +1,8 @@
 ﻿"""
 classes responsible for obtaining results from the Event Registry
 """
-import os, sys, traceback, urllib2, urllib, json, re, requests, time
-import urllib, urllib2, threading
+import os, sys, traceback, urllib.request, urllib.error, urllib.parse, urllib.request, urllib.parse, urllib.error, json, re, requests, time
+import urllib.request, urllib.parse, urllib.error, urllib.request, urllib.error, urllib.parse, threading
 #from cookielib import CookieJar
 from Base import *
 from EventForText import *
@@ -50,7 +50,7 @@ class EventRegistry(object):
         if os.path.exists(settPath):
             settings = json.load(open(settPath))
             self._host = host or settings.get("host", "http://eventregistry.org")
-            if settings.has_key("username") and settings.has_key("password"):
+            if "username" in settings and "password" in settings:
                 self.login(settings.get("username", ""), settings.get("password", ""), False)
         else:
             self._host = host or "http://eventregistry.org"
@@ -59,7 +59,7 @@ class EventRegistry(object):
         #cj = CookieJar()
         #self._reqOpener = urllib2.build_opener(urllib2.HTTPCookieProcessor(cj))
 
-        print "Event Registry host: %s" % (self._host)
+        print("Event Registry host: %s" % (self._host))
 
     def setLogging(self, val):
         """should all requests be logged to a file or not?"""
@@ -73,7 +73,7 @@ class EventRegistry(object):
         return self._lastException
 
     def printLastException(self):
-        print str(self._lastException)
+        print(str(self._lastException))
 
     def format(self, obj):
         """return a string containing the object in a pretty formated version"""
@@ -81,7 +81,7 @@ class EventRegistry(object):
 
     def printConsole(self, text):
         """print time prefix + text to console"""
-        print time.strftime("%H:%M:%S") + " " + str(text)
+        print(time.strftime("%H:%M:%S") + " " + str(text))
 
     def getRemainingAvailableRequests(self):
         """get the number of requests that are still available for the user today"""
@@ -103,10 +103,10 @@ class EventRegistry(object):
             self._cookies = respInfo.cookies
             respInfoText = respInfo.text
             respInfoObj = json.loads(respInfoText)
-            if throwExceptOnFailure and respInfoObj.has_key("error"):
+            if throwExceptOnFailure and "error" in respInfoObj:
                 raise Exception(respInfo["error"])
-            elif respInfoObj.has_key("info"):
-                print "Successfully logged in with user %s" % (username)
+            elif "info" in respInfoObj:
+                print("Successfully logged in with user %s" % (username))
         except Exception as ex:
             if isinstance(ex, requests.exceptions.ConnectionError) and throwExceptOnFailure:
                 raise ex
@@ -156,7 +156,7 @@ class EventRegistry(object):
                     raise Exception(respInfo.text)
                 # did we get a warning. if yes, print it
                 if respInfo.headers.get("warning", ""):
-                    print "=========== WARNING ===========\n%s\n===============================" % (respInfo.headers.get("warning", ""))
+                    print("=========== WARNING ===========\n%s\n===============================" % (respInfo.headers.get("warning", "")))
                 # remember the available requests
                 self._dailyAvailableRequests = tryParseInt(respInfo.headers.get("x-ratelimit-limit", ""), val = -1)
                 self._remainingAvailableRequests = tryParseInt(respInfo.headers.get("x-ratelimit-remaining", ""), val = -1)
@@ -167,11 +167,11 @@ class EventRegistry(object):
                     returnData = respInfo.json()
                     break
                 except Exception as ex:
-                    print "EventRegistry.jsonRequest(): Exception while parsing the returned json object. Repeating the query..."
+                    print("EventRegistry.jsonRequest(): Exception while parsing the returned json object. Repeating the query...")
                     open("invalidJsonResponse.json", "w").write(respInfo.text)
             except Exception as ex:
                 self._lastException = ex
-                print "Event Registry exception while executing the request:"
+                print("Event Registry exception while executing the request:")
                 self.printLastException()
                 time.sleep(10)   # sleep for 10 seconds on error
         self._lock.release()
@@ -245,7 +245,7 @@ class EventRegistry(object):
         if there are multiple matches for the given conceptLabel, they are sorted based on their frequency of occurence in news (most to least frequent)
         """
         matches = self.suggestConcepts(conceptLabel, lang = lang, sources = sources)
-        if matches != None and isinstance(matches, list) and len(matches) > 0 and matches[0].has_key("uri"):
+        if matches != None and isinstance(matches, list) and len(matches) > 0 and "uri" in matches[0]:
             return matches[0]["uri"]
         return None
 
@@ -253,7 +253,7 @@ class EventRegistry(object):
     def getLocationUri(self, locationLabel, lang = "eng", source = ["place", "country"], countryUri = None, sortByDistanceTo = None):
         """return a location uri that is the best match for the given location label"""
         matches = self.suggestLocations(locationLabel, lang = lang, source = source, countryUri = countryUri, sortByDistanceTo = sortByDistanceTo)
-        if matches != None and isinstance(matches, list) and len(matches) > 0 and matches[0].has_key("wikiUri"):
+        if matches != None and isinstance(matches, list) and len(matches) > 0 and "wikiUri" in matches[0]:
             return matches[0]["wikiUri"]
         return None
 
@@ -261,7 +261,7 @@ class EventRegistry(object):
     def getCategoryUri(self, categoryLabel):
         """return a category uri that is the best match for the given label"""
         matches = self.suggestCategories(categoryLabel)
-        if matches != None and isinstance(matches, list) and len(matches) > 0 and matches[0].has_key("uri"):
+        if matches != None and isinstance(matches, list) and len(matches) > 0 and "uri" in matches[0]:
             return matches[0]["uri"]
         return None
 
@@ -269,7 +269,7 @@ class EventRegistry(object):
     def getNewsSourceUri(self, sourceName):
         """return the news source that best matches the source name"""
         matches = self.suggestNewsSources(sourceName)
-        if matches != None and isinstance(matches, list) and len(matches) > 0 and matches[0].has_key("uri"):
+        if matches != None and isinstance(matches, list) and len(matches) > 0 and "uri" in matches[0]:
             return matches[0]["uri"]
         return None
 
@@ -277,7 +277,7 @@ class EventRegistry(object):
     def getConceptClassUri(self, classLabel, lang = "eng"):
         """return a uri of the concept class that is the best match for the given label"""
         matches = self.suggestConceptClasses(classLabel, lang = lang)
-        if matches != None and isinstance(matches, list) and len(matches) > 0 and matches[0].has_key("uri"):
+        if matches != None and isinstance(matches, list) and len(matches) > 0 and "uri" in matches[0]:
             return matches[0]["uri"]
         return None
 
@@ -298,7 +298,7 @@ class EventRegistry(object):
         if multiple candidates match the label we cannot guarantee which one will be returned
         """
         matches = self.suggestCustomConcepts(label, lang = lang)
-        if matches != None and isinstance(matches, list) and len(matches) > 0 and matches[0].has_key("uri"):
+        if matches != None and isinstance(matches, list) and len(matches) > 0 and "uri" in matches[0]:
             return matches[0]["uri"]
         return None
 
@@ -320,7 +320,7 @@ class EventRegistry(object):
         @param articleUrls a single article url or a list of article urls
         @returns dict where key is article url and value is None (if article not found) or article uri
         """
-        assert isinstance(articleUrls, (str, unicode, list)), "Expected a single article url or a list of urls"
+        assert isinstance(articleUrls, (str, list)), "Expected a single article url or a list of urls"
         return self.jsonRequest("/json/articleMapper", { "articleUrl": articleUrls })
 
 
@@ -333,8 +333,8 @@ class EventRegistry(object):
         q = QueryArticle.queryById(latestId)
         q.addRequestedResult(RequestArticleInfo(returnInfo))
         ret = self.execQuery(q)
-        if ret and len(ret.keys()) > 0:
-            return ret[ret.keys()[0]].get("info")
+        if ret and len(list(ret.keys())) > 0:
+            return ret[list(ret.keys())[0]].get("info")
         return None
 
     # utility methods
@@ -360,10 +360,10 @@ class ArticleMapper:
         self._rememberMappings = rememberMappings
 
     def getArticleUri(self, articleUrl):
-        if self._articleUrlToUri.has_key(articleUrl):
+        if articleUrl in self._articleUrlToUri:
             return self._articleUrlToUri[articleUrl]
         res = self._er.getArticleUris(articleUrl)
-        if res and res.has_key(articleUrl):
+        if res and articleUrl in res:
             if self._rememberMappings:
                 self._articleUrlToUri[articleUrl] = res[articleUrl]
             return res[articleUrl]

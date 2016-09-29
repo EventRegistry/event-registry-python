@@ -1,2 +1,1 @@
-﻿
-from .EventRegistry import *
+﻿from EventRegistry import *

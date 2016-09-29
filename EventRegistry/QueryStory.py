@@ -106,7 +106,7 @@ class RequestStorySimilarStories(RequestStory):
     def __init__(self, 
                  count = 20,                    # number of similar stories to return
                  source = "concept",            # how to compute similarity. Options: concept cca
-                 maxDayDiff = sys.maxint,       # what is the maximum time difference between the similar stories and this one
+                 maxDayDiff = sys.maxsize,       # what is the maximum time difference between the similar stories and this one
                  returnInfo = ReturnInfo()):
         assert count <= 200
         self.resultType = "similarStories"

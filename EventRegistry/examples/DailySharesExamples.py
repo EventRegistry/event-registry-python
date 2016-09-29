@@ -5,12 +5,12 @@ er = EventRegistry()
 # get top shared articles for a date
 q = GetTopSharedArticles(date = "2015-05-23", count = 30)
 ret = er.execQuery(q)
-print er.format(ret)
+print(er.format(ret))
 
 # get top shared events for a date
 q = GetTopSharedEvents(date = "2015-05-23", count = 30)
 ret = er.execQuery(q)
-print er.format(ret)
+print(er.format(ret))
 
 
 # get social shared information for resulting articles
@@ -21,7 +21,7 @@ q.addRequestedResult(RequestArticlesInfo(
     returnInfo = ReturnInfo(
         articleInfo = ArticleInfoFlags(socialScore = True))))
 ret = er.execQuery(q)
-print er.format(ret)
+print(er.format(ret))
 
 
 
@@ -33,4 +33,4 @@ q.addRequestedResult(RequestEventsInfo(
     returnInfo = ReturnInfo(
         eventInfo = EventInfoFlags(socialScore = True))))
 ret = er.execQuery(q)
-print er.format(ret)
+print(er.format(ret))

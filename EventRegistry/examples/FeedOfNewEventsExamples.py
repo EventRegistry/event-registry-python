@@ -14,8 +14,8 @@ recentQ = GetRecentEvents(maxEventCount = 200)
 
 while True:
     ret = recentQ.getUpdates(er)
-    if ret.has_key("eventInfo") and isinstance(ret["eventInfo"], dict):
-        print "==========\n%d events updated since last call" % len(ret["eventInfo"])
+    if "eventInfo" in ret and isinstance(ret["eventInfo"], dict):
+        print("==========\n%d events updated since last call" % len(ret["eventInfo"]))
         
         # get the list of event URIs, sorted from the most recently changed backwards
         activity = ret["activity"]
@@ -24,9 +24,9 @@ while True:
         # about it was recently written about it
         for eventUri in activity:
             event = ret["eventInfo"][eventUri]
-            print u"Event %s ('%s') was changed" % (eventUri, event["title"][event["title"].keys()[0]].encode("ascii", "ignore"))
+            print("Event %s ('%s') was changed" % (eventUri, event["title"][list(event["title"].keys())[0]].encode("ascii", "ignore")))
     
     # wait a bit for new content to be added to Event Registry
-    print "sleeping for 20 seconds..."
+    print("sleeping for 20 seconds...")
     time.sleep(20)
 

@@ -52,7 +52,7 @@ class QueryEvents(Query):
                  dateStart = "",
                  dateEnd = "",
                  minArticlesInEvent = 0,
-                 maxArticlesInEvent = sys.maxint,
+                 maxArticlesInEvent = sys.maxsize,
                  dateMentionStart = "",
                  dateMentionEnd = "",
                  ignoreKeywords = "",
@@ -80,7 +80,7 @@ class QueryEvents(Query):
         if (dateEnd != ""):
             self._setDateVal("dateEnd", dateEnd)       # 2014-05-02
         self._setValIfNotDefault("minArticlesInEvent", minArticlesInEvent, 0)
-        self._setValIfNotDefault("maxArticlesInEvent", maxArticlesInEvent, sys.maxint)
+        self._setValIfNotDefault("maxArticlesInEvent", maxArticlesInEvent, sys.maxsize)
         if (dateMentionStart != ""):
             self._setDateVal("dateMentionStart", dateMentionStart)    # e.g. 2014-05-02
         if (dateMentionEnd != ""):

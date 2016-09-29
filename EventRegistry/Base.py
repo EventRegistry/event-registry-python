@@ -2,7 +2,7 @@
 utility classes for Event Registry
 """
 
-import warnings, os, sys, re, datetime, time, urllib
+import warnings, os, sys, re, datetime, time, urllib.request, urllib.parse, urllib.error
 
 
 mainLangs = ["eng", "deu", "zho", "slv", "spa"]
@@ -45,7 +45,7 @@ class Struct(object):
     instead of a["b"]["c"] we can write a.b.c
     """
     def __init__(self, data):
-        for name, value in data.iteritems():
+        for name, value in data.items():
             setattr(self, name, self._wrap(value))
 
     def _wrap(self, value):
@@ -86,16 +86,16 @@ class QueryParamsBase(object):
 
     def _clearVal(self, propName):
         """remove the value of a property propName (if existing)"""
-        if self.queryParams.has_key(propName):
+        if propName in self.queryParams:
             del self.queryParams[propName]
 
     def _hasVal(self, propName):
         """do we have in the query property named propName"""
-        return self.queryParams.has_key(propName)
+        return propName in self.queryParams
 
     def _setVal(self, propName, val):
         """set a value of a property in the query"""
-        if isinstance(val, unicode):
+        if isinstance(val, str):
             val = val.encode("utf8")
         if isinstance(val, str):
             val = removeInvalidChars(val)
@@ -112,7 +112,7 @@ class QueryParamsBase(object):
             return val.isoformat()
         elif isinstance(val, datetime.datetime):
             return val.date().isoformat()
-        elif isinstance(val, (str, unicode)):
+        elif isinstance(val, str):
             assert re.match("\d{4}-\d{2}-\d{2}", val)
             return val
         raise AssertionError("date was not in the expected format")
@@ -124,11 +124,11 @@ class QueryParamsBase(object):
         
     def _addArrayVal(self, propName, val):
         """add a value to an array of values for a property"""
-        if isinstance(val, unicode):
+        if isinstance(val, str):
             val = val.encode("utf8")
         if isinstance(val, str):
             val = removeInvalidChars(val)
-        if not self.queryParams.has_key(propName):
+        if propName not in self.queryParams:
             self.queryParams[propName] = []
         self.queryParams[propName].append(val)
 
