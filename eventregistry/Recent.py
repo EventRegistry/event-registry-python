@@ -2,8 +2,8 @@
 provides classes for getting new/updated events and articles
 """
 
-from Base import *
-from ReturnInfo import *
+from .Base import *
+from .ReturnInfo import *
 
 class GetRecentEvents(QueryParamsBase):
     def __init__(self,

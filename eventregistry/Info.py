@@ -1,5 +1,5 @@
-﻿from Base import *
-from ReturnInfo import *
+﻿from .Base import *
+from .ReturnInfo import *
 
 # #################
 # GetSourceInfo

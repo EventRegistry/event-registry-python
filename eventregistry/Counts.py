@@ -3,8 +3,8 @@ provides classes for obtaining information about how frequently individual conce
 have been mentioned in news articles (if source == "news") of in social media (if source == "social")
 """
 
-from Base import *
-from ReturnInfo import *
+from .Base import *
+from .ReturnInfo import *
 
 class CountsBase(QueryParamsBase):
     def _getPath(self):

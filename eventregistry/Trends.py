@@ -4,8 +4,8 @@ mentioned in the articles. By default trends are computed by comparing the total
 in the last two days compared to the number of mentions in the two weeks before. The trend for each concept/category
 is computed as the Pearson residual. The returned concepts/categories are the ones that have the highest residual.
 """
-from Base import *
-from ReturnInfo import *
+from .Base import *
+from .ReturnInfo import *
 
 
 class TrendsBase(QueryParamsBase):

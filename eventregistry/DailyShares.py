@@ -6,8 +6,8 @@ events on that day are checked and top shared ones are returned.
 Social score for an article is computed as the sum of shares on facebook and twitter.
 Social score for an event is computed by checking 30 top shared articles in the event and averaging their social scores.
 """
-from Base import *
-from ReturnInfo import *
+from .Base import *
+from .ReturnInfo import *
 
 class DailySharesBase(QueryParamsBase):
     def _getPath(self):
