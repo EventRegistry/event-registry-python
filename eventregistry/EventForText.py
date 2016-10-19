@@ -28,7 +28,7 @@ You can use QueryEvent or QueryStory to obtain more information about these even
 """
 
 from .Base import *
-from .ReturnInfo import *
+
 
 class GetEventForText(QueryParamsBase):
     def __init__(self,

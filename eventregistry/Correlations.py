@@ -3,8 +3,6 @@ provides classes needed to identify concepts or categories that trend the most w
 """
 
 import json
-from .Base import *
-from .ReturnInfo import *
 from .Info import *
 from .QueryArticles import *
 from .Counts import *

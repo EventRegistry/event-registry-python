@@ -1,22 +1,12 @@
 ﻿"""
 classes responsible for obtaining results from the Event Registry
 """
-import os, sys, traceback, urllib.request, urllib.error, urllib.parse, urllib.request, urllib.parse, urllib.error, json, re, requests, time
-import urllib.request, urllib.parse, urllib.error, urllib.request, urllib.error, urllib.parse, threading
-#from cookielib import CookieJar
-from .Base import *
-from .EventForText import *
-from .ReturnInfo import *
-from .QueryEvents import *
-from .QueryEvent import *
-from .QueryArticles import *
+import os
+import requests
+import time
+import threading
 from .QueryArticle import *
-from .QueryStory import *
 from .Correlations import *
-from .Counts import *
-from .DailyShares import *
-from .Info import *
-from .Recent import *
 from .Trends import *
 
 

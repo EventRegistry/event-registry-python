@@ -2,7 +2,7 @@
 utility classes for Event Registry
 """
 
-import warnings, os, sys, re, datetime, time, urllib.request, urllib.parse, urllib.error
+import warnings, re, datetime
 
 
 mainLangs = ["eng", "deu", "zho", "slv", "spa"]
