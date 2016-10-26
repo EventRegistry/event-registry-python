@@ -5,7 +5,7 @@ from eventregistry import *
 class TestAutoSuggest(unittest.TestCase):
     @classmethod
     def setUpClass(self):
-        self.er = EventRegistry(host = "http://beta.eventregistry.org")
+        self.er = EventRegistry()
 
     def testConcepts(self):
         q = QueryEvents()

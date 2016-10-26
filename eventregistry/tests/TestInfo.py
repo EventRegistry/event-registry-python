@@ -4,7 +4,7 @@ from eventregistry import *
 class TestInfo(unittest.TestCase):
     @classmethod
     def setUpClass(self):
-        self.er = EventRegistry(host = "http://beta.eventregistry.org")
+        self.er = EventRegistry()
 
     def test_sourcesById(self):
         q = GetSourceInfo(returnInfo = ReturnInfo(
