@@ -1,4 +1,6 @@
-﻿from .Base import *
+﻿import sys
+
+from .Base import *
 from .ReturnInfo import *
 
 
