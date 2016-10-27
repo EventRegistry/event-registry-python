@@ -223,7 +223,7 @@ class RequestArticlesIdList(RequestArticles):
 
 class RequestArticlesUrlList(RequestArticles):
     """
-    return a list of article ids
+    return a list of article urls
     """
     def __init__(self, page = 1,
                  count = 10000,
