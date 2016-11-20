@@ -17,6 +17,7 @@ class QueryArticle(Query):
         return "/json/article"
 
     @staticmethod
+    @deprecated
     def queryById(articleIdOrIdList):
         """
         obtain information about one or more articles by providing their Event Registry ids

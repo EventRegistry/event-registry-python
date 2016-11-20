@@ -140,6 +140,7 @@ class QueryArticles(Query):
         assert isinstance(requestArticles, RequestArticles), "QueryArticles class can only accept result requests that are of type RequestArticles"
         self.resultTypeList.append(requestArticles)
 
+    @deprecated
     def setArticleIdList(self, idList):
         """set a custom list of article ids. the results will be then computed on this list - no query will be done"""
         self.queryParams = { "action": "getArticles", "articleIdList": ",".join([str(val) for val in idList])}
