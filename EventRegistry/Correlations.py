@@ -2,7 +2,7 @@
 provides classes needed to identify concepts or categories that trend the most with a concept, category or a custom time series
 """
 
-import json
+import json, six
 from Base import *
 from ReturnInfo import *
 from Info import *
@@ -39,7 +39,7 @@ class GetTopCorrelations(QueryParamsBase):
                 dateStr = val.isoformat()
             elif isinstance(val, datetime.datetime):
                 dateStr = val.date().isoformat()
-            elif isinstance(val, (str, unicode)):
+            elif isinstance(val, six.string_types):
                 assert re.match("\d{4}-\d{2}-\d{2}", date)
                 dateStr = date
             else:
@@ -62,7 +62,7 @@ class GetTopCorrelations(QueryParamsBase):
         assert isinstance(queryArticles, QueryArticles), "'queryArticles' excpected to be an instance of QueryArticles"
         queryArticles.addRequestedResult(RequestArticlesTimeAggr())
         res = self._er.execQuery(queryArticles)
-        if res.has_key("timeAggr"):
+        if "timeAggr" in res:
             for obj in res["timeAggr"]:
                 self._addArrayVal("testData", json.dumps(obj))
 
@@ -76,10 +76,10 @@ class GetTopCorrelations(QueryParamsBase):
 
         assert isinstance(getCounts, GetCounts), "'getCounts' is expected to be an instance of GetCounts"
         res = self._er.execQuery(getCounts)
-        assert len(res.keys()) <= 1, "The returned object had multiple keys. When creating the GetCounts instance use only one uri."
-        assert len(res.keys()) != 0, "Obtained an empty object"
-        assert not res.has_key("error"), res.get("error")
-        key = res.keys()[0]
+        assert len(list(res.keys())) <= 1, "The returned object had multiple keys. When creating the GetCounts instance use only one uri."
+        assert len(list(res.keys())) != 0, "Obtained an empty object"
+        assert "error" not in res, res.get("error")
+        key = list(res.keys())[0]
         assert isinstance(res[key], list), "Expected a list"
         for obj in res[key]:
             self._addArrayVal("testData", json.dumps(obj))
@@ -125,10 +125,10 @@ class GetTopCorrelations(QueryParamsBase):
             candidateConceptsQuery._setVal("conceptAggrConceptCountPerType", candidatesPerType)
             candidateConceptsQuery._setVal("conceptAggrConceptIdOnly", True)
             ret = self._er.execQuery(candidateConceptsQuery)
-            if ret and ret.has_key("conceptAggr"):
+            if ret and "conceptAggr" in ret:
                 params._setVal("contextConceptIds", ",".join([str(x) for x in ret["conceptAggr"]]))
             else:
-                print "Warning: Failed to compute a candidate set of concepts"
+                print("Warning: Failed to compute a candidate set of concepts")
 
         if conceptType:
             params._setVal("conceptType", conceptType)

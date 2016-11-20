@@ -2,7 +2,7 @@
 utility classes for Event Registry
 """
 
-import warnings, os, sys, re, datetime, time, urllib
+import six, warnings, os, sys, re, datetime, time
 
 
 mainLangs = ["eng", "deu", "zho", "slv", "spa"]
@@ -17,7 +17,7 @@ def deprecated(func):
     when the function is used."""
 
     def new_func(*args, **kwargs):
-        warnings.simplefilter('always', DeprecationWarning) #turn off filter 
+        warnings.simplefilter('always', DeprecationWarning) #turn off filter
         warnings.warn("Call to deprecated function {}.".format(func.__name__), category=DeprecationWarning, stacklevel=2)
         warnings.simplefilter('default', DeprecationWarning) #reset filter
         return func(*args, **kwargs)
@@ -45,11 +45,11 @@ class Struct(object):
     instead of a["b"]["c"] we can write a.b.c
     """
     def __init__(self, data):
-        for name, value in data.iteritems():
+        for name, value in data.items():
             setattr(self, name, self._wrap(value))
 
     def _wrap(self, value):
-        if isinstance(value, (tuple, list, set, frozenset)): 
+        if isinstance(value, (tuple, list, set, frozenset)):
             return type(value)([self._wrap(v) for v in value])
         else:
             return Struct(value) if isinstance(value, dict) else value
@@ -73,7 +73,7 @@ class QueryParamsBase(object):
     used for storing parameters for a query. Parameter values can either be
     simple values (set by _setVal()) or an array of values (set by multiple
     calls to _addArrayVal() method)
-    """    
+    """
     def __init__(self):
         self.queryParams = {}
 
@@ -86,21 +86,20 @@ class QueryParamsBase(object):
 
     def _clearVal(self, propName):
         """remove the value of a property propName (if existing)"""
-        if self.queryParams.has_key(propName):
+        if propName in self.queryParams:
             del self.queryParams[propName]
 
     def _hasVal(self, propName):
         """do we have in the query property named propName"""
-        return self.queryParams.has_key(propName)
+        return propName in self.queryParams
 
     def _setVal(self, propName, val):
         """set a value of a property in the query"""
-        if isinstance(val, unicode):
+        if isinstance(val, six.string_types):
             val = val.encode("utf8")
-        if isinstance(val, str):
             val = removeInvalidChars(val)
         self.queryParams[propName] = val
- 
+
     def _setValIfNotDefault(self, propName, val, defVal):
         """set to queryParams property propName to val if val != defVal"""
         if val != defVal:
@@ -112,7 +111,7 @@ class QueryParamsBase(object):
             return val.isoformat()
         elif isinstance(val, datetime.datetime):
             return val.date().isoformat()
-        elif isinstance(val, (str, unicode)):
+        elif isinstance(val, six.string_types):
             assert re.match("\d{4}-\d{2}-\d{2}", val)
             return val
         raise AssertionError("date was not in the expected format")
@@ -121,14 +120,13 @@ class QueryParamsBase(object):
         """set a property value that represents date. Value can be string in YYYY-MM-DD format, datetime.date or datetime.datetime"""
         encodedVal = self._encodeDate(val)
         self._setVal(propName, encodedVal)
-        
+
     def _addArrayVal(self, propName, val):
         """add a value to an array of values for a property"""
-        if isinstance(val, unicode):
+        if isinstance(val, six.string_types):
             val = val.encode("utf8")
-        if isinstance(val, str):
             val = removeInvalidChars(val)
-        if not self.queryParams.has_key(propName):
+        if propName not in self.queryParams:
             self.queryParams[propName] = []
         self.queryParams[propName].append(val)
 
@@ -144,7 +142,7 @@ class Query(QueryParamsBase):
     def __init__(self):
         QueryParamsBase.__init__(self)
         self.resultTypeList = []
-      
+
     def clearRequestedResults(self):
         self.resultTypeList = []
 

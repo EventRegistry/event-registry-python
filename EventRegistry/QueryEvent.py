@@ -123,7 +123,7 @@ class RequestEventSimilarEvents(RequestEvent):
     def __init__(self,
                  count = 20,                    # number of similar events to return
                  source = "concept",            # how to compute similarity. Options: concept cca
-                 maxDayDiff = sys.maxint,       # what is the maximum time difference between the similar events and this one
+                 maxDayDiff = sys.maxsize,       # what is the maximum time difference between the similar events and this one
                  addArticleTrendInfo = False,   # add info how the articles in the similar events are distributed over time
                  aggrHours = 6,                 # if similarEventsAddArticleTrendInfo == True then this is the aggregating window
                  includeSelf = False,           # should the info about the event itself be included among the results
@@ -132,7 +132,8 @@ class RequestEventSimilarEvents(RequestEvent):
         self.resultType = "similarEvents"
         self.similarEventsCount = count
         self.similarEventsSource = source
-        self.similarEventsMaxDayDiff = maxDayDiff
+        if maxDayDiff != sys.maxsize:
+            self.similarEventsMaxDayDiff = maxDayDiff
         self.similarEventsAddArticleTrendInfo = addArticleTrendInfo
         self.similarEventsAggrHours = aggrHours
         self.similarEventsIncludeSelf = includeSelf
@@ -147,12 +148,13 @@ class RequestEventSimilarStories(RequestEvent):
                  count = 20,                # number of similar stories to return
                  source = "concept",        # how to compute similarity. Options: concept, cca
                  lang = ["eng"],            # in which language should be the similar stories
-                 maxDayDiff = sys.maxint,   # what is the maximum time difference between the similar stories and this one
+                 maxDayDiff = sys.maxsize,   # what is the maximum time difference between the similar stories and this one
                  returnInfo = ReturnInfo()):
         assert count <= 200
         self.resultType = "similarStories"
         self.similarStoriesCount = count
         self.similarStoriesSource = source
         self.similarStoriesLang = lang
-        self.similarStoriesMaxDayDiff = maxDayDiff
+        if maxDayDiff != sys.maxsize:
+            self.similarStoriesMaxDayDiff = maxDayDiff
         self.__dict__.update(returnInfo.getParams("similarStories"))

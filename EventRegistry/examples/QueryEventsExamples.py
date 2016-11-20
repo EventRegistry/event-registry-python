@@ -8,7 +8,7 @@ er = EventRegistry()
 
 # get the concept URI that matches label "Barack Obama"
 obamaConceptUri = er.getConceptUri("Obama")
-print "Concept uri for 'Obama' is " + obamaConceptUri
+print("Concept uri for 'Obama' is " + obamaConceptUri)
 
 # make a query for events
 q = QueryEvents()
@@ -30,7 +30,7 @@ q.addRequestedResult(RequestEventsConceptAggr(conceptCount = 20,
 
 # get the news source URI that matches label "BBC"
 bbcSourceUri = er.getNewsSourceUri("BBC")
-print "Source uri for 'BBC' is " + bbcSourceUri
+print("Source uri for 'BBC' is " + bbcSourceUri)
 
 # make a query for events
 q = QueryEvents()
@@ -46,7 +46,7 @@ q.addRequestedResult(RequestEventsInfo(count = 30, sortBy = "date", sortByAsc = 
 
 # get the category URI that matches label "society issues"
 issuesCategoryUri = er.getCategoryUri("society issues")
-print "Category uri for 'society issues' is " + issuesCategoryUri
+print("Category uri for 'society issues' is " + issuesCategoryUri)
 
 # make a query for events
 q = QueryEvents()

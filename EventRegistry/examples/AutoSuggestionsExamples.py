@@ -6,6 +6,13 @@ from eventregistry import *
 
 er = EventRegistry()
 
+from eventregistry import *
+er = EventRegistry()
+q = QueryEvents()
+q.addConcept(er.getConceptUri("Star Wars"))
+q.addRequestedResult(RequestEventsInfo(sortBy = "date", count=10))   # return event details for last 10 events
+print er.execQuery(q)
+
 # get concept uris for concepts based on the concept labels:
 conceptUrisMatchingObama = er.suggestConcepts("Obama", lang = "eng", conceptLang = ["eng", "deu"])
 # get only the top concept that best matches the prefix

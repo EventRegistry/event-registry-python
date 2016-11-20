@@ -10,7 +10,7 @@ q.addConcept(er.getConceptUri("Brussels"))
 # published by New York Times
 q.addNewsSource(er.getNewsSourceUri("New York Times"))
 # return details about the articles
-q.addRequestedResult(RequestArticlesInfo(count = 30, 
+q.addRequestedResult(RequestArticlesInfo(count = 30,
     returnInfo = ReturnInfo(
         articleInfo = ArticleInfoFlags(duplicateList = True, concepts = True, categories = True, location = True, image = True))))
 # execute the query

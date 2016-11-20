@@ -23,7 +23,7 @@ class ReturnInfoFlagsBase(object):
         if not hasattr(self, "flags"):
             self.flags = {}
         dict = {}
-        for key in self.flags.keys():
+        for key in list(self.flags.keys()):
             dict[prefix + key] = self.flags[key]
         return dict
 
@@ -49,7 +49,7 @@ class ReturnInfoFlagsBase(object):
         if not hasattr(self, "vals"):
             self.vals = {}
         dict = {}
-        for key in self.vals.keys():
+        for key in list(self.vals.keys()):
             # if no prefix then lower the first letter
             if prefix == "":
                 newkey = key[:1].lower() + key[1:] if key else ""
