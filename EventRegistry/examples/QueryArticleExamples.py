@@ -1,7 +1,7 @@
 ﻿from eventregistry import *
 
 er = EventRegistry()
-            
+
 # search article by uri
 q = QueryArticle("247634888")
 q.addRequestedResult(RequestArticleInfo())                 # get all info about the specified article

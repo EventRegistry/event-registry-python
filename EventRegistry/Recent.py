@@ -2,20 +2,20 @@
 provides classes for getting new/updated events and articles
 """
 
-from Base import *
-from ReturnInfo import *
+from eventregistry.Base import *
+from eventregistry.ReturnInfo import *
 
 class GetRecentEvents(QueryParamsBase):
     def __init__(self,
-            maxEventCount = 60, 
-            maxMinsBack = 10 * 60, 
-            mandatoryLang = None, 
-            mandatoryLocation = True, 
-            lastActivityId = 0, 
+            maxEventCount = 60,
+            maxMinsBack = 10 * 60,
+            mandatoryLang = None,
+            mandatoryLocation = True,
+            lastActivityId = 0,
             returnInfo = ReturnInfo()):
         """
         return info about recently modified events
-        
+
         @param maxEventCount: determines the maximum number of events to return in a single call (max 250)
         @param maxMinsBack: sets how much in the history are we interested to look
         @param mandatoryLang: set a lang or array of langs if you wish to only get events covered at least by the specified language
@@ -36,7 +36,7 @@ class GetRecentEvents(QueryParamsBase):
         if mandatoryLang != None:
             self._setVal("recentActivityEventsMandatoryLang", mandatoryLang)
         self._update(returnInfo.getParams("recentActivityEvents"))
-                
+
     def _getPath(self):
         return "/json/overview"
 
@@ -48,7 +48,7 @@ class GetRecentEvents(QueryParamsBase):
         """
         # execute the query
         ret = er.execQuery(self)
-        
+
         # extract the latest activity id and remember it for the next query
         if ret and ret.get("recentActivity") and ret["recentActivity"].get("events"):
             lastActivityId =  ret["recentActivity"]["events"].get("lastActivityId", 0)
@@ -61,10 +61,10 @@ class GetRecentEvents(QueryParamsBase):
 
 class GetRecentArticles(QueryParamsBase):
     def __init__(self,
-            maxArticleCount = 60, 
-            maxMinsBack = 10 * 60, 
-            mandatorySourceLocation = False, 
-            lastActivityId = 0, 
+            maxArticleCount = 60,
+            maxMinsBack = 10 * 60,
+            mandatorySourceLocation = False,
+            lastActivityId = 0,
             returnInfo = ReturnInfo()):
         """
         return info about recently added articles
@@ -84,7 +84,7 @@ class GetRecentArticles(QueryParamsBase):
         self._setVal("recentActivityArticlesMandatorySourceLocation", mandatorySourceLocation)
         self._setVal("recentActivityArticlesLastActivityId", lastActivityId)
         self._update(returnInfo.getParams("recentActivityArticles"))
-                
+
     def _getPath(self):
         return "/json/overview"
 
@@ -96,7 +96,7 @@ class GetRecentArticles(QueryParamsBase):
         """
         # execute the query
         ret = er.execQuery(self)
-        
+
         # extract the latest activity id and remember it for the next query
         if ret and ret.get("recentActivity") and ret["recentActivity"].get("articles"):
             lastActivityId = ret["recentActivity"]["articles"].get("lastActivityId", 0)

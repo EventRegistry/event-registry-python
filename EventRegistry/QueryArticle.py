@@ -1,5 +1,5 @@
-﻿from Base import *
-from ReturnInfo import *
+﻿from eventregistry.Base import *
+from eventregistry.ReturnInfo import *
 
 class QueryArticle(Query):
     """

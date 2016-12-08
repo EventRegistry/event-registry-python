@@ -3,7 +3,7 @@
 er = EventRegistry()
 
 #
-# query for events related to Barack Obama 
+# query for events related to Barack Obama
 #
 
 # get the concept URI that matches label "Barack Obama"
@@ -16,10 +16,10 @@ q.addConcept(obamaConceptUri)                 # get events related to obama
 # return a list of event URIs
 q.addRequestedResult(RequestEventsUriList())
 # return details about 30 events that are most related to Obama
-q.addRequestedResult(RequestEventsInfo(count = 30, sortBy = "rel", sortByAsc = False, 
+q.addRequestedResult(RequestEventsInfo(count = 30, sortBy = "rel", sortByAsc = False,
     returnInfo = ReturnInfo(conceptInfo = ConceptInfoFlags(lang = "deu", type = ["person", "wiki"]))))
 # compute most relevant concepts of type organization or location extracted from events about Obama
-q.addRequestedResult(RequestEventsConceptAggr(conceptCount = 20, 
+q.addRequestedResult(RequestEventsConceptAggr(conceptCount = 20,
     returnInfo = ReturnInfo(conceptInfo = ConceptInfoFlags(type = ["org", "loc"]))))
 #res = er.execQuery(q)
 
@@ -60,8 +60,8 @@ q.addRequestedResult(RequestEventsInfo(count = 30, sortBy = "size", sortByAsc = 
 ## find events where either Sandra Bullock or Gerge Clooney are relevant. since we use OR, res3 should have more results than res1 and res2
 #res1 = er.execQuery(QueryEvents(conceptUri = er.getConceptUri("sandra bullock"), requestedResult = RequestEventsInfo(count = 0)))
 #res2 = er.execQuery(QueryEvents(conceptUri = er.getConceptUri("george clooney"), requestedResult = RequestEventsInfo(count = 0)))
-#res3 = er.execQuery(QueryEvents(conceptUri = [er.getConceptUri("sandra bullock"), er.getConceptUri("george clooney")], 
-#                                conceptOper = "OR", 
+#res3 = er.execQuery(QueryEvents(conceptUri = [er.getConceptUri("sandra bullock"), er.getConceptUri("george clooney")],
+#                                conceptOper = "OR",
 #                                requestedResult = RequestEventsInfo(count = 0)))
 #c1 = res1["events"]["totalResults"]
 #c2 = res2["events"]["totalResults"]
@@ -77,7 +77,7 @@ q.addRequestedResult(RequestEventsInfo(count = 30, sortBy = "size", sortByAsc = 
 q = QueryEvents()
 q.addLocation(er.getLocationUri("Berlin"))
 q.setDateLimit(datetime.date(2015, 4, 16), datetime.date(2015, 4, 28))
-q.addRequestedResult(RequestEventsConceptTrends(conceptCount = 40, 
+q.addRequestedResult(RequestEventsConceptTrends(conceptCount = 40,
     returnInfo = ReturnInfo(conceptInfo = ConceptInfoFlags(type = ["person"]))))
 q.addRequestedResult(RequestEventsCategoryAggr())
 q.addRequestedResult(RequestEventsInfo())

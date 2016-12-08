@@ -3,21 +3,20 @@ classes responsible for obtaining results from the Event Registry
 """
 import six, os, sys, traceback, json, re, requests, time
 import threading
-#from cookielib import CookieJar
-from Base import *
-from EventForText import *
-from ReturnInfo import *
-from QueryEvents import *
-from QueryEvent import *
-from QueryArticles import *
-from QueryArticle import *
-from QueryStory import *
-from Correlations import *
-from Counts import *
-from DailyShares import *
-from Info import *
-from Recent import *
-from Trends import *
+from eventregistry.Base import *
+from eventregistry.EventForText import *
+from eventregistry.ReturnInfo import *
+from eventregistry.QueryEvents import *
+from eventregistry.QueryEvent import *
+from eventregistry.QueryArticles import *
+from eventregistry.QueryArticle import *
+from eventregistry.QueryStory import *
+from eventregistry.Correlations import *
+from eventregistry.Counts import *
+from eventregistry.DailyShares import *
+from eventregistry.Info import *
+from eventregistry.Recent import *
+from eventregistry.Trends import *
 
 class EventRegistry(object):
     """
@@ -26,7 +25,7 @@ class EventRegistry(object):
     """
     def __init__(self, host = None, logging = False,
                  minDelayBetweenRequests = 0.5,     # the minimum number of seconds between individual api calls
-                 repeatFailedRequestCount = -1,    # if a request fails (for example, because ER is down), what is the max number of times the request should be repeated (-1 for indefinitely)
+                 repeatFailedRequestCount = -1,     # if a request fails (for example, because ER is down), what is the max number of times the request should be repeated (-1 for indefinitely)
                  verboseOutput = False):            # if true, additional info about query times etc will be printed to console
         self._host = host
         self._lastException = None
@@ -42,6 +41,7 @@ class EventRegistry(object):
         # lock for making sure we make one request at a time - requests module otherwise sometimes returns incomplete json objects
         self._lock = threading.Lock()
         self._reqSession = requests.Session()
+        self._apiKey = None
 
         # if there is a settings.json file in the directory then try using it to login to ER
         # and to read the host name from it (if custom host is not specified)
@@ -50,14 +50,19 @@ class EventRegistry(object):
         if os.path.exists(settPath):
             settings = json.load(open(settPath))
             self._host = host or settings.get("host", "http://eventregistry.org")
+            # try logging in with username and password
             if "username" in settings and "password" in settings:
+                print "found username and password in settings file which will be used for making requests. Trying to login..."
                 self.login(settings.get("username", ""), settings.get("password", ""), False)
+            # if api key is set, then use it when making the requests
+            elif "apiKey" in settings:
+                print "found apiKey in settings file which will be used for making requests"
+                self._apiKey = settings["apiKey"]
+            else:
+                print "no authentication found in the settings file"
         else:
             self._host = host or "http://eventregistry.org"
         self._requestLogFName = os.path.join(currPath, "requests_log.txt")
-
-        #cj = CookieJar()
-        #self._reqOpener = urllib2.build_opener(urllib2.HTTPCookieProcessor(cj))
 
         print("Event Registry host: %s" % (self._host))
 
@@ -142,6 +147,12 @@ class EventRegistry(object):
             except Exception as ex:
                 self._lastException = ex
 
+        # if we have api key then add it to the paramDict
+        if self._apiKey:
+            if paramDict == None:
+                paramDict = {}
+            paramDict["apiKey"] = self._apiKey
+
         tryCount = 0
         returnData = None
         while self._repeatFailedRequestCount < 0 or tryCount < self._repeatFailedRequestCount:
@@ -223,7 +234,7 @@ class EventRegistry(object):
     def suggestConceptClasses(self, prefix, lang = "eng", conceptLang = "eng", source = ["dbpedia", "custom"], page = 1, count = 20, returnInfo = ReturnInfo()):
         """return a list of dmoz categories that contain the prefix"""
         assert page > 0, "page parameter should be above 0"
-        params = { "prefix": prefix, "lang": lang, "conceptLang": conceptLang, source: source, "page": page, "count": count }
+        params = { "prefix": prefix, "lang": lang, "conceptLang": conceptLang, "source": source, "page": page, "count": count }
         params.update(returnInfo.getParams())
         return self.jsonRequest("/json/suggestConceptClasses", params)
 

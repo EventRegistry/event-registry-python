@@ -3,11 +3,11 @@ provides classes needed to identify concepts or categories that trend the most w
 """
 
 import json, six
-from Base import *
-from ReturnInfo import *
-from Info import *
-from QueryArticles import *
-from Counts import *
+from eventregistry.Base import *
+from eventregistry.ReturnInfo import *
+from eventregistry.Info import *
+from eventregistry.QueryArticles import *
+from eventregistry.Counts import *
 
 class GetTopCorrelations(QueryParamsBase):
     def __init__(self,

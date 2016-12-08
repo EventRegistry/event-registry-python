@@ -5,7 +5,7 @@ from eventregistry import *
 class TestQueryArticles(unittest.TestCase):
     @classmethod
     def setUpClass(self):
-        self.er = EventRegistry(host = "http://beta.eventregistry.org")
+        self.er = EventRegistry(host = "http://eventregistry.org")
 
         self.articleInfo = ArticleInfoFlags(bodyLen = -1, concepts = True, storyUri = True, duplicateList = True, originalArticle = True, categories = True,
                 location = True, image = True, extractedDates = True, socialScore = True, details = True)

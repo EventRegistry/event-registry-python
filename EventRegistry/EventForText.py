@@ -27,8 +27,8 @@ where
 You can use QueryEvent or QueryStory to obtain more information about these events/stories
 """
 
-from Base import *
-from ReturnInfo import *
+from eventregistry.Base import *
+from eventregistry.ReturnInfo import *
 
 class GetEventForText(QueryParamsBase):
     def __init__(self,
