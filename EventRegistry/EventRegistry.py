@@ -52,14 +52,14 @@ class EventRegistry(object):
             self._host = host or settings.get("host", "http://eventregistry.org")
             # try logging in with username and password
             if "username" in settings and "password" in settings:
-                print "found username and password in settings file which will be used for making requests. Trying to login..."
+                print("found username and password in settings file which will be used for making requests. Trying to login...")
                 self.login(settings.get("username", ""), settings.get("password", ""), False)
             # if api key is set, then use it when making the requests
             elif "apiKey" in settings:
-                print "found apiKey in settings file which will be used for making requests"
+                print("found apiKey in settings file which will be used for making requests")
                 self._apiKey = settings["apiKey"]
             else:
-                print "no authentication found in the settings file"
+                print("no authentication found in the settings file")
         else:
             self._host = host or "http://eventregistry.org"
         self._requestLogFName = os.path.join(currPath, "requests_log.txt")
