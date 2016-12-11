@@ -96,14 +96,16 @@ class QueryParamsBase(object):
     def _setVal(self, propName, val):
         """set a value of a property in the query"""
         if isinstance(val, six.string_types):
-            val = val.encode("utf8")
+            # in python 2 we need to first encode, before removing the invalid characters
+            if six.PY2:
+                val = val.encode("utf8")
             val = removeInvalidChars(val)
         self.queryParams[propName] = val
 
     def _setValIfNotDefault(self, propName, val, defVal):
         """set to queryParams property propName to val if val != defVal"""
         if val != defVal:
-            self.queryParams[propName] = val
+            self._setVal(propName, val)
 
     def _encodeDate(self, val):
         """encode val that can be a date in different forms as a date that can be sent to Er"""
@@ -124,7 +126,9 @@ class QueryParamsBase(object):
     def _addArrayVal(self, propName, val):
         """add a value to an array of values for a property"""
         if isinstance(val, six.string_types):
-            val = val.encode("utf8")
+            # in python 2 we need to first encode, before removing the invalid characters
+            if six.PY2:
+                val = val.encode("utf8")
             val = removeInvalidChars(val)
         if propName not in self.queryParams:
             self.queryParams[propName] = []

@@ -28,7 +28,7 @@ londonUri = er.getLocationUri("Lond")
 print(londonUri)
 
 usUri = er.getLocationUri("united states", source= "country")
-print usUri
+print(usUri)
 # get a top location for "lond" that is located in USA
 londonUsUri = er.getLocationUri("Lond", countryUri = usUri)
 print(londonUsUri)

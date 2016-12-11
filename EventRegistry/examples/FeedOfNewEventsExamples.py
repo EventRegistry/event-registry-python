@@ -8,7 +8,7 @@ languages
 from eventregistry import *
 import time
 
-er = EventRegistry("http://eventregistry.org", verboseOutput = True)
+er = EventRegistry()
 
 recentQ = GetRecentEvents(maxEventCount = 200)
 
@@ -32,6 +32,6 @@ while True:
             # TODO: here you can do the processing that decides if the event is relevant for you or not. if relevant, send the info to an external service
 
     # wait a bit for new content to be added to Event Registry
-    print "sleeping for 40 seconds..."
+    print("sleeping for 40 seconds...")
     time.sleep(40)
 

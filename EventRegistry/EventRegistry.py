@@ -198,13 +198,13 @@ class EventRegistry(object):
         assert page > 0, "page parameter should be above 0"
         params = { "prefix": prefix, "source": sources, "lang": lang, "conceptLang": conceptLang, "page": page, "count": count}
         params.update(returnInfo.getParams())
-        return self.jsonRequest("/json/suggestConcepts", params)
+        return self.jsonRequest("/json/suggestConceptsFast", params)
 
 
     def suggestNewsSources(self, prefix, page = 1, count = 20):
         """return a list of news sources that match the prefix"""
         assert page > 0, "page parameter should be above 0"
-        return self.jsonRequest("/json/suggestSources", { "prefix": prefix, "page": page, "count": count })
+        return self.jsonRequest("/json/suggestSourcesFast", { "prefix": prefix, "page": page, "count": count })
 
 
     def suggestLocations(self, prefix, count = 20, lang = "eng", source = ["place", "country"], countryUri = None, sortByDistanceTo = None, returnInfo = ReturnInfo()):
@@ -228,7 +228,7 @@ class EventRegistry(object):
         assert page > 0, "page parameter should be above 0"
         params = { "prefix": prefix, "page": page, "count": count }
         params.update(returnInfo.getParams())
-        return self.jsonRequest("/json/suggestCategories", params)
+        return self.jsonRequest("/json/suggestCategoriesFast", params)
 
 
     def suggestConceptClasses(self, prefix, lang = "eng", conceptLang = "eng", source = ["dbpedia", "custom"], page = 1, count = 20, returnInfo = ReturnInfo()):
