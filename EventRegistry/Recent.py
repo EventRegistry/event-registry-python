@@ -51,7 +51,7 @@ class GetRecentEvents(QueryParamsBase):
 
         # extract the latest activity id and remember it for the next query
         if ret and ret.get("recentActivity") and ret["recentActivity"].get("events"):
-            lastActivityId =  ret["recentActivity"]["events"].get("lastActivityId", 0)
+            lastActivityId =  ret["recentActivity"]["events"].get("newestActivityId", 0)
             self._setVal("recentActivityEventsLastActivityId", lastActivityId)
             # return the updated information
             return ret["recentActivity"]["events"]
