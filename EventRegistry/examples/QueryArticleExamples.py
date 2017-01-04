@@ -17,7 +17,7 @@ res = er.execQuery(q)
 
 # first search for articles related to Apple
 q = QueryArticles()
-#q.setDateLimit(datetime.date(2014, 4, 16), datetime.date(2014, 4, 28))
+q.setDateLimit(datetime.datetime(2016, 12, 10, 3, 2, 1), datetime.datetime(2016, 12, 18))
 #q.addKeyword("apple")
 #q.addKeyword("iphone")
 q.addConcept(er.getConceptUri("Apple"))

@@ -87,10 +87,19 @@ class QueryArticles(Query):
         self._setValIfNotDefault("categoryIncludeSub", categoryIncludeSub, True)    # also include the subcategories for the given categories
         self._setValIfNotDefault("lang", lang, [])                  # a single lang or list (possible: eng, deu, spa, zho, slv)
 
-        self._setValIfNotDefault("dateStart", dateStart, "")        # starting date of the published articles (e.g. 2014-05-02)
-        self._setValIfNotDefault("dateEnd", dateEnd, "")            # ending date of the published articles (e.g. 2014-05-02)
-        self._setValIfNotDefault("dateMentionStart", dateMentionStart, "")  # first valid mentioned date detected in articles (e.g. 2014-05-02)
-        self._setValIfNotDefault("dateMentionEnd", dateMentionEnd, "")      # last valid mentioned date detected in articles (e.g. 2014-05-02)
+        # starting date of the published articles (e.g. 2014-05-02)
+        if (dateStart != ""):
+            self._setDateVal("dateStart", dateStart)
+        # ending date of the published articles (e.g. 2014-05-02)
+        if (dateEnd != ""):
+            self._setDateVal("dateEnd", dateEnd)
+
+        # first valid mentioned date detected in articles (e.g. 2014-05-02)
+        if (dateMentionStart != ""):
+            self._setDateVal("dateMentionStart", dateMentionStart)
+        # last valid mentioned date detected in articles (e.g. 2014-05-02)
+        if (dateMentionEnd != ""):
+            self._setDateVal("dateMentionEnd", dateMentionEnd)
 
         self._setValIfNotDefault("ignoreKeywords", ignoreKeywords, "")
         self._setValIfNotDefault("ignoreConceptUri", ignoreConceptUri, [])
