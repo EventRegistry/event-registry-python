@@ -26,7 +26,8 @@ class EventRegistry(object):
     def __init__(self, host = None, logging = False,
                  minDelayBetweenRequests = 0.5,     # the minimum number of seconds between individual api calls
                  repeatFailedRequestCount = -1,     # if a request fails (for example, because ER is down), what is the max number of times the request should be repeated (-1 for indefinitely)
-                 verboseOutput = False):            # if true, additional info about query times etc will be printed to console
+                 verboseOutput = False,             # if true, additional info about query times etc will be printed to console
+                 apiKey = None):
         self._host = host
         self._lastException = None
         self._logRequests = logging
@@ -41,7 +42,7 @@ class EventRegistry(object):
         # lock for making sure we make one request at a time - requests module otherwise sometimes returns incomplete json objects
         self._lock = threading.Lock()
         self._reqSession = requests.Session()
-        self._apiKey = None
+        self._apiKey = apiKey
 
         # if there is a settings.json file in the directory then try using it to login to ER
         # and to read the host name from it (if custom host is not specified)
