@@ -99,7 +99,7 @@ class EventRegistry(object):
 
     def login(self, username, password, throwExceptOnFailure = True):
         """
-        login the user. without logging in, the user is limited to 10.000 queries per day.
+        login the user. without logging in, the user is limited to 50 queries per day.
         if you have a registered account, the number of allowed requests per day can be higher, depending on your subscription plan
         """
         respInfoObj = None
