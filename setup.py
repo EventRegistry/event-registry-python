@@ -18,7 +18,7 @@ setup(name='eventregistry',
       ],
       url='https://github.com/gregorleban/EventRegistry',
       author='Gregor Leban',
-      author_email='gleban@gmail.com',
+      author_email='gregor@eventregistry.org',
       license='MIT',
       packages=['eventregistry'],
       install_requires=[
