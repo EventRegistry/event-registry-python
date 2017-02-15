@@ -48,7 +48,9 @@ class EventRegistry(object):
         # and to read the host name from it (if custom host is not specified)
         currPath = os.path.split(__file__)[0]
         settPath = os.path.join(currPath, "settings.json")
-        if os.path.exists(settPath):
+        if apiKey:
+            print("using user provided API key for making requests")
+        elif os.path.exists(settPath):
             settings = json.load(open(settPath))
             self._host = host or settings.get("host", "http://eventregistry.org")
             # try logging in with username and password

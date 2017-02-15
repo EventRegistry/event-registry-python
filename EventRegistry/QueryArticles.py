@@ -316,7 +316,7 @@ class RequestArticlesConceptGraph(RequestArticles):
                  linkCount = 50,
                  articlesSampleSize = 10000,
                  returnInfo = ReturnInfo()):
-        assert count <= 1000
+        assert conceptCount <= 1000
         assert linkCount <= 2000
         assert articlesSampleSize <= 50000
         self.resultType = "conceptGraph"
