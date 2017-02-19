@@ -247,30 +247,76 @@ class TestQueryEvents(DataValidator):
 
 
     def testQuery1(self):
+        """
+        find events about Obama that also mention keyword "germany"
+        """
         obamaUri = self.er.getConceptUri("Obama")
         iter = QueryEventsIter(keywords = "germany", conceptUri = obamaUri)
         for event in iter.execQuery(self.er, returnInfo = self.returnInfo):
             self.ensureEventHasConcept(event, obamaUri)
             uri = event["uri"]
             articleIter = QueryEventArticlesIter(uri)
-            hasGermany = ["germany" in article["body"].lower() for article in articleIter.execQuery(self.er, lang = allLangs, returnInfo = self.returnInfo)]
-            self.assertTrue(True in hasGermany, "'germany' was not mentioned in the articles in the event")
+            articles = list(articleIter.execQuery(self.er, lang = allLangs, returnInfo = self.returnInfo))
+            self.ensureArticlesContainText(articles, "germany")
+
 
     def testQuery2(self):
+        """
+        search for events covered by a given news source, about a category and mentioning two keywords
+        """
         sourceUri = self.er.getNewsSourceUri("los angeles")
         businessCat = self.er.getCategoryUri("business")
         iter = QueryEventsIter(keywords = "obama trump", sourceUri = sourceUri, categoryUri = businessCat)
         for event in iter.execQuery(self.er, returnInfo = self.returnInfo):
             self.ensureEventHasCategory(event, businessCat)
+
             articleIter = QueryEventArticlesIter(event["uri"])
             articles = list(articleIter.execQuery(self.er, lang = allLangs, returnInfo = self.returnInfo))
+            self.ensureArticlesContainText(articles, "obama")
+            self.ensureArticlesContainText(articles, "trump")
+
             hasArticleFromLAT = [article["source"]["uri"] == sourceUri for article in articles]
             self.assertTrue(True in hasArticleFromLAT, "event did not have any articles from source los angeles times")
 
-            hasKeywords = ["obama" in article["body"].lower() and "trump" in article["body"].lower()
-                                 for article in articles]
-            self.assertTrue(True in hasKeywords, "articles from the event did not have the obama and trump keywords")
 
+    def testQuery3(self):
+        """
+        query with some positive but several negative conditions
+        """
+        obamaUri = self.er.getConceptUri("Obama")
+        politicsUri = self.er.getConceptUri("politics")
+        chinaUri = self.er.getConceptUri("china")
+        unitedStatesUri = self.er.getConceptUri("united states")
+
+        srcDailyCallerUri = self.er.getNewsSourceUri("daily caller")
+        srcAawsatUri = self.er.getNewsSourceUri("aawsat")
+        srcSvodkaUri = self.er.getNewsSourceUri("svodka")
+
+        catBusinessUri = self.er.getCategoryUri("business")
+        catPoliticsUri = self.er.getCategoryUri("politics")
+        iter = QueryEventsIter(conceptUri = obamaUri,
+                               ignoreConceptUri = [politicsUri, chinaUri, unitedStatesUri],
+                               ignoreKeywords=["trump", "politics", "michelle"],
+                               ignoreSourceUri = [srcDailyCallerUri, srcAawsatUri, srcSvodkaUri],
+                               ignoreCategoryUri = [catBusinessUri, catPoliticsUri])
+        for event in iter.execQuery(self.er, returnInfo = self.returnInfo):
+            self.ensureEventHasConcept(event, obamaUri)
+            self.ensureEventHasNotConcept(event, politicsUri)
+            self.ensureEventHasNotConcept(event, chinaUri)
+            self.ensureEventHasNotConcept(event, unitedStatesUri)
+
+            artIter = QueryEventArticlesIter(event["uri"])
+            articles = list(artIter.execQuery(self.er, lang = allLangs))
+            self.ensureArticlesDoNotContainText(articles, "trump")
+            self.ensureArticlesDoNotContainText(articles, "politics")
+            self.ensureArticlesDoNotContainText(articles, "michelle")
+
+            self.ensureArticlesNotFromSource(articles, srcDailyCallerUri)
+            self.ensureArticlesNotFromSource(articles, srcAawsatUri)
+            self.ensureArticlesNotFromSource(articles, srcSvodkaUri)
+
+            self.ensureEventHasNotCategory(event, catBusinessUri)
+            self.ensureEventHasNotCategory(event, catPoliticsUri)
 
 
 if __name__ == "__main__":

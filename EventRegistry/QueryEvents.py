@@ -31,11 +31,11 @@ class QueryEvents(Query):
     @param maxArticlesInEvent: find events that have not been reported in more than maxArticlesInEvent articles (regardless of language)
     @param dateMentionStart: find events where articles explicitly mention a date that is equal or greater than dateMentionStart.
     @param dateMentionEnd: find events where articles explicitly mention a date that is lower or equal to dateMentionEnd.
-    @param ignoreKeywords: ignore events where articles about the event mention all provided keywords
-    @param ignoreConceptUri: ignore events that are about all provided concepts
+    @param ignoreKeywords: ignore events where articles about the event mention any of the provided keywords
+    @param ignoreConceptUri: ignore events that are about any of the provided concepts
     @param ignoreLang: ignore events that are reported in any of the provided languages
     @param ignoreLocationUri: ignore events that occured in any of the provided locations. A location can be a city or a place
-    @param ignoreSourceUri: ignore events that have have articles which have been written by all specified news sources
+    @param ignoreSourceUri: ignore events that have have articles which have been written by any of the specified news sources
     @param categoryIncludeSub: when a category is specified using categoryUri, should also all subcategories be included?
     @param ignoreCategoryIncludeSub: when a category is specified using ignoreCategoryUri, should also all subcategories be included?
     @param conceptOper: Boolean operator to use in cases when multiple concepts are specified. Possible values are:

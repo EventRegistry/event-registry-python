@@ -180,6 +180,43 @@ class TestQueryArticles(DataValidator):
             self.ensureArticleHasConcept(article, obamaUri)
 
 
+    def testQuery3(self):
+        """query with several negative conditions"""
+        obamaUri = self.er.getConceptUri("Obama")
+        politicsUri = self.er.getConceptUri("politics")
+        chinaUri = self.er.getConceptUri("china")
+        unitedStatesUri = self.er.getConceptUri("united states")
+
+        srcDailyCallerUri = self.er.getNewsSourceUri("daily caller")
+        srcAawsatUri = self.er.getNewsSourceUri("aawsat")
+        srcSvodkaUri = self.er.getNewsSourceUri("svodka")
+
+        catBusinessUri = self.er.getCategoryUri("business")
+        catPoliticsUri = self.er.getCategoryUri("politics")
+        iter = QueryArticlesIter(conceptUri = obamaUri,
+                                 ignoreConceptUri = [politicsUri, chinaUri, unitedStatesUri],
+                                 ignoreKeywords=["trump", "politics", "michelle"],
+                                 ignoreSourceUri = [srcDailyCallerUri, srcAawsatUri, srcSvodkaUri],
+                                 ignoreCategoryUri = [catBusinessUri, catPoliticsUri])
+        for article in iter.execQuery(self.er, returnInfo = self.returnInfo):
+            self.ensureArticleHasConcept(article, obamaUri)
+            self.ensureArticleHasNotConcept(article, politicsUri)
+            self.ensureArticleHasNotConcept(article, chinaUri)
+            self.ensureArticleHasNotConcept(article, unitedStatesUri)
+
+            self.ensureArticleBodyDoesNotContainText(article, "trump")
+            self.ensureArticleBodyDoesNotContainText(article, "politics")
+            self.ensureArticleBodyDoesNotContainText(article, "michelle")
+
+            self.ensureArticleNotFromSource(article, srcDailyCallerUri)
+            self.ensureArticleNotFromSource(article, srcAawsatUri)
+            self.ensureArticleNotFromSource(article, srcSvodkaUri)
+
+            self.ensureArticleHasNotCategory(article, catBusinessUri)
+            self.ensureArticleHasNotCategory(article, catPoliticsUri)
+
+
+
 if __name__ == "__main__":
     suite = unittest.TestLoader().loadTestsFromTestCase(TestQueryArticles)
     unittest.TextTestRunner(verbosity=3).run(suite)

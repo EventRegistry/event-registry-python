@@ -101,7 +101,13 @@ class DataValidator(unittest.TestCase):
 
     def ensureArticleBodyContainsText(self, article, text):
         self.assertTrue("body" in article, "Article did not contain body")
-        self.assertTrue(text.lower() in article["body"].lower(), "Article body did not contain text '%s'" % (text))
+        self.assertTrue(re.search("(^|\s)" + text + "($|'|\s)", article["body"], re.IGNORECASE) != None, "Article body did not contain text '%s'" % (text))
+
+
+    def ensureArticleBodyDoesNotContainText(self, article, text):
+        if "body" in article:
+            if re.search("(^|\s)" + text + "($|'|\s)", article["body"], re.IGNORECASE) != None:
+                self.fail("Article body contained text '%s' and it shouldn't" % (text))
 
 
     def ensureArticleHasConcept(self, article, conceptUri):
@@ -109,22 +115,60 @@ class DataValidator(unittest.TestCase):
         for concept in article["concepts"]:
             if conceptUri == concept["uri"]:
                 return
-        self.assertTrue(False, "Article concepts did not contain concept '%s'" % (conceptUri))
+        self.fail("Article concepts did not contain concept '%s'" % (conceptUri))
+
+
+    def ensureArticleHasNotConcept(self, article, conceptUri):
+        if "concepts" in article:
+            for concept in article["concepts"]:
+                if conceptUri == concept["uri"]:
+                    self.fail("Article concepts contained concept '%s'" % (conceptUri))
 
 
     def ensureArticleHasCategory(self, article, categoryUri):
         """
-        ensure that the event has the given category or ANY child category
+        ensure that the article has the given category or ANY child category
         """
         self.assertTrue("categories" in article, "Article did not contain category array")
         for category in article["categories"]:
             if category["uri"].find(categoryUri) == 0:
                 return
-        self.assertTrue(False, "Article categories did not contain category '%s'" % (categoryUri))
+        self.fail("Article categories did not contain category '%s'" % (categoryUri))
+
+
+    def ensureArticleHasNotCategory(self, article, categoryUri):
+        """
+        ensure that the article does not have the given category or ANY child category
+        """
+        for category in article["categories"]:
+            if category["uri"].find(categoryUri) != -1:
+                self.fail("Article categories contained an incorrect category '%s'" % (categoryUri))
 
 
     def ensureArticleSource(self, article, sourceUri):
         self.assertTrue(article.get("source").get("uri") == sourceUri, "Article source is not '%s'" % sourceUri)
+
+
+    def ensureArticleNotFromSource(self, article, sourceUri):
+        self.assertFalse(article.get("source").get("uri") == sourceUri, "Article source is not '%s'" % sourceUri)
+
+
+    def ensureArticlesContainText(self, articles, keyword):
+        """assure that at least one article contains the given keyword"""
+        hasKw = [True for art in articles if keyword.lower() in art["body"].lower()]
+        self.assertTrue(len(hasKw) > 0, "None of the articles contained given keyword '%s'" % keyword)
+
+
+    def ensureArticlesDoNotContainText(self, articles, keyword):
+        """assure that at least one article contains the given keyword"""
+        for article in articles:
+            self.ensureArticleBodyDoesNotContainText(article, keyword)
+
+
+    def ensureArticlesNotFromSource(self, articles, sourceUri):
+        """assure that none of the articles are from the given source"""
+        for article in articles:
+            self.ensureArticleNotFromSource(article, sourceUri)
 
 
     def ensureEventHasConcept(self, event, conceptUri):
@@ -132,7 +176,14 @@ class DataValidator(unittest.TestCase):
         for concept in event["concepts"]:
             if conceptUri == concept["uri"]:
                 return
-        self.assertTrue(False, "Event concepts did not contain concept '%s'" % (conceptUri))
+        self.fail("Event concepts did not contain concept '%s'" % (conceptUri))
+
+
+    def ensureEventHasNotConcept(self, event, conceptUri):
+        if "concepts" in event:
+            for concept in event["concepts"]:
+                if conceptUri == concept["uri"]:
+                    self.fail("Event concepts contained concept '%s'" % (conceptUri))
 
 
     def ensureEventHasCategory(self, event, categoryUri):
@@ -143,4 +194,13 @@ class DataValidator(unittest.TestCase):
         for category in event["categories"]:
             if category["uri"].find(categoryUri) == 0:
                 return
-        self.assertTrue(False, "Event categories did not contain category '%s'" % (categoryUri))
+        self.fail("Event categories did not contain category '%s'" % (categoryUri))
+
+
+    def ensureEventHasNotCategory(self, event, categoryUri):
+        """
+        ensure that the event does not have the given category or ANY child category
+        """
+        for category in event["categories"]:
+            if category["uri"].find(categoryUri) != -1:
+                self.fail("Event categories contained an incorrect category '%s'" % (categoryUri))
