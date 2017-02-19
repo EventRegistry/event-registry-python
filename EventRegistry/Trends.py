@@ -12,15 +12,20 @@ class TrendsBase(QueryParamsBase):
     def _getPath(self):
         return "/json/trends"
 
+
 class GetTrendingConcepts(TrendsBase):
-    """
-    get currently top trending concepts
-    """
     def __init__(self,
-                 source = "news",   # source information from which to compute top trends. Options: "news", "social"
-                 count = 20,        # number of top trends to return
-                 conceptType = ["person", "org", "loc"],    # which types of concepts are we interested in
-                 returnInfo = ReturnInfo()):     # specify the details of the concepts to return
+                 source = "news",
+                 count = 20,
+                 conceptType = ["person", "org", "loc"],
+                 returnInfo = ReturnInfo()):
+        """
+        get currently top trending concepts
+        @param source: source information from which to compute top trends. Options: "news", "social"
+        @param count: number of top trends to return
+        @param conceptType: which types of concepts are we interested in
+        @param returnInfo: what details should be included in the returned information
+        """
         QueryParamsBase.__init__(self)
         self._setVal("action", "getTrendingConcepts")
         self._setVal("source", source)
@@ -29,14 +34,18 @@ class GetTrendingConcepts(TrendsBase):
         self._update(returnInfo.getParams())
 
 
+
 class GetTrendingCategories(TrendsBase):
-    """
-    get currently top trending categories
-    """
     def __init__(self,
-                 source = "news",   # source information from which to compute top trends. Options: "news", "social"
-                 count = 20,        # number of top trends to return
-                 returnInfo = ReturnInfo()):     # specify the details of the categories to return
+                 source = "news",
+                 count = 20,
+                 returnInfo = ReturnInfo()):
+        """
+        get currently top trending categories
+        @param source: source information from which to compute top trends. Options: "news", "social"
+        @param count: number of top trends to return
+        @param returnInfo: what details should be included in the returned information
+        """
         QueryParamsBase.__init__(self)
         self._setVal("action", "getTrendingCategories")
         self._setVal("source", source)
@@ -44,38 +53,47 @@ class GetTrendingCategories(TrendsBase):
         self._update(returnInfo.getParams())
 
 
+
 class GetTrendingCustomItems(TrendsBase):
-    """
-    get currently top trending items for which the users provided the data
-    this data can be stock prices, energy prices, etc...
-    """
     def __init__(self,
-                 count = 20,        # number of top trends to return
-                 returnInfo = ReturnInfo()):     # specify the details of the concepts to return
+                 count = 20,
+                 returnInfo = ReturnInfo()):
+        """
+        get currently top trending items for which the users provided the data
+        this data can be stock prices, energy prices, etc...
+        @param count: number of top trends to return
+        @param returnInfo: what details should be included in the returned information
+        """
         QueryParamsBase.__init__(self)
         self._setVal("action", "getTrendingCustom")
         self._setVal("conceptCount", count)
         self._update(returnInfo.getParams())
 
 
+
 class GetTrendingConceptGroups(TrendsBase):
-    """
-    get currently top trending groups of concepts
-    a group can be identified by the concept type or by a concept class uri
-    """
     def __init__(self,
-                 source = "news",   # source information from which to compute top trends. Options: "news", "social"
-                 count = 20,        # number of top trends to return
-                 returnInfo = ReturnInfo()):     # specify the details of the concepts to return
+                 source = "news",
+                 count = 20,
+                 returnInfo = ReturnInfo()):
+        """
+        get currently top trending groups of concepts
+        a group can be identified by the concept type or by a concept class uri
+        @param source: source information from which to compute top trends. Options: "news", "social"
+        @param count: number of top trends to return
+        @param returnInfo: what details should be included in the returned information
+        """
         QueryParamsBase.__init__(self)
         self._setVal("action", "getConceptTrendGroups")
         self._setVal("source", source)
         self._setVal("conceptCount", count)
         self._update(returnInfo.getParams())
 
+
     def getConceptTypeGroups(self, types = ["person", "org", "loc"]):
         """request trending of concepts of specified types"""
         self._setVal("conceptType", types)
+
 
     def getConceptClassUris(self, conceptClassUris):
         """request trending of concepts assigned to the specified concept classes"""

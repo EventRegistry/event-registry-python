@@ -32,6 +32,7 @@ invalidCharRe = re.compile(r"[\x00-\x08]|\x0b|\x0c|\x0e|\x0f|[\x10-\x19]|[\x1a-\
 def removeInvalidChars(text):
     return invalidCharRe.sub("", text)
 
+
 def tryParseInt(s, base=10, val=None):
     try:
         return int(s, base)
@@ -48,15 +49,18 @@ class Struct(object):
         for name, value in data.items():
             setattr(self, name, self._wrap(value))
 
+
     def _wrap(self, value):
         if isinstance(value, (tuple, list, set, frozenset)):
             return type(value)([self._wrap(v) for v in value])
         else:
             return Struct(value) if isinstance(value, dict) else value
 
+
     # does the object have the key
     def has(self, key):
         return hasattr(self, key)
+
 
 
 def createStructFromDict(data):
@@ -65,6 +69,7 @@ def createStructFromDict(data):
         return type(data)([createStructFromDict(v) for v in data])
     else:
         return Struct(data)
+
 
 
 class QueryParamsBase(object):
@@ -77,6 +82,7 @@ class QueryParamsBase(object):
     def __init__(self):
         self.queryParams = {}
 
+
     @staticmethod
     def copy(obj):
         assert isinstance(obj, QueryParamsBase)
@@ -84,14 +90,17 @@ class QueryParamsBase(object):
         ret.queryParams = dict(obj.queryParams)
         return ret
 
+
     def _clearVal(self, propName):
         """remove the value of a property propName (if existing)"""
         if propName in self.queryParams:
             del self.queryParams[propName]
 
+
     def _hasVal(self, propName):
         """do we have in the query property named propName"""
         return propName in self.queryParams
+
 
     def _setVal(self, propName, val):
         """set a value of a property in the query"""
@@ -102,10 +111,12 @@ class QueryParamsBase(object):
             val = removeInvalidChars(val)
         self.queryParams[propName] = val
 
+
     def _setValIfNotDefault(self, propName, val, defVal):
         """set to queryParams property propName to val if val != defVal"""
         if val != defVal:
             self._setVal(propName, val)
+
 
     def _encodeDate(self, val):
         """encode val that can be a date in different forms as a date that can be sent to Er"""
@@ -118,10 +129,12 @@ class QueryParamsBase(object):
             return val
         raise AssertionError("date was not in the expected format")
 
+
     def _setDateVal(self, propName, val):
         """set a property value that represents date. Value can be string in YYYY-MM-DD format, datetime.date or datetime.datetime"""
         encodedVal = self._encodeDate(val)
         self._setVal(propName, encodedVal)
+
 
     def _addArrayVal(self, propName, val):
         """add a value to an array of values for a property"""
@@ -134,12 +147,15 @@ class QueryParamsBase(object):
             self.queryParams[propName] = []
         self.queryParams[propName].append(val)
 
+
     def _update(self, object):
         self.queryParams.update(object)
+
 
     def _getQueryParams(self):
         """return the parameters."""
         return dict(self.queryParams)
+
 
 
 class Query(QueryParamsBase):
@@ -147,8 +163,10 @@ class Query(QueryParamsBase):
         QueryParamsBase.__init__(self)
         self.resultTypeList = []
 
+
     def clearRequestedResults(self):
         self.resultTypeList = []
+
 
     def _getQueryParams(self):
         """encode the request."""

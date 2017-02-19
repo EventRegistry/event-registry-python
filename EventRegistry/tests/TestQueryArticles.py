@@ -1,55 +1,8 @@
 ﻿import unittest
 from eventregistry import *
+from DataValidator import DataValidator
 
-
-class TestQueryArticles(unittest.TestCase):
-    @classmethod
-    def setUpClass(self):
-        self.er = EventRegistry(host = "http://eventregistry.org")
-
-        self.articleInfo = ArticleInfoFlags(bodyLen = -1, concepts = True, storyUri = True, duplicateList = True, originalArticle = True, categories = True,
-                location = True, image = True, extractedDates = True, socialScore = True, details = True)
-        self.sourceInfo = SourceInfoFlags(description = True, location = True, importance = True, articleCount = True, tags = True, details = True)
-        self.conceptInfo = ConceptInfoFlags(type=["entities"], lang = "spa", synonyms = True, image = True, description = True, details = True,
-                conceptClassMembership = True, conceptFolderMembership = True, trendingScore = True, trendingHistory = True)
-        self.locationInfo = LocationInfoFlags(wikiUri = True, label = True, geoNamesId = True, geoLocation = True, population = True,
-                countryArea = True, countryDetails = True, countryContinent = True,
-                placeFeatureCode = True, placeCountry = True)
-        self.categoryInfo = CategoryInfoFlags(parentUri = True, childrenUris = True, trendingScore = True, trendingHistory = True)
-        self.returnInfo = ReturnInfo(articleInfo = self.articleInfo, conceptInfo = self.conceptInfo,
-            sourceInfo = self.sourceInfo, locationInfo = self.locationInfo, categoryInfo = self.categoryInfo)
-
-    def ensureValidConcept(self, concept, testName):
-        for prop in ["id", "uri", "label", "synonyms", "image", "description", "details", "conceptClassMembership", "conceptFolderMembership", "trendingScore", "trendingHistory", "details"]:
-            self.assertTrue(prop in concept, "Property '%s' was expected in concept for test %s" % (prop, testName))
-        self.assertTrue(concept.get("type") in ["person", "loc", "org"], "Expected concept to be an entity type, but got %s" % (concept.get("type")))
-        if concept.get("location"):
-            self.ensureValidLocation(concept.get("location"), testName)
-
-    def ensureValidArticle(self, article, testName):
-        for prop in ["id", "url", "uri", "title", "body", "source", "details", "location", "duplicateList", "originalArticle", "time", "date", "categories", "lang", "extractedDates", "concepts", "details"]:
-            self.assertTrue(prop in article, "Property '%s' was expected in article for test %s" % (prop, testName))
-        for concept in article.get("concepts"):
-            self.ensureValidConcept(concept, testName)
-        self.assertTrue(article.get("isDuplicate") or "eventUri" in article, "Nonduplicates should have event uris")
-
-    def ensureValidSource(self, source, testName):
-        for prop in ["id", "uri", "location", "importance", "articleCount", "tags", "details"]:
-            self.assertTrue(prop in source, "Property '%s' was expected in source for test %s" % (prop, testName))
-
-    def ensureValidCategory(self, category, testName):
-        for prop in ["id", "uri", "parentUri", "childrenUris", "trendingScore", "trendingHistory"]:
-            self.assertTrue(prop in category, "Property '%s' was expected in source for test %s" % (prop, testName))
-
-    def ensureValidLocation(self, location, testName):
-        for prop in ["wikiUri", "label", "lat", "long", "geoNamesId", "population"]:
-            self.assertTrue(prop in location, "Property '%s' was expected in a location for test %s" % (prop, testName))
-        if location.get("type") == "country":
-            for prop in ["area", "code2", "code3", "webExt", "continent"]:
-                self.assertTrue(prop in location, "Property '%s' was expected in a location for test %s" % (prop, testName))
-        if location.get("type") == "place":
-            for prop in ["featureCode", "country"]:
-                self.assertTrue(prop in location, "Property '%s' was expected in a location for test %s" % (prop, testName))
+class TestQueryArticles(DataValidator):
 
     def createQuery(self):
         q = QueryArticles()
@@ -195,6 +148,36 @@ class TestQueryArticles(unittest.TestCase):
             counts = sourceInfo.get("counts")
             self.assertIsNotNone(counts.get("frequency"), "Counts should contain a frequency")
             self.assertIsNotNone(counts.get("ratio"), "Counts should contain a ratio")
+
+
+    def testQueryArticlesIterator(self):
+        # check that the iterator really downloads all articles
+        obamaUri = self.er.getConceptUri("Obama")
+        iter = QueryArticlesIter(keywords = "trump", conceptUri = obamaUri, sourceUri = self.er.getNewsSourceUri("los angeles times"))
+        articleCount = iter.count(self.er)
+        articles = list(iter.execQuery(self.er, returnInfo = self.returnInfo))
+        self.assertTrue(articleCount == len(articles), "Article iterator did not generate the full list of aticles")
+
+
+    def testQuery1(self):
+        obamaUri = self.er.getConceptUri("Obama")
+        LAsourceUri = self.er.getNewsSourceUri("los angeles times")
+        iter = QueryArticlesIter(keywords = "trump", conceptUri = obamaUri, sourceUri = LAsourceUri)
+        for article in iter.execQuery(self.er, returnInfo = self.returnInfo):
+            self.ensureArticleHasConcept(article, obamaUri)
+            self.ensureArticleSource(article, LAsourceUri)
+            self.ensureArticleBodyContainsText(article, "trump")
+
+
+    def testQuery2(self):
+        obamaUri = self.er.getConceptUri("Obama")
+        LAsourceUri = self.er.getNewsSourceUri("los angeles times")
+        businessCatUri = self.er.getCategoryUri("business")
+        iter = QueryArticlesIter(conceptUri = obamaUri, sourceUri = LAsourceUri, categoryUri = businessCatUri)
+        for article in iter.execQuery(self.er, returnInfo = self.returnInfo):
+            self.ensureArticleHasCategory(article, businessCatUri)
+            self.ensureArticleSource(article, LAsourceUri)
+            self.ensureArticleHasConcept(article, obamaUri)
 
 
 if __name__ == "__main__":

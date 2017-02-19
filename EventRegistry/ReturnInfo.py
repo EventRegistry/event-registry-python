@@ -18,6 +18,7 @@ class ReturnInfoFlagsBase(object):
         if val != defVal:
             self.flags[name] = val
 
+
     def _getFlags(self, prefix):
         """return the dict of stored flags, where each flag name should be first prefixed using prefix"""
         if not hasattr(self, "flags"):
@@ -27,11 +28,13 @@ class ReturnInfoFlagsBase(object):
             dict[prefix + key] = self.flags[key]
         return dict
 
+
     def _setVal(self, name, val):
         """set value of name to val"""
         if not hasattr(self, "vals"):
             self.vals = {}
         self.vals[name] = val
+
 
     def _setVal(self, name, val, defVal):
         """set value of name to val in case the val != defVal"""
@@ -40,6 +43,7 @@ class ReturnInfoFlagsBase(object):
         if not hasattr(self, "vals"):
             self.vals = {}
         self.vals[name] = val
+
 
     def _getVals(self, prefix):
         """
@@ -118,6 +122,7 @@ class ArticleInfoFlags(ReturnInfoFlagsBase):
         self._setFlag("IncludeArticleDetails", details, False)
 
 
+
 class StoryInfoFlags(ReturnInfoFlagsBase):
     """
     What information about a story (cluster of articles) should be returned by the API call
@@ -160,6 +165,7 @@ class StoryInfoFlags(ReturnInfoFlagsBase):
         self._setFlag("IncludeStorySocialScore", socialScore, False)
         self._setFlag("IncludeStoryDetails", details, False)
         self._setVal("StoryImageCount", imageCount, 0)
+
 
 
 class EventInfoFlags(ReturnInfoFlagsBase):
@@ -208,6 +214,7 @@ class EventInfoFlags(ReturnInfoFlagsBase):
         self._setVal("EventImageCount", imageCount, 0)
 
 
+
 class SourceInfoFlags(ReturnInfoFlagsBase):
     """
     What information about a news source should be returned by the API call
@@ -239,6 +246,7 @@ class SourceInfoFlags(ReturnInfoFlagsBase):
         self._setFlag("IncludeSourceDetails", details, False)
 
 
+
 class CategoryInfoFlags(ReturnInfoFlagsBase):
     """
     What information about a category should be returned by the API call
@@ -267,6 +275,7 @@ class CategoryInfoFlags(ReturnInfoFlagsBase):
         self._setVal("CategoryTrendingSource", trendingSource, None)
 
 
+
 class ConceptInfoFlags(ReturnInfoFlagsBase):
     """
     What information about a concept should be returned by the API call
@@ -279,7 +288,6 @@ class ConceptInfoFlags(ReturnInfoFlagsBase):
     @param description: description of the concept
     @param conceptClassMembership: provide a list of concept classes where the concept is a member
     @param conceptClassMembership: provide a list of concept classes and their parents where the concept is a member
-    @param conceptFolderMembership: provide a list of publicly visible concept folders where the concept is a member
     @param trendingScore: information about how the concept is currently trending. The score is computed as Pearson residual by comparing the trending of the concept in last 2 days compared to last 14 days
     @param trendingHistory: information about the number of times articles were assigned to the concept in last 30 days
     @param totalCount: the total number of times the concept appeared in the news articles
@@ -299,7 +307,6 @@ class ConceptInfoFlags(ReturnInfoFlagsBase):
                  details = False,
                  conceptClassMembership = False,
                  conceptClassMembershipFull = False,
-                 conceptFolderMembership = False,
                  trendingScore = False,
                  trendingHistory = False,
                  trendingSource = "news",
@@ -315,12 +322,12 @@ class ConceptInfoFlags(ReturnInfoFlagsBase):
         self._setFlag("IncludeConceptDetails", details, False)
         self._setFlag("IncludeConceptConceptClassMembership", conceptClassMembership, False)
         self._setFlag("IncludeConceptConceptClassMembershipFull", conceptClassMembershipFull, False)
-        self._setFlag("IncludeConceptConceptFolderMembership", conceptFolderMembership, False)
         self._setFlag("IncludeConceptTrendingScore", trendingScore, False)
         self._setFlag("IncludeConceptTrendingHistory", trendingHistory, False)
         self._setFlag("IncludeConceptTotalCount", totalCount, False)
         self._setVal("ConceptTrendingSource", trendingSource, None)
         self._setVal("MaxConceptsPerType", maxConceptsPerType, 20)
+
 
 
 class LocationInfoFlags(ReturnInfoFlagsBase):
@@ -367,6 +374,7 @@ class LocationInfoFlags(ReturnInfoFlagsBase):
         self._setFlag("IncludeLocationPlaceCountry", placeCountry, True)
 
 
+
 class ConceptClassInfoFlags(ReturnInfoFlagsBase):
     """
     What information about a concept class should be returned by the API call
@@ -384,6 +392,7 @@ class ConceptClassInfoFlags(ReturnInfoFlagsBase):
         self._setFlag("IncludeConceptClassParentLabels", parentLabels, True)
         self._setFlag("IncludeConceptClassConcepts", concepts, False)
         self._setFlag("IncludeConceptClassDetails", details, False)
+
 
 
 class ConceptFolderInfoFlags(ReturnInfoFlagsBase):
@@ -458,6 +467,7 @@ class ReturnInfo:
         self.storyInfo = storyInfo
         self.conceptClassInfo = conceptClassInfo
         self.conceptFolderInfo = conceptFolderInfo
+
 
     def getParams(self, prefix = ""):
         dict = {}

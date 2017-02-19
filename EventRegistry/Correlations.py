@@ -9,6 +9,7 @@ from eventregistry.Info import *
 from eventregistry.QueryArticles import *
 from eventregistry.Counts import *
 
+
 class GetTopCorrelations(QueryParamsBase):
     def __init__(self,
                  eventRegistry):    # instance of EventRegistry class
@@ -66,6 +67,7 @@ class GetTopCorrelations(QueryParamsBase):
             for obj in res["timeAggr"]:
                 self._addArrayVal("testData", json.dumps(obj))
 
+
     def loadInputDataWithCounts(self, getCounts):
         """
         use GetCounts class to obtain daily counts information for concept/category of interest
@@ -84,9 +86,11 @@ class GetTopCorrelations(QueryParamsBase):
         for obj in res[key]:
             self._addArrayVal("testData", json.dumps(obj))
 
+
     def hasValidInputData(self):
         """do we have valid input data (needed before we can compute correlations)"""
         return self._hasVal("testData")
+
 
     #
     # computing correlations

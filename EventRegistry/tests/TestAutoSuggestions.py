@@ -1,11 +1,8 @@
 ﻿import unittest
 from eventregistry import *
+from DataValidator import DataValidator
 
-
-class TestAutoSuggest(unittest.TestCase):
-    @classmethod
-    def setUpClass(self):
-        self.er = EventRegistry(host = "http://eventregistry.org")
+class TestAutoSuggest(DataValidator):
 
     def testConcepts(self):
         q = QueryEvents()

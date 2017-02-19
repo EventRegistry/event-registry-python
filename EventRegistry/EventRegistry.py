@@ -1,5 +1,5 @@
 ﻿"""
-classes responsible for obtaining results from the Event Registry
+main class responsible for obtaining results from the Event Registry
 """
 import six, os, sys, traceback, json, re, requests, time
 import threading
@@ -69,31 +69,39 @@ class EventRegistry(object):
 
         print("Event Registry host: %s" % (self._host))
 
+
     def setLogging(self, val):
         """should all requests be logged to a file or not?"""
         self._logRequests = val
 
+
     def getHost(self):
         return self._host
+
 
     def getLastException(self):
         """return the last exception"""
         return self._lastException
 
+
     def printLastException(self):
         print(str(self._lastException))
+
 
     def format(self, obj):
         """return a string containing the object in a pretty formated version"""
         return json.dumps(obj, sort_keys=True, indent=4, separators=(',', ': '))
 
+
     def printConsole(self, text):
         """print time prefix + text to console"""
         print(time.strftime("%H:%M:%S") + " " + str(text))
 
+
     def getRemainingAvailableRequests(self):
         """get the number of requests that are still available for the user today"""
         return self._remainingAvailableRequests
+
 
     def getDailyAvailableRequests(self):
         """get the total number of requests that the user can make in a day"""
@@ -194,9 +202,14 @@ class EventRegistry(object):
 
     def suggestConcepts(self, prefix, sources = ["concepts"], lang = "eng", conceptLang = "eng", page = 1, count = 20, returnInfo = ReturnInfo()):
         """
-        return a list of concepts that contain the given prefix
-        valid sources: person, loc, org, wiki, entities (== person + loc + org), concepts (== entities + wiki), conceptClass, conceptFolder
-        returned matching concepts are sorted based on their frequency of occurence in news (from most to least frequent)
+        return a list of concepts that contain the given prefix. returned matching concepts are sorted based on their frequency of occurence in news (from most to least frequent)
+        @param prefix: input text that should be contained in the concept
+        @param sources: what types of concepts should be returned. valid values are person, loc, org, wiki, entities (== person + loc + org), concepts (== entities + wiki), conceptClass, conceptFolder
+        @param lang: language in which the prefix is specified
+        @param conceptLang: languages in which the label(s) for the concepts are to be returned
+        @param page:  page of the results (1, 2, ...)
+        @param count: number of returned suggestions per page
+        @param returnInfo: what details about concepts should be included in the returned information
         """
         assert page > 0, "page parameter should be above 0"
         params = { "prefix": prefix, "source": sources, "lang": lang, "conceptLang": conceptLang, "page": page, "count": count}
@@ -205,18 +218,28 @@ class EventRegistry(object):
 
 
     def suggestNewsSources(self, prefix, page = 1, count = 20):
-        """return a list of news sources that match the prefix"""
+        """
+        return a list of news sources that match the prefix
+        @param prefix: input text that should be contained in the source name or uri
+        @param page:  page of the results (1, 2, ...)
+        @param count: number of returned suggestions
+        """
         assert page > 0, "page parameter should be above 0"
         return self.jsonRequest("/json/suggestSourcesFast", { "prefix": prefix, "page": page, "count": count })
 
 
-    def suggestLocations(self, prefix, count = 20, lang = "eng", source = ["place", "country"], countryUri = None, sortByDistanceTo = None, returnInfo = ReturnInfo()):
+    def suggestLocations(self, prefix, sources = ["place", "country"], lang = "eng", count = 20, countryUri = None, sortByDistanceTo = None, returnInfo = ReturnInfo()):
         """
         return a list of geo locations (cities or countries) that contain the prefix
-        if countryUri is provided then return only those locations that are inside the specified country
-        if sortByDistanceto is provided then return the locations sorted by the distance to the (lat, long) provided in the tuple
+        @param prefix: input text that should be contained in the location name
+        @param source: what types of locations are we interested in. Possible options are "place" and "country"
+        @param lang: language in which the prefix is specified
+        @param count: number of returned suggestions
+        @param countryUri: if provided, then return only those locations that are inside the specified country
+        @param sortByDistanceTo: if provided, then return the locations sorted by the distance to the (lat, long) provided in the tuple
+        @param returnInfo: what details about locations should be included in the returned information
         """
-        params = { "prefix": prefix, "count": count, "source": source, "lang": lang, "countryUri": countryUri or "" }
+        params = { "prefix": prefix, "count": count, "source": sources, "lang": lang, "countryUri": countryUri or "" }
         params.update(returnInfo.getParams())
         if sortByDistanceTo:
             assert isinstance(sortByDistanceTo, (tuple, list)), "sortByDistanceTo has to contain a tuple with latitude and longitude of the location"
@@ -227,7 +250,13 @@ class EventRegistry(object):
 
 
     def suggestCategories(self, prefix, page = 1, count = 20, returnInfo = ReturnInfo()):
-        """return a list of dmoz categories that contain the prefix"""
+        """
+        return a list of dmoz categories that contain the prefix
+        @param prefix: input text that should be contained in the category name
+        @param page:  page of the results (1, 2, ...)
+        @param count: number of returned suggestions
+        @param returnInfo: what details about categories should be included in the returned information
+        """
         assert page > 0, "page parameter should be above 0"
         params = { "prefix": prefix, "page": page, "count": count }
         params.update(returnInfo.getParams())
@@ -235,7 +264,16 @@ class EventRegistry(object):
 
 
     def suggestConceptClasses(self, prefix, lang = "eng", conceptLang = "eng", source = ["dbpedia", "custom"], page = 1, count = 20, returnInfo = ReturnInfo()):
-        """return a list of dmoz categories that contain the prefix"""
+        """
+        return a list of concept classes that match the given prefix
+        @param prefix: input text that should be contained in the category name
+        @param lang: language in which the prefix is specified
+        @param conceptLang: languages in which the label(s) for the concepts are to be returned
+        @param source: what types of concepts classes should be returned. valid values are 'dbpedia' or 'custom'
+        @param page:  page of the results (1, 2, ...)
+        @param count: number of returned suggestions
+        @param returnInfo: what details about categories should be included in the returned information
+        """
         assert page > 0, "page parameter should be above 0"
         params = { "prefix": prefix, "lang": lang, "conceptLang": conceptLang, "source": source, "page": page, "count": count }
         params.update(returnInfo.getParams())
@@ -244,8 +282,13 @@ class EventRegistry(object):
 
     def suggestCustomConcepts(self, prefix, lang = "eng", conceptLang = "eng", page = 1, count = 20, returnInfo = ReturnInfo()):
         """
-        return a list of custom concepts that contain the given prefix
-        custom concepts are the things (indicators, stock prices, ...) for which we import daily trending values that can be obtained using GetCounts class
+        return a list of custom concepts that contain the given prefix. Custom concepts are the things (indicators, stock prices, ...) for which we import daily trending values that can be obtained using GetCounts class
+        @param prefix: input text that should be contained in the concept name
+        @param lang: language in which the prefix is specified
+        @param conceptLang: languages in which the label(s) for the concepts are to be returned
+        @param page:  page of the results (1, 2, ...)
+        @param count: number of returned suggestions
+        @param returnInfo: what details about categories should be included in the returned information
         """
         assert page > 0, "page parameter should be above 0"
         params = { "prefix": prefix, "lang": lang, "conceptLang": conceptLang, "page": page, "count": count }
@@ -257,6 +300,8 @@ class EventRegistry(object):
         """
         return a concept uri that is the best match for the given concept label
         if there are multiple matches for the given conceptLabel, they are sorted based on their frequency of occurence in news (most to least frequent)
+        @param conceptLabel: partial or full name of the concept for which to return the concept uri
+        @param sources: what types of concepts should be returned. valid values are person, loc, org, wiki, entities (== person + loc + org), concepts (== entities + wiki), conceptClass, conceptFolder
         """
         matches = self.suggestConcepts(conceptLabel, lang = lang, sources = sources)
         if matches != None and isinstance(matches, list) and len(matches) > 0 and "uri" in matches[0]:
@@ -264,16 +309,25 @@ class EventRegistry(object):
         return None
 
 
-    def getLocationUri(self, locationLabel, lang = "eng", source = ["place", "country"], countryUri = None, sortByDistanceTo = None):
-        """return a location uri that is the best match for the given location label"""
-        matches = self.suggestLocations(locationLabel, lang = lang, source = source, countryUri = countryUri, sortByDistanceTo = sortByDistanceTo)
+    def getLocationUri(self, locationLabel, lang = "eng", sources = ["place", "country"], countryUri = None, sortByDistanceTo = None):
+        """
+        return a location uri that is the best match for the given location label
+        @param locationLabel: partial or full location name for which to return the location uri
+        @param sources: what types of locations are we interested in. Possible options are "place" and "country"
+        @param countryUri: if set, then filter the possible locatiosn to the locations from that country
+        @param sortByDistanceTo: sort candidates by distance to the given (lat, long) pair
+        """
+        matches = self.suggestLocations(locationLabel, sources = sources, lang = lang, countryUri = countryUri, sortByDistanceTo = sortByDistanceTo)
         if matches != None and isinstance(matches, list) and len(matches) > 0 and "wikiUri" in matches[0]:
             return matches[0]["wikiUri"]
         return None
 
 
     def getCategoryUri(self, categoryLabel):
-        """return a category uri that is the best match for the given label"""
+        """
+        return a category uri that is the best match for the given label
+        @param categoryLabel: partial or full name of the category for which to return category uri
+        """
         matches = self.suggestCategories(categoryLabel)
         if matches != None and isinstance(matches, list) and len(matches) > 0 and "uri" in matches[0]:
             return matches[0]["uri"]
@@ -281,7 +335,10 @@ class EventRegistry(object):
 
 
     def getNewsSourceUri(self, sourceName):
-        """return the news source that best matches the source name"""
+        """
+        return the news source that best matches the source name
+        @param sourceName: partial or full name of the source or source uri for which to return source uri
+        """
         matches = self.suggestNewsSources(sourceName)
         if matches != None and isinstance(matches, list) and len(matches) > 0 and "uri" in matches[0]:
             return matches[0]["uri"]
@@ -289,7 +346,10 @@ class EventRegistry(object):
 
 
     def getConceptClassUri(self, classLabel, lang = "eng"):
-        """return a uri of the concept class that is the best match for the given label"""
+        """
+        return a uri of the concept class that is the best match for the given label
+        @param classLabel: partial or full name of the concept class for which to return class uri
+        """
         matches = self.suggestConceptClasses(classLabel, lang = lang)
         if matches != None and isinstance(matches, list) and len(matches) > 0 and "uri" in matches[0]:
             return matches[0]["uri"]
@@ -299,7 +359,11 @@ class EventRegistry(object):
     def getConceptInfo(self, conceptUri,
                        returnInfo = ReturnInfo(conceptInfo = ConceptInfoFlags(
                            synonyms = True, image = True, description = True))):
-        """return detailed information about a particular concept"""
+        """
+        return detailed information about a particular concept
+        @param conceptUri: uri of the concept
+        @param returnInfo: what details about the concept should be included in the returned information
+        """
         params = returnInfo.getParams()
         params.update({"uri": conceptUri, "action": "getInfo" })
         return self.jsonRequest("/json/concept", params)
@@ -310,6 +374,7 @@ class EventRegistry(object):
         return a custom concept uri that is the best match for the given custom concept label
         note that for the custom concepts we don't have a sensible way of sorting the candidates that match the label
         if multiple candidates match the label we cannot guarantee which one will be returned
+        @param label: label of the custom concept
         """
         matches = self.suggestCustomConcepts(label, lang = lang)
         if matches != None and isinstance(matches, list) and len(matches) > 0 and "uri" in matches[0]:
@@ -329,10 +394,10 @@ class EventRegistry(object):
 
     def getArticleUris(self, articleUrls):
         """
-        if you have article urls and you want to query them in ER you first have to
-        obtain their uris in the ER.
+        if you have article urls and you want to query them in ER you first have to obtain their uris in the ER.
         @param articleUrls a single article url or a list of article urls
-        @returns dict where key is article url and value is None (if article not found) or article uri
+        @returns dict where key is article url and value is a list with 0, 1 or more article uris. More articles uris can occur if the
+            article was updated several times
         """
         assert isinstance(articleUrls, (six.string_types, list)), "Expected a single article url or a list of urls"
         return self.jsonRequest("/json/articleMapper", { "articleUrl": articleUrls })
@@ -351,6 +416,7 @@ class EventRegistry(object):
             return ret[list(ret.keys())[0]].get("info")
         return None
 
+    #
     # utility methods
 
     def _sleepIfNecessary(self):
@@ -363,17 +429,24 @@ class EventRegistry(object):
 
 
 class ArticleMapper:
-    """
-    create instance of article mapper
-    it will map from article urls to article uris
-    the mappings can be remembered so it will not repeat requests for the same article urls
-    """
     def __init__(self, er, rememberMappings = True):
+        """
+        create instance of article mapper
+        it will map from article urls to article uris
+        the mappings can be remembered so it will not repeat requests for the same article urls
+        """
         self._er = er
         self._articleUrlToUri = {}
         self._rememberMappings = rememberMappings
 
+
     def getArticleUri(self, articleUrl):
+        """
+        given the article url, return an array with 0, 1 or more article uris. Not all returned article uris are necessarily valid anymore. For news sources
+        of lower importance we remove the duplicated articles and just keep the latest content
+        @param articleUrl: string containing the article url
+        @returns list: list of strings representing article uris.
+        """
         if articleUrl in self._articleUrlToUri:
             return self._articleUrlToUri[articleUrl]
         res = self._er.getArticleUris(articleUrl)

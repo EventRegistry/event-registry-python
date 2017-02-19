@@ -1,86 +1,8 @@
 ﻿import unittest
 from eventregistry import *
+from DataValidator import DataValidator
 
-
-class TestQueryEvents(unittest.TestCase):
-
-    @classmethod
-    def setUpClass(self):
-        self.er = EventRegistry(host = "http://eventregistry.org")
-
-        self.articleInfo = ArticleInfoFlags(bodyLen = -1, concepts = True, storyUri = True, duplicateList = True, originalArticle = True, categories = True,
-                location = True, image = True, extractedDates = True, socialScore = True, details = True)
-        self.sourceInfo = SourceInfoFlags(description = True, location = True, importance = True, articleCount = True, tags = True, details = True)
-        self.conceptInfo = ConceptInfoFlags(type=["entities"], lang = ["eng", "spa"], synonyms = True, image = True, description = True, details = True,
-                conceptClassMembership = True, conceptFolderMembership = True, trendingScore = True, trendingHistory = True, )
-        self.locationInfo = LocationInfoFlags(wikiUri = True, label = True, geoNamesId = True, geoLocation = True, population = True,
-                countryArea = True, countryDetails = True, countryContinent = True,
-                placeFeatureCode = True, placeCountry = True)
-        self.categoryInfo = CategoryInfoFlags(parentUri = True, childrenUris = True, trendingScore = True, trendingHistory = True)
-        self.eventInfo = EventInfoFlags(commonDates = True, stories = True, socialScore = True, details = True, imageCount = 2)
-        self.storyInfo = StoryInfoFlags(categories = True, date = True, concepts = True, title = True, summary = True,
-                                        medoidArticle = True, commonDates = True, socialScore = True, imageCount = 2, details = True)
-        self.returnInfo = ReturnInfo(articleInfo = self.articleInfo, conceptInfo = self.conceptInfo, eventInfo = self.eventInfo, storyInfo = self.storyInfo,
-            sourceInfo = self.sourceInfo, locationInfo = self.locationInfo, categoryInfo = self.categoryInfo)
-
-    def ensureValidConcept(self, concept, testName):
-        for prop in ["id", "uri", "label", "synonyms", "image", "description", "details", "conceptClassMembership", "conceptFolderMembership", "trendingScore", "trendingHistory", "details"]:
-            self.assertTrue(prop in concept, "Property '%s' was expected in concept for test %s" % (prop, testName))
-        self.assertTrue(concept.get("type") in ["person", "loc", "org"], "Expected concept to be an entity type, but got %s" % (concept.get("type")))
-        if concept.get("location"):
-            self.ensureValidLocation(concept.get("location"), testName)
-
-    def ensureValidArticle(self, article, testName):
-        for prop in ["id", "url", "uri", "title", "body", "source", "details", "location", "duplicateList", "originalArticle", "time", "date", "categories", "lang", "extractedDates", "concepts", "details"]:
-            self.assertTrue(prop in article, "Property '%s' was expected in article for test %s" % (prop, testName))
-        for concept in article.get("concepts"):
-            self.ensureValidConcept(concept, testName)
-        self.assertTrue(article.get("isDuplicate") or "eventUri" in article, "Nonduplicates should have event uris")
-        if article.get("location"):
-            self.ensureValidLocation(article.get("location"), testName)
-
-    def ensureValidSource(self, source, testName):
-        for prop in ["id", "uri", "location", "importance", "articleCount", "tags", "details"]:
-            self.assertTrue(prop in source, "Property '%s' was expected in source for test %s" % (prop, testName))
-        if source.get("location"):
-            self.ensureValidLocation(source.get("location"), testName)
-
-    def ensureValidCategory(self, category, testName):
-        for prop in ["id", "uri", "parentUri", "childrenUris", "trendingScore", "trendingHistory"]:
-            self.assertTrue(prop in category, "Property '%s' was expected in source for test %s" % (prop, testName))
-
-    def ensureValidEvent(self, event, testName):
-        if "newEventUri" in event:
-            return
-        for prop in ["uri", "title", "summary", "articleCounts", "concepts", "categories", "location", "eventDate", "commonDates", "stories", "socialScore", "details", "images"]:
-            self.assertTrue(prop in event, "Property '%s' was expected in event for test %s" % (prop, testName))
-        for concept in event.get("concepts"):
-            self.ensureValidConcept(concept, testName)
-        for story in event.get("stories"):
-            self.ensureValidStory(story, testName)
-        for category in event.get("categories"):
-            self.ensureValidCategory(category, testName)
-        if event.get("location"):
-            self.ensureValidLocation(event.get("location"), testName)
-
-    def ensureValidStory(self, story, testName):
-        for prop in ["uri", "title", "summary", "concepts", "categories", "location",
-                     "storyDate", "averageDate", "commonDates", "socialScore", "details", "images"]:
-            self.assertTrue(prop in story, "Property '%s' was expected in story for test %s" % (prop, testName))
-        if story.get("location"):
-            self.ensureValidLocation(story.get("location"), testName)
-
-    def ensureValidLocation(self, location, testName):
-        for prop in ["wikiUri", "label", "lat", "long", "geoNamesId", "population"]:
-            self.assertTrue(prop in location, "Property '%s' was expected in a location for test %s" % (prop, testName))
-        if location.get("type") == "country":
-            for prop in ["area", "code2", "code3", "webExt", "continent"]:
-                self.assertTrue(prop in location, "Property '%s' was expected in a location for test %s" % (prop, testName))
-        if location.get("type") == "place":
-            for prop in ["featureCode", "country"]:
-                self.assertTrue(prop in location, "Property '%s' was expected in a location for test %s" % (prop, testName))
-
-
+class TestQueryEvents(DataValidator):
     def validateGeneralEventList(self, res):
         self.assertIsNotNone(res.get("events"), "Expected to get 'events'")
 
@@ -94,11 +16,13 @@ class TestQueryEvents(unittest.TestCase):
         q.addConcept(self.er.getConceptUri("Obama"))
         return q
 
+
     def testEventList(self):
         q = self.createQuery()
         q.addRequestedResult(RequestEventsInfo(count = 10, returnInfo = self.returnInfo))
         res = self.er.execQuery(q)
         self.validateGeneralEventList(res)
+
 
     def testEventListWithKeywordSearch(self):
         q = QueryEvents(keywords="germany")
@@ -106,17 +30,20 @@ class TestQueryEvents(unittest.TestCase):
         res = self.er.execQuery(q)
         self.validateGeneralEventList(res)
 
+
     def testEventListWithSourceSearch(self):
         q = QueryEvents(sourceUri = self.er.getNewsSourceUri("bbc"))
         q.addRequestedResult(RequestEventsInfo(count = 10, returnInfo = self.returnInfo))
         res = self.er.execQuery(q)
         self.validateGeneralEventList(res)
 
+
     def testEventListWithCategorySearch(self):
         q = QueryEvents(categoryUri = self.er.getCategoryUri("disa"))
         q.addRequestedResult(RequestEventsInfo(count = 10, returnInfo = self.returnInfo))
         res = self.er.execQuery(q)
         self.validateGeneralEventList(res)
+
 
     def testEventListWithLanguageSearch(self):
         q = QueryEvents(lang = "spa")
@@ -126,11 +53,13 @@ class TestQueryEvents(unittest.TestCase):
             return
         self.validateGeneralEventList(res)
 
+
     def testEventListWithMinArtsSearch(self):
         q = QueryEvents(minArticlesInEvent = 100)
         q.addRequestedResult(RequestEventsInfo(count = 10, returnInfo = self.returnInfo))
         res = self.er.execQuery(q)
         self.validateGeneralEventList(res)
+
 
     def testConceptTrends(self):
         q = self.createQuery()
@@ -262,6 +191,7 @@ class TestQueryEvents(unittest.TestCase):
                 self.assertTrue(hasattr(concept.label, "deu"), "Concept should contain label in german language")
                 self.assertTrue(concept.type == "wiki", "Got concept of invalid type")
 
+
     def testSearchByKeyword(self):
         q = QueryEvents()
         q.addKeyword("car")  # get events containing word car
@@ -296,6 +226,7 @@ class TestQueryEvents(unittest.TestCase):
             self.assertFalse(hasattr(event, "title"), "Event should not contain title")
             self.assertFalse(hasattr(event, "summary"), "Event should not contain summary")
 
+
     def testSearchByLocation(self):
         q = QueryEvents()
         q.addLocation(self.er.getLocationUri("Washington"))
@@ -304,6 +235,42 @@ class TestQueryEvents(unittest.TestCase):
         q.addRequestedResult(RequestEventsCategoryAggr())
         q.addRequestedResult(RequestEventsInfo())
         res = self.er.execQuery(q)
+
+
+    def testQueryEventsIterator(self):
+        # check that the iterator really downloads all events
+        obamaUri = self.er.getConceptUri("Obama")
+        iter = QueryEventsIter(keywords = "germany", conceptUri = obamaUri)
+        eventCount = iter.count(self.er)
+        events = list(iter.execQuery(self.er, returnInfo = self.returnInfo))
+        self.assertTrue(eventCount == len(events), "Event iterator did not generate the full list of events")
+
+
+    def testQuery1(self):
+        obamaUri = self.er.getConceptUri("Obama")
+        iter = QueryEventsIter(keywords = "germany", conceptUri = obamaUri)
+        for event in iter.execQuery(self.er, returnInfo = self.returnInfo):
+            self.ensureEventHasConcept(event, obamaUri)
+            uri = event["uri"]
+            articleIter = QueryEventArticlesIter(uri)
+            hasGermany = ["germany" in article["body"].lower() for article in articleIter.execQuery(self.er, lang = allLangs, returnInfo = self.returnInfo)]
+            self.assertTrue(True in hasGermany, "'germany' was not mentioned in the articles in the event")
+
+    def testQuery2(self):
+        sourceUri = self.er.getNewsSourceUri("los angeles")
+        businessCat = self.er.getCategoryUri("business")
+        iter = QueryEventsIter(keywords = "obama trump", sourceUri = sourceUri, categoryUri = businessCat)
+        for event in iter.execQuery(self.er, returnInfo = self.returnInfo):
+            self.ensureEventHasCategory(event, businessCat)
+            articleIter = QueryEventArticlesIter(event["uri"])
+            articles = list(articleIter.execQuery(self.er, lang = allLangs, returnInfo = self.returnInfo))
+            hasArticleFromLAT = [article["source"]["uri"] == sourceUri for article in articles]
+            self.assertTrue(True in hasArticleFromLAT, "event did not have any articles from source los angeles times")
+
+            hasKeywords = ["obama" in article["body"].lower() and "trump" in article["body"].lower()
+                                 for article in articles]
+            self.assertTrue(True in hasKeywords, "articles from the event did not have the obama and trump keywords")
+
 
 
 if __name__ == "__main__":

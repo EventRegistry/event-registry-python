@@ -1,10 +1,8 @@
 ﻿import unittest
 from eventregistry import *
+from DataValidator import DataValidator
 
-class TestInfo(unittest.TestCase):
-    @classmethod
-    def setUpClass(self):
-        self.er = EventRegistry(host = "http://eventregistry.org")
+class TestInfo(DataValidator):
 
     def test_sourcesById(self):
         q = GetSourceInfo(returnInfo = ReturnInfo(
@@ -89,7 +87,6 @@ class TestInfo(unittest.TestCase):
                                            details = True,
                                            conceptClassMembership = True,
                                            conceptClassMembershipFull = True,
-                                           conceptFolderMembership = True,
                                            trendingScore = True,
                                            trendingHistory = True,
                                            trendingSource = ["news", "social"])))
@@ -111,7 +108,6 @@ class TestInfo(unittest.TestCase):
             self.assertTrue("details" in item, "Concept should have details")
             self.assertIsNotNone(item.get("conceptClassMembership"), "Concept should have conceptClassMembership")
             self.assertIsNotNone(item.get("conceptClassMembershipFull"), "Concept should have conceptClassMembershipFull")
-            self.assertIsNotNone(item.get("conceptFolderMembership"), "Concept should have conceptFolderMembership")
             self.assertIsNotNone(item.get("trendingScore"), "Concept should have trendingScore")
             self.assertIsNotNone(item.get("trendingScore").get("news"), "Concept should have trendingScore for news")
             self.assertIsNotNone(item.get("trendingScore").get("social"), "Concept should have trendingScore for social")
@@ -128,7 +124,6 @@ class TestInfo(unittest.TestCase):
                                            details = False,
                                            conceptClassMembership = False,
                                            conceptClassMembershipFull = False,
-                                           conceptFolderMembership = False,
                                            trendingScore = False,
                                            trendingHistory = False),
             locationInfo = LocationInfoFlags(label = False, placeCountry = False)))
@@ -148,7 +143,6 @@ class TestInfo(unittest.TestCase):
             self.assertIsNone(item.get("details"), "Concept should not have have details")
             self.assertIsNone(item.get("conceptClassMembership"), "Concept should not have have conceptClassMembership")
             self.assertIsNone(item.get("conceptClassMembershipFull"), "Concept should not have have conceptClassMembershipFull")
-            self.assertIsNone(item.get("conceptFolderMembership"), "Concept should not have have conceptFolderMembership")
             self.assertIsNone(item.get("trendingScore"), "Concept should not have have trendingScore")
             self.assertIsNone(item.get("trendingHistory"), "Concept should not have have trendingHistory")
 

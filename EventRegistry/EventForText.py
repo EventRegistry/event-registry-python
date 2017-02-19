@@ -37,7 +37,7 @@ class GetEventForText(QueryParamsBase):
         QueryParamsBase.__init__(self)
         self._er = eventRegistry
         self._nrOfEventsToReturn = nrOfEventsToReturn;
-        self._setVal("action", "findTopCorrelations")
+
 
     def compute(self,
                 text,           # text for which to find the most similar event

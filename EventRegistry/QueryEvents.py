@@ -100,23 +100,30 @@ class QueryEvents(Query):
         if requestedResult:
             self.addRequestedResult(requestedResult)
 
+
     def _getPath(self):
         return "/json/event"
+
 
     def addConcept(self, conceptUri):
         self._addArrayVal("conceptUri", conceptUri)
 
+
     def addLocation(self, locationUri):
         self._addArrayVal("locationUri", locationUri)
+
 
     def addCategory(self, categoryUri):
         self._addArrayVal("categoryUri", categoryUri)
 
+
     def addNewsSource(self, newsSourceUri):
         self._addArrayVal("sourceUri", newsSourceUri)
 
+
     def addKeyword(self, keyword):
         self.queryParams["keywords"] = self.queryParams.pop("keywords", "") + " " + keyword
+
 
     def setEventUriList(self, uriList):
         """
@@ -126,9 +133,11 @@ class QueryEvents(Query):
         assert isinstance(uriList, list), "uriList has to be a list of strings that represent event uris"
         self.queryParams = { "action": "getEvents", "eventUriList": ",".join(uriList) }
 
+
     def setDateLimit(self, startDate, endDate):
         self._setDateVal("dateStart", startDate)
         self._setDateVal("dateEnd", endDate)
+
 
     def addRequestedResult(self, requestEvents):
         """
@@ -139,25 +148,128 @@ class QueryEvents(Query):
         assert isinstance(requestEvents, RequestEvents), "QueryEvents class can only accept result requests that are of type RequestEvents"
         self.resultTypeList.append(requestEvents)
 
+
     @staticmethod
     def initWithEventUriList(uriList):
         q = QueryEvents()
         q.setEventUriList(uriList)
         return q
 
+
+
+class QueryEventsIter(QueryEvents):
+    """
+    class that simplifies and combines functionality from QueryEvents and RequestEventsInfo. It provides an iterator
+    over the list of events that match the specified conditions
+    """
+
+    def count(self, eventRegistry):
+        """
+        return the number of events that match the criteria
+        """
+        self.clearRequestedResults()
+        self.addRequestedResult(RequestEventsUriList())
+        res = eventRegistry.execQuery(self)
+        count = res.get("uriList", {}).get("totalResults", 0)
+        return count
+
+
+    def execQuery(self, eventRegistry,
+                  sortBy = "rel",
+                  sortByAsc = False,
+                  returnInfo = ReturnInfo(),
+                  eventBatchSize = 200):
+        """
+        @param eventRegistry: instance of EventRegistry class. used to query new event list and uris
+        @param sortBy: how should the resulting events be sorted. Options: date (by event date), rel (relevance to the query), size (number of articles), socialScore (amount of shares in social media)
+        @param sortByAsc: should the results be sorted in ascending order (True) or descending (False)
+        @param eventBatchSize: number of events to download at once (we are not downloading event by event)
+        """
+        assert eventBatchSize <= 200, "You can not have a batch size > 200 items"
+        self._er = eventRegistry
+        self._sortBy = sortBy
+        self._sortByAsc = sortByAsc
+        self._returnInfo = returnInfo
+        self._eventBatchSize = eventBatchSize
+        self._uriPage = 0
+        # list of cached events that are yet to be returned by the iterator
+        self._eventList = []
+        self._uriList = []
+        # how many pages do we have for URIs. set once we call _getNextUriPage first
+        self._allUriPages = None
+        return self
+
+
+    def _getNextUriPage(self):
+        """download a simple list of event uris"""
+        self._uriPage += 1
+        self._uriList = []
+        if self._allUriPages != None and self._uriPage > self._allUriPages:
+            return
+        if self._er._verboseOutput:
+            print("Downoading page %d of event uris" % (self._uriPage))
+        self.clearRequestedResults()
+        self.addRequestedResult(RequestEventsUriList(page = self._uriPage, sortBy = self._sortBy, sortByAsc = self._sortByAsc))
+        res = self._er.execQuery(self)
+        self._uriList = res.get("uriList", {}).get("results", [])
+        self._allUriPages = res.get("uriList", {}).get("pages", 0)
+        self._getNextEventBatch()
+
+
+    def _getNextEventBatch(self):
+        """download next batch of events based on the event uris in the uri list"""
+        self.clearRequestedResults()
+        # try to get more uris, if none
+        if len(self._uriList) == 0:
+            self._getNextUriPage()
+        # if still no uris, then we have nothing to download
+        if len(self._uriList) == 0:
+            return
+        # get uris to download
+        uris = self._uriList[:self._eventBatchSize]
+        if self._er._verboseOutput:
+            print("Downoading %d events..." % (len(uris)))
+        # remove used uris
+        self._uriList = self._uriList[self._eventBatchSize:]
+        self.setEventUriList(uris)
+        self.addRequestedResult(RequestEventsInfo(page = 1, count = self._eventBatchSize, sortBy = "none", returnInfo = self._returnInfo))
+        res = self._er.execQuery(self)
+        self._eventList.extend(res.get("events", {}).get("results", []))
+
+
+    def __iter__(self):
+        return self
+
+
+    def next(self):
+        """iterate over the available events"""
+        if len(self._eventList) == 0:
+            self._getNextEventBatch()
+        if len(self._eventList) > 0:
+            return self._eventList.pop(0)
+        raise StopIteration
+
+
+
 class RequestEvents:
     def __init__(self):
         self.resultType = None
 
 
+
 class RequestEventsInfo(RequestEvents):
-    """
-    return event details for resulting events
-    """
     def __init__(self, page = 1,
                  count = 20,
-                 sortBy = "rel", sortByAsc = False,    # how should the resulting events be sorted. Options: date (by event date), rel (relevance to the query), size (number of articles), socialScore (amount of shares in social media)
+                 sortBy = "rel", sortByAsc = False,
                  returnInfo = ReturnInfo()):
+        """
+        return event details for resulting events
+        @param page: page of the results to return (1, 2, ...)
+        @param count: number of results to return per page (at most 200)
+        @param sortBy: how should the resulting events be sorted. Options: date (by event date), rel (relevance to the query), size (number of articles), socialScore (amount of shares in social media)
+        @param sortByAsc: should the results be sorted in ascending order (True) or descending (False)
+        @param returnInfo: what details should be included in the returned information
+        """
         assert page >= 1, "page has to be >= 1"
         assert count <= 200
         self.resultType = "events"
@@ -167,21 +279,29 @@ class RequestEventsInfo(RequestEvents):
         self.eventsSortByAsc = sortByAsc
         self.__dict__.update(returnInfo.getParams("events"))
 
+
     def setPage(self, page):
         assert page >= 1, "page has to be >= 1"
         self.eventsPage = page
+
 
     def setCount(self, count):
         self.eventsCount = count
 
 
+
 class RequestEventsUriList(RequestEvents):
-    """
-    return a simple list of event uris for resulting events
-    """
-    def __init__(self, page = 1,
+    def __init__(self,
+                 page = 1,
                  count = 100000,
-                 sortBy = "rel", sortByAsc = False):    # how should the resulting events be sorted. Options: date (by event date), rel (relevance to the query), size (number of articles), socialScore (amount of shares in social media)
+                 sortBy = "rel", sortByAsc = False):
+        """
+        return a simple list of event uris for resulting events
+        @param page: page of the results (1, 2, ...)
+        @param count: number of results to include per page (at most 300000)
+        @param sortBy: how should the resulting events be sorted. Options: date (by event date), rel (relevance to the query), size (number of articles), socialScore (amount of shares in social media)
+        @param sortByAsc: should the events be sorted in ascending order (True) or descending (False)
+        """
         assert page >= 1, "page has to be >= 1"
         assert count <= 300000
         self.resultType = "uriList"
@@ -199,29 +319,32 @@ class RequestEventsUriList(RequestEvents):
 
 
 class RequestEventsTimeAggr(RequestEvents):
-    """
-    return time distribution of resulting events
-    """
     def __init__(self):
+        """
+        return time distribution of resulting events
+        """
         self.resultType = "timeAggr"
 
 
 class RequestEventsKeywordAggr(RequestEvents):
-    """
-    return keyword aggregate (tag cloud) of resulting events
-    """
     def __init__(self, lang = "eng"):
+        """
+        return keyword aggregate (tag cloud) on words in articles in resulting events
+        @param lang: in which language to produce the list of top keywords
+        """
         self.resultType = "keywordAggr"
         self.keywordAggrLang = lang
 
 
 class RequestEventsLocAggr(RequestEvents):
-    """
-    return aggreate of locations of resulting events
-    """
     def __init__(self,
                  eventsSampleSize = 100000,
                  returnInfo = ReturnInfo()):
+        """
+        return aggreate of locations of resulting events
+        @param eventsSampleSize: sample of events to use to compute the location aggregate (at most 300000)
+        @param returnInfo: what details (about locations) should be included in the returned information
+        """
         assert eventsSampleSize <= 300000
         self.resultType = "locAggr"
         self.locAggrSampleSize = eventsSampleSize
@@ -229,12 +352,15 @@ class RequestEventsLocAggr(RequestEvents):
 
 
 class RequestEventsLocTimeAggr(RequestEvents):
-    """
-    return aggreate of locations and times of resulting events
-    """
+
     def __init__(self,
                  eventsSampleSize = 100000,
                  returnInfo = ReturnInfo()):
+        """
+        return aggreate of locations and times of resulting events
+        @param eventsSampleSize: sample of events to use to compute the location aggregate (at most 300000)
+        @param returnInfo: what details (about locations) should be included in the returned information
+        """
         assert eventsSampleSize <= 300000
         self.resultType = "locTimeAggr"
         self.locTimeAggrSampleSize = eventsSampleSize
@@ -242,13 +368,16 @@ class RequestEventsLocTimeAggr(RequestEvents):
 
 
 class RequestEventsConceptAggr(RequestEvents):
-    """
-    get aggregated list of concepts - top concepts that appear in events
-    """
     def __init__(self,
                  conceptCount = 20,
                  eventsSampleSize = 100000,
                  returnInfo = ReturnInfo()):
+        """
+        compute which concept are the most frequently occuring in the list of resulting events
+        @param conceptCount: number of top concepts to return (at most 200)
+        @param eventsSampleSize: on what sample of results should the aggregate be computed (at most 3000000)
+        @param returnInfo: what details about the concepts should be included in the returned information
+        """
         assert conceptCount <= 200
         assert eventsSampleSize <= 3000000
         self.resultType = "conceptAggr"
@@ -258,14 +387,18 @@ class RequestEventsConceptAggr(RequestEvents):
 
 
 class RequestEventsConceptGraph(RequestEvents):
-    """
-    return a graph of concepts - connect concepts that are frequently occuring in the same events
-    """
     def __init__(self,
                  conceptCount = 25,
                  linkCount = 50,
                  eventsSampleSize = 100000,
                  returnInfo = ReturnInfo()):
+        """
+        compute which concept pairs frequently co-occur together in the resulting events
+        @param conceptCount: number of top concepts to return (at most 1000)
+        @param linkCount: number of links between the concepts to return (at most 2000)
+        @param eventsSampleSize: on what sample of results should the aggregate be computed (at most 300000)
+        @param returnInfo: what details about the concepts should be included in the returned information
+        """
         assert conceptCount <= 1000
         assert linkCount <= 2000
         assert eventsSampleSize <= 300000
@@ -277,16 +410,20 @@ class RequestEventsConceptGraph(RequestEvents):
 
 
 class RequestEventsConceptMatrix(RequestEvents):
-    """
-    get a matrix of concepts and their dependencies. For individual concept pairs
-    return how frequently they co-occur in the resulting events and
-    how "surprising" this is, based on the frequency of individual concepts
-    """
     def __init__(self,
                  conceptCount = 25,
                  measure = "pmi",
                  eventsSampleSize = 100000,
                  returnInfo = ReturnInfo()):
+        """
+        get a matrix of concepts and their dependencies. For individual concept pairs
+        return how frequently they co-occur in the resulting events and
+        how "surprising" this is, based on the frequency of individual concepts
+        @param conceptCount: number of top concepts to return (at most 200)
+        @param measure: how should the interestingness between the selected pairs of concepts be computed. Options: pmi (pointwise mutual information), pairTfIdf (pair frequence * IDF of individual concepts), chiSquare
+        @param eventsSampleSize: on what sample of results should the aggregate be computed (at most 300000)
+        @param returnInfo: what details about the concepts should be included in the returned information
+        """
         assert conceptCount <= 200
         assert eventsSampleSize <= 300000
         self.resultType = "conceptMatrix"
@@ -297,12 +434,14 @@ class RequestEventsConceptMatrix(RequestEvents):
 
 
 class RequestEventsConceptTrends(RequestEvents):
-    """
-    return a list of top trending concepts and their daily trending info over time
-    """
     def __init__(self,
                  conceptCount = 10,
                  returnInfo = ReturnInfo()):
+        """
+        return a list of top trending concepts and their daily trending info over time
+        @param conceptCount: number of top concepts to return (at most 50)
+        @param returnInfo: what details about the concepts should be included in the returned information
+        """
         assert conceptCount <= 50
         self.resultType = "conceptTrends"
         self.conceptTrendsConceptCount = conceptCount
@@ -310,12 +449,16 @@ class RequestEventsConceptTrends(RequestEvents):
 
 
 class RequestEventsSourceAggr(RequestEvents):
-    """
-    return top news sources that report about the events that match the search conditions
-    """
-    def __init__(self, sourceCount = 30,
+    def __init__(self,
+                 sourceCount = 30,
                  eventsSampleSize = 100000,
                  returnInfo = ReturnInfo()):
+        """
+        return top news sources that report about the events that match the search conditions
+        @param sourceCount: number of top sources to return (at most 200)
+        @param eventsSampleSize: on what sample of results should the aggregate be computed (at most 300000)
+        @param returnInfo: what details about the sources should be included in the returned information
+        """
         assert sourceCount <= 200
         assert eventsSampleSize <= 300000
         self.resultType = "sourceAggr"
@@ -325,13 +468,16 @@ class RequestEventsSourceAggr(RequestEvents):
 
 
 class RequestEventsDateMentionAggr(RequestEvents):
-    """
-    return events and the dates that are mentioned in articles about these events
-    """
     def __init__(self,
                  minDaysApart = 0,
                  minDateMentionCount = 5,
                  eventsSampleSize = 100000):
+        """
+        return events and the dates that are mentioned in articles about these events
+        @param minDaysApart: ignore events that don't have a date that is more than this number of days apart from the tested event
+        @param minDateMentionCount: report only dates that are mentioned at least this number of times
+        @param eventsSampleSize: on what sample of results should the aggregate be computed (at most 300000)
+        """
         assert eventsSampleSize <= 300000
         self.resultType = "dateMentionAggr"
         self.dateMentionAggrMinDaysApart = minDaysApart
@@ -340,14 +486,16 @@ class RequestEventsDateMentionAggr(RequestEvents):
 
 
 class RequestEventsEventClusters(RequestEvents):
-    """
-    return hierarchical clustering of events into smaller clusters
-    2-means clustering is applied on each node in the tree
-    """
     def __init__(self,
                  keywordCount = 30,
                  maxEventsToCluster = 10000,
                  returnInfo = ReturnInfo()):
+        """
+        return hierarchical clustering of events into smaller clusters. 2-means clustering is applied on each node in the tree
+        @param keywordCount: number of keywords to report in each of the clusters (at most !00)
+        @param maxEventsToCluster: try to cluster at most this number of events (at most 10000)
+        @param returnInfo: what details about the concepts should be included in the returned information
+        """
         assert keywordCount <= 100
         assert maxEventsToCluster <= 10000
         self.resultType = "eventClusters"
@@ -357,36 +505,47 @@ class RequestEventsEventClusters(RequestEvents):
 
 
 class RequestEventsCategoryAggr(RequestEvents):
-    """
-    return distribution of events into dmoz categories
-    """
-    def __init__(self, returnInfo = ReturnInfo()):
+    def __init__(self,
+                 returnInfo = ReturnInfo()):
+        """
+        return distribution of events into dmoz categories
+        @param returnInfo: what details about the categories should be included in the returned information
+        """
         self.resultType = "categoryAggr"
         self.__dict__.update(returnInfo.getParams("categoryAggr"))
 
 
 class RequestEventsRecentActivity(RequestEvents):
-    """
-    return a list of recently changed events that match search conditions
-    """
     def __init__(self,
                  maxEventCount = 60,
                  maxMinsBack = 10 * 60,
-                 lastEventActivityId = 0,
-                 lang = "eng",
-                 eventsWithLocationOnly = True,
-                 eventsWithLangOnly = False,
+                 lastActivityId = 0,
+                 mandatoryLocation = True,
+                 lang = None,
+                 iterateDirection = "backward",
                  minAvgCosSim = 0,
                  returnInfo = ReturnInfo()):
+        """
+        return a list of recently changed events that match search conditions
+        @param maxEventCount: max events to return (at most 1000)
+        @param: maxMinsBack: maximum number of minutes in the history to look at
+        @param lastActivityId: id of the last activity (returned by previous call to the same method)
+        @param mandatoryLocation: return only events that have a geographic location assigned to them
+        @param lang: limit the results to events that are described in the selected language (None if not filtered by any language)
+        @param iterateDirection: in which order should the returned events be sorted. "backward" for from most recently updated to least recently, "forward" for the other direction
+        @param minAvgCosSim: the minimum avg cos sim of the events to be returned (events with lower quality should not be included)
+        @param returnInfo: what details should be included in the returned information
+        """
         assert maxEventCount <= 1000
         self.resultType = "recentActivity"
-        self.eventsRecentActivityMaxEventCount = maxEventCount
-        self.eventsRecentActivityMaxMinsBack = maxMinsBack
-        self.eventsRecentActivityLastEventActivityId = lastEventActivityId
-        self.eventsRecentActivityEventLang = lang                                   # the language in which title should be returned
-        self.eventsRecentActivityEventsWithLocationOnly = eventsWithLocationOnly    # return only events for which we've recognized their location
-        self.eventsRecentActivityEventsWithLangOnly = eventsWithLangOnly            # return only event that have a cluster at least in the lang language
-        self.eventsRecentActivityMinAvgCosSim = minAvgCosSim                        # the minimum avg cos sim of the events to be returned (events with lower quality should not be included)
-        self.__dict__.update(returnInfo.getParams("recentActivity"))
+        self.recentActivityEventsMaxEventCount = maxEventCount
+        self.recentActivityEventsMaxMinsBack = maxMinsBack
+        self.recentActivityEventsLastActivityId = lastActivityId
+        self.recentActivityEventsMandatoryLocation = mandatoryLocation
+        if lang != None:
+            self.recentActivityEventsLang = lang
+        self.recentActivityEventsIterateDirection = iterateDirection
+        self.eventsRecentActivityMinAvgCosSim = minAvgCosSim
+        self.__dict__.update(returnInfo.getParams("recentActivityEvents"))
 
 
