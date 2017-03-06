@@ -175,6 +175,15 @@ class QueryArticles(Query):
         self.resultTypeList.append(requestArticles)
 
 
+    def setRequestedResult(self, requestArticles):
+        """
+        Set the single result type that you would like to be returned. If some other request type was previously set, it will be overwritten.
+        Result types can be the classes that extend RequestArticles base class (see classes below).
+        """
+        assert isinstance(requestArticles, RequestArticles), "QueryArticles class can only accept result requests that are of type RequestArticles"
+        self.resultTypeList = [requestArticles]
+
+
     @deprecated
     def setArticleIdList(self, idList):
         """set a custom list of article ids. the results will be then computed on this list - no query will be done"""
@@ -567,16 +576,14 @@ class RequestArticlesRecentActivity(RequestArticles):
                  lastActivityId = 0,
                  lang = None,
                  mandatorySourceLocation = False,
-                 iterateDirection = "backward",
                  returnInfo = ReturnInfo()):
         """
         get the list of articles that were recently added to the Event Registry and match the selected criteria
-        @param maxArticleCount: max articles to return (at most 100)
+        @param maxArticleCount: max articles to return (at most 500)
         @param: maxMinsBack: maximum number of minutes in the history to look at
         @param lastActivityId: id of the last activity (returned by previous call to the same method)
-        @param lang: return only articles in the specified languages (None if no limits)
+        @param lang: return only articles in the specified languages (None if no limits). accepts string or a list of strings
         @param mandatorySourceLocation: return only articles for which we know the source's geographic location
-        @param iterateDirection: in which order should the returned events be sorted. "backward" for from most recently updated to least recently, "forward" for the other direction
         @param returnInfo: what details should be included in the returned information
         """
         assert maxArticleCount <= 100
@@ -588,5 +595,4 @@ class RequestArticlesRecentActivity(RequestArticles):
             self.recentActivityArticlesLang = lang
 
         self.recentActivityArticlesMandatorySourceLocation = mandatorySourceLocation
-        self.recentActivityArticlesIterateDirection = iterateDirection
         self.__dict__.update(returnInfo.getParams("recentActivityArticles"))

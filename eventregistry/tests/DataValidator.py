@@ -7,19 +7,7 @@ class DataValidator(unittest.TestCase):
         # load settings from the current folder. use different instance than for regular ER requests
         currPath = os.path.split(__file__)[0]
         settPath = os.path.join(currPath, "settings.json")
-        if not os.path.exists(settPath):
-            self.er = EventRegistry(verboseOutput = True)
-        else:
-            settings = json.load(open(settPath))
-            host = settings.get("host", "http://eventregistry.org")
-            self.er = EventRegistry(
-                host = host,
-                apiKey = settings.get("apiKey", None),
-                verboseOutput = True)
-            # try logging in with username and password
-            if "apiKey" not in settings and "username" in settings and "password" in settings:
-                print("Trying to login with username and password...")
-                self.er.login(settings.get("username", ""), settings.get("password", ""), False)
+        self.er = EventRegistry(verboseOutput = True, settingsFName = settPath)
 
 
     def __init__(self, *args, **kwargs):

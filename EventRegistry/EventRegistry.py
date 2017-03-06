@@ -23,11 +23,23 @@ class EventRegistry(object):
     the core object that is used to access any data in Event Registry
     it is used to send all the requests and queries
     """
-    def __init__(self, host = None, logging = False,
-                 minDelayBetweenRequests = 0.5,     # the minimum number of seconds between individual api calls
-                 repeatFailedRequestCount = -1,     # if a request fails (for example, because ER is down), what is the max number of times the request should be repeated (-1 for indefinitely)
-                 verboseOutput = False,             # if true, additional info about query times etc will be printed to console
-                 apiKey = None):
+    def __init__(self,
+                 apiKey = None,
+                 host = None,
+                 logging = False,
+                 minDelayBetweenRequests = 0.5,
+                 repeatFailedRequestCount = -1,
+                 verboseOutput = False,
+                 settingsFName = None):
+        """
+        @param apiKey: API key that should be used to make the requests to the Event Registry. API key is assigned to each user account and can be obtained on this page: http://eventregistry.org/me?tab=settings
+        @param host: host to use to access the Event Registry backend. Use None to use the default host.
+        @param logging: log all requests made to a 'requests_log.txt' file
+        @param minDelayBetweenRequests: the minimum number of seconds between individual api calls
+        @param repeatFailedRequestCount: if a request fails (for example, because ER is down), what is the max number of times the request should be repeated (-1 for indefinitely)
+        @param verboseOutput: if True, additional info about query times etc will be printed to console
+        @param settingsFName: If provided it should be a full path to 'settings.json' file where apiKey an/or host can be loaded from. If None, we will look for the settings file in the eventregistry module folder
+        """
         self._host = host
         self._lastException = None
         self._logRequests = logging
@@ -35,7 +47,6 @@ class EventRegistry(object):
         self._repeatFailedRequestCount = repeatFailedRequestCount
         self._verboseOutput = verboseOutput
         self._lastQueryTime = time.time()
-        self._cookies = None
         self._dailyAvailableRequests = -1
         self._remainingAvailableRequests = -1
 
@@ -44,27 +55,25 @@ class EventRegistry(object):
         self._reqSession = requests.Session()
         self._apiKey = apiKey
 
-        # if there is a settings.json file in the directory then try using it to login to ER
+        # if there is a settings.json file in the directory then try using it to load the API key from it
         # and to read the host name from it (if custom host is not specified)
         currPath = os.path.split(__file__)[0]
-        settPath = os.path.join(currPath, "settings.json")
+        settFName = settingsFName or os.path.join(currPath, "settings.json")
         if apiKey:
             print("using user provided API key for making requests")
-        elif os.path.exists(settPath):
-            settings = json.load(open(settPath))
+
+        if os.path.exists(settFName):
+            settings = json.load(open(settFName))
             self._host = host or settings.get("host", "http://eventregistry.org")
-            # try logging in with username and password
-            if "username" in settings and "password" in settings:
-                print("found username and password in settings file which will be used for making requests. Trying to login...")
-                self.login(settings.get("username", ""), settings.get("password", ""), False)
             # if api key is set, then use it when making the requests
-            elif "apiKey" in settings:
+            if "apiKey" in settings and not apiKey:
                 print("found apiKey in settings file which will be used for making requests")
                 self._apiKey = settings["apiKey"]
-            else:
-                print("no authentication found in the settings file")
         else:
             self._host = host or "http://eventregistry.org"
+
+        if self._apiKey == None:
+            print("No API key was provided. You will be allowed to perform only a very limited number of requests per day.")
         self._requestLogFName = os.path.join(currPath, "requests_log.txt")
 
         print("Event Registry host: %s" % (self._host))
@@ -105,33 +114,15 @@ class EventRegistry(object):
 
     def getDailyAvailableRequests(self):
         """get the total number of requests that the user can make in a day"""
-        return self._dailyAvailableRequests;
-
-
-    def login(self, username, password, throwExceptOnFailure = True):
-        """
-        login the user. without logging in, the user is limited to 50 queries per day.
-        if you have a registered account, the number of allowed requests per day can be higher, depending on your subscription plan
-        """
-        respInfoObj = None
-        try:
-            respInfo = self._reqSession.post(self._host + "/login", data = { "email": username, "pass": password })
-            self._cookies = respInfo.cookies
-            respInfoText = respInfo.text
-            respInfoObj = json.loads(respInfoText)
-            if throwExceptOnFailure and "error" in respInfoObj:
-                raise Exception(respInfo["error"])
-            elif "info" in respInfoObj:
-                print("Successfully logged in with user %s" % (username))
-        except Exception as ex:
-            if isinstance(ex, requests.exceptions.ConnectionError) and throwExceptOnFailure:
-                raise ex
-        finally:
-            return respInfoObj
+        return self._dailyAvailableRequests
 
 
     def execQuery(self, query):
-        """main method for executing the search queries."""
+        """
+        main method for executing the search queries.
+        @param query: instance of Query class
+        """
+        assert isinstance(query, QueryParamsBase), "query parameter should be an instance of a class that has Query as a base class, such as QueryArticles or QueryEvents"
         # don't modify original query params
         allParams = query._getQueryParams()
         # make the request
@@ -158,10 +149,10 @@ class EventRegistry(object):
             except Exception as ex:
                 self._lastException = ex
 
+        if paramDict == None:
+            paramDict = {}
         # if we have api key then add it to the paramDict
         if self._apiKey:
-            if paramDict == None:
-                paramDict = {}
             paramDict["apiKey"] = self._apiKey
 
         tryCount = 0
@@ -172,7 +163,7 @@ class EventRegistry(object):
                 url = self._host + methodUrl;
 
                 # make the request
-                respInfo = self._reqSession.post(url, json = paramDict, cookies = self._cookies)
+                respInfo = self._reqSession.post(url, json = paramDict)
                 # if we got some error codes print the error and repeat the request after a short time period
                 if respInfo.status_code != 200:
                     raise Exception(respInfo.text)

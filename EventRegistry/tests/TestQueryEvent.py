@@ -103,6 +103,7 @@ class TestQueryEvent(DataValidator):
         # check that the iterator really downloads all articles in the event
         iter = QueryEventArticlesIter("eng-2866653")
         articleCount = iter.count(self.er)
+        self.assertTrue(articleCount == 263, "Expected to see 263 articles for the specified event")
         articles = [art for art in iter.execQuery(self.er, lang = allLangs)]
         self.assertTrue(articleCount == len(articles), "Event article iterator did not generate the full list of event articles")
 

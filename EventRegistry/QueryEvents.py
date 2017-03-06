@@ -149,6 +149,15 @@ class QueryEvents(Query):
         self.resultTypeList.append(requestEvents)
 
 
+    def setRequestedResult(self, requestEvents):
+        """
+        Set the single result type that you would like to be returned. If some other request type was previously set, it will be overwritten.
+        Result types can be the classes that extend RequestEvents base class (see classes below).
+        """
+        assert isinstance(requestEvents, RequestEvents), "QueryEvents class can only accept result requests that are of type RequestEvents"
+        self.resultTypeList = [requestEvents]
+
+
     @staticmethod
     def initWithEventUriList(uriList):
         q = QueryEvents()
@@ -522,17 +531,15 @@ class RequestEventsRecentActivity(RequestEvents):
                  lastActivityId = 0,
                  mandatoryLocation = True,
                  lang = None,
-                 iterateDirection = "backward",
                  minAvgCosSim = 0,
                  returnInfo = ReturnInfo()):
         """
         return a list of recently changed events that match search conditions
-        @param maxEventCount: max events to return (at most 1000)
+        @param maxEventCount: max events to return (at most 500)
         @param: maxMinsBack: maximum number of minutes in the history to look at
         @param lastActivityId: id of the last activity (returned by previous call to the same method)
         @param mandatoryLocation: return only events that have a geographic location assigned to them
         @param lang: limit the results to events that are described in the selected language (None if not filtered by any language)
-        @param iterateDirection: in which order should the returned events be sorted. "backward" for from most recently updated to least recently, "forward" for the other direction
         @param minAvgCosSim: the minimum avg cos sim of the events to be returned (events with lower quality should not be included)
         @param returnInfo: what details should be included in the returned information
         """
@@ -544,7 +551,6 @@ class RequestEventsRecentActivity(RequestEvents):
         self.recentActivityEventsMandatoryLocation = mandatoryLocation
         if lang != None:
             self.recentActivityEventsLang = lang
-        self.recentActivityEventsIterateDirection = iterateDirection
         self.eventsRecentActivityMinAvgCosSim = minAvgCosSim
         self.__dict__.update(returnInfo.getParams("recentActivityEvents"))
 
