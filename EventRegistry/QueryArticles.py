@@ -1,4 +1,6 @@
-﻿from eventregistry.Base import *
+﻿
+import six
+from eventregistry.Base import *
 from eventregistry.ReturnInfo import *
 
 
@@ -210,7 +212,7 @@ class QueryArticles(Query):
 
 
 
-class QueryArticlesIter(QueryArticles):
+class QueryArticlesIter(QueryArticles, six.Iterator):
     """
     class that simplifies and combines functionality from QueryArticles and RequestArticlesInfo. It provides an iterator
     over the list of articles that match the specified conditions
@@ -295,7 +297,7 @@ class QueryArticlesIter(QueryArticles):
         return self
 
 
-    def next(self):
+    def __next__(self):
         """iterate over the available articles"""
         if len(self._articleList) == 0:
             self._getNextArticleBatch()
