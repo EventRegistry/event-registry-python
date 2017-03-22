@@ -1,4 +1,5 @@
-﻿from eventregistry.Base import *
+﻿import six
+from eventregistry.Base import *
 from eventregistry.ReturnInfo import *
 
 
@@ -166,7 +167,7 @@ class QueryEvents(Query):
 
 
 
-class QueryEventsIter(QueryEvents):
+class QueryEventsIter(QueryEvents, six.Iterator):
     """
     class that simplifies and combines functionality from QueryEvents and RequestEventsInfo. It provides an iterator
     over the list of events that match the specified conditions
@@ -249,7 +250,7 @@ class QueryEventsIter(QueryEvents):
         return self
 
 
-    def next(self):
+    def __next__(self):
         """iterate over the available events"""
         if len(self._eventList) == 0:
             self._getNextEventBatch()

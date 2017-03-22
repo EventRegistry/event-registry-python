@@ -1,4 +1,5 @@
-﻿from eventregistry.Base import *
+﻿import six
+from eventregistry.Base import *
 from eventregistry.ReturnInfo import *
 from eventregistry.QueryArticle import QueryArticle, RequestArticleInfo
 
@@ -34,7 +35,7 @@ class QueryEvent(Query):
         self.resultTypeList = [requestEvent]
 
 
-class QueryEventArticlesIter(QueryEvent):
+class QueryEventArticlesIter(QueryEvent, six.Iterator):
     """
     Class for obtaining an iterator over all articles in the event
     """
@@ -108,7 +109,7 @@ class QueryEventArticlesIter(QueryEvent):
         return self
 
 
-    def next(self):
+    def __next__(self):
         """iterate over the available events"""
         if len(self._articleList) == 0:
             self._getNextArticleBatch()
