@@ -15,16 +15,20 @@ class QueryStory(Query):
         if storyUriOrList != None:
             self.queryByUri(storyUriOrList)
 
+
     def _getPath(self):
         return "/json/story"
+
 
     def queryByUri(self, uriOrUriList):
         """search stories by their uri(s)"""
         self._setVal("storyUri", uriOrUriList)
 
+
     def queryById(self, idOrIdList):
         """specify stories by their id(s)"""
         self._setVal("storyId", idOrIdList)
+
 
     def addRequestedResult(self, requestStory):
         """
@@ -36,9 +40,20 @@ class QueryStory(Query):
         self.resultTypeList.append(requestStory)
 
 
+    def setRequestedResult(self, requestStory):
+        """
+        Set the single result type that you would like to be returned. If some other request type was previously set, it will be overwritten.
+        Result types can be the classes that extend RequestStory base class (see classes below).
+        """
+        assert isinstance(requestStory, RequestStory), "QueryStory class can only accept result requests that are of type RequestStory"
+        self.resultTypeList = [requestStory]
+
+
+
 class RequestStory:
     def __init__(self):
         self.resultType = None
+
 
 
 class RequestStoryInfo(RequestStory):
@@ -50,25 +65,33 @@ class RequestStoryInfo(RequestStory):
         self.__dict__.update(returnInfo.getParams("info"))
 
 
+
 class RequestStoryArticles(RequestStory):
     """
     return articles about the story
     """
     def __init__(self,
-                 page = 1,              # page of the articles
-                 count = 20,            # number of articles to return
-                 lang = mainLangs,      # return articles in specified language(s)
-                 sortBy = "cosSim", sortByAsc = False,              # order in which story articles are sorted. Options: id (internal id), date (published date), cosSim (closeness to story centroid), socialScore (total shares in social media), facebookShares (shares on fb), twitterShares (shares on twitter)
+                 page = 1,
+                 count = 20,
+                 sortBy = "cosSim", sortByAsc = False,
                  returnInfo = ReturnInfo(articleInfo = ArticleInfoFlags(bodyLen = 200))):
+        """
+        return articles in the story (cluster)
+        @param page: page of the articles to return (1, 2, ...)
+        @param count: number of articles to return per page (at most 200)
+        @param sortBy: order in which articles are sorted. Options: id (internal id), date (published date), cosSim (closeness to event centroid), sourceImportance (importance of the news source), socialScore (total shares in social media)
+        @param sortByAsc: should the articles be sorted in ascending order (True) or descending (False) based on sortBy value
+        @param returnInfo: what details should be included in the returned information
+        """
         assert page >= 1, "page has to be >= 1"
         assert count <= 200
         self.resultType = "articles"
         self.articlesPage = page
         self.articlesCount = count
-        self.articlesLang = lang
         self.articlesSortBy = sortBy
         self.articlesSortByAsc = sortByAsc
         self.__dict__.update(returnInfo.getParams("articles"))
+
 
 
 class RequestStoryArticleUris(RequestStory):
@@ -76,13 +99,17 @@ class RequestStoryArticleUris(RequestStory):
     return a list of article uris
     """
     def __init__(self,
-                 lang = mainLangs,
                  sortBy = "cosSim", sortByAsc = False  # order in which story articles are sorted. Options: id (internal id), date (published date), cosSim (closeness to story centroid), socialScore (total shares in social media), facebookShares (shares on fb), twitterShares (shares on twitter)
                  ):
-        self.articleUrisLang = lang
+        """
+        return articles in the story (cluster)
+        @param sortBy: order in which articles are sorted. Options: id (internal id), date (published date), cosSim (closeness to event centroid), sourceImportance (importance of the news source), socialScore (total shares in social media)
+        @param sortByAsc: should the articles be sorted in ascending order (True) or descending (False) based on sortBy value
+        """
         self.articleUrisSortBy = sortBy
         self.articleUrisSortByAsc = sortByAsc
         self.resultType = "articleUris"
+
 
 
 class RequestStoryArticleTrend(RequestStory):
@@ -97,6 +124,7 @@ class RequestStoryArticleTrend(RequestStory):
         self.articleTrendLang = lang
         self.articleTrendMinArticleCosSim = minArticleCosSim
         self.__dict__.update(returnInfo.getParams("articleTrend"))
+
 
 
 class RequestStorySimilarStories(RequestStory):

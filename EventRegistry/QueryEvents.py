@@ -176,8 +176,7 @@ class QueryEventsIter(QueryEvents):
         """
         return the number of events that match the criteria
         """
-        self.clearRequestedResults()
-        self.addRequestedResult(RequestEventsUriList())
+        self.setRequestedResult(RequestEventsUriList())
         res = eventRegistry.execQuery(self)
         count = res.get("uriList", {}).get("totalResults", 0)
         return count
@@ -217,8 +216,7 @@ class QueryEventsIter(QueryEvents):
             return
         if self._er._verboseOutput:
             print("Downoading page %d of event uris" % (self._uriPage))
-        self.clearRequestedResults()
-        self.addRequestedResult(RequestEventsUriList(page = self._uriPage, sortBy = self._sortBy, sortByAsc = self._sortByAsc))
+        self.setRequestedResult(RequestEventsUriList(page = self._uriPage, sortBy = self._sortBy, sortByAsc = self._sortByAsc))
         res = self._er.execQuery(self)
         self._uriList = res.get("uriList", {}).get("results", [])
         self._allUriPages = res.get("uriList", {}).get("pages", 0)
@@ -236,12 +234,13 @@ class QueryEventsIter(QueryEvents):
             return
         # get uris to download
         uris = self._uriList[:self._eventBatchSize]
-        if self._er._verboseOutput:
-            print("Downoading %d events..." % (len(uris)))
         # remove used uris
         self._uriList = self._uriList[self._eventBatchSize:]
-        self.setEventUriList(uris)
-        self.addRequestedResult(RequestEventsInfo(page = 1, count = self._eventBatchSize, sortBy = "none", returnInfo = self._returnInfo))
+        if self._er._verboseOutput:
+            print("Downoading %d events..." % (len(uris)))
+        q = QueryEvents()
+        q.setEventUriList(uris)
+        self.setRequestedResult(RequestEventsInfo(page = 1, count = self._eventBatchSize, sortBy = "none", returnInfo = self._returnInfo))
         res = self._er.execQuery(self)
         self._eventList.extend(res.get("events", {}).get("results", []))
 

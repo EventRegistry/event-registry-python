@@ -51,6 +51,15 @@ class QueryArticle(Query):
         self.resultTypeList.append(requestArticle)
 
 
+    def setRequestedResult(self, requestArticle):
+        """
+        Set the single result type that you would like to be returned. If some other request type was previously set, it will be overwritten.
+        Result types can be the classes that extend RequestArticle base class (see classes below).
+        """
+        assert isinstance(requestArticle, RequestArticle), "QueryArticle class can only accept result requests that are of type RequestArticle"
+        self.resultTypeList = [requestArticle]
+
+
 
 class RequestArticle:
     def __init__(self):

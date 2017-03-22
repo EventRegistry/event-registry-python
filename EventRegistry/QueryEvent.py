@@ -25,6 +25,14 @@ class QueryEvent(Query):
         self.resultTypeList.append(requestEvent)
 
 
+    def setRequestedResult(self, requestEvent):
+        """
+        Set the single result type that you would like to be returned. If some other request type was previously set, it will be overwritten.
+        Result types can be the classes that extend RequestEvent base class (see classes below).
+        """
+        assert isinstance(requestEvent, RequestEvent), "QueryEvent class can only accept result requests that are of type RequestEvent"
+        self.resultTypeList = [requestEvent]
+
 
 class QueryEventArticlesIter(QueryEvent):
     """
@@ -42,8 +50,7 @@ class QueryEventArticlesIter(QueryEvent):
         @param eventRegistry: instance of EventRegistry class. used to obtain the necessary data
         @param lang: array or a single language in which to return the list of matching articles
         """
-        self.clearRequestedResults()
-        self.addRequestedResult(RequestEventArticleUris(lang = lang))
+        self.setRequestedResult(RequestEventArticleUris(lang = lang))
         res = eventRegistry.execQuery(self)
         count = len(res.get(self.queryParams["eventUri"], {}).get("articleUris", {}).get("results", []))
         return count
@@ -71,8 +78,7 @@ class QueryEventArticlesIter(QueryEvent):
         self._articleBatchSize = articleBatchSize
         # download the list of article uris
         self._articleList = []
-        self.clearRequestedResults()
-        self.addRequestedResult(RequestEventArticleUris(lang = self._lang, sortBy = self._sortBy, sortByAsc = self._sortByAsc))
+        self.setRequestedResult(RequestEventArticleUris(lang = self._lang, sortBy = self._sortBy, sortByAsc = self._sortByAsc))
         res = self._er.execQuery(self)
         self._uriList = res.get(self.queryParams["eventUri"], {}).get("articleUris", {}).get("results", [])
         return self
@@ -91,7 +97,7 @@ class QueryEventArticlesIter(QueryEvent):
         # remove used uris
         self._uriList = self._uriList[self._articleBatchSize:]
         q = QueryArticle(uris)
-        q.addRequestedResult(RequestArticleInfo(self._returnInfo))
+        q.setRequestedResult(RequestArticleInfo(self._returnInfo))
         res = self._er.execQuery(q)
         arts = [ res[key]["info"] for key in uris if key in res and "info" in res[key]]
         self._articleList.extend(arts)

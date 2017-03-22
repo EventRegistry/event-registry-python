@@ -10,10 +10,11 @@ import time
 
 er = EventRegistry()
 
-recentQ = GetRecentEvents(maxEventCount = 200)
+recentQ = GetRecentEvents(er)
+starttime = time.time()
 
 while True:
-    ret = recentQ.getUpdates(er)
+    ret = recentQ.getUpdates()
     if "eventInfo" in ret and isinstance(ret["eventInfo"], dict):
         print("==========\n%d events updated since last call" % len(ret["eventInfo"]))
 
@@ -31,7 +32,7 @@ while True:
             #
             # TODO: here you can do the processing that decides if the event is relevant for you or not. if relevant, send the info to an external service
 
-    # wait a bit for new content to be added to Event Registry
-    print("sleeping for 40 seconds...")
-    time.sleep(40)
+    # wait exactly a minute until next batch of new content is ready
+    print("sleeping for 60 seconds...")
+    time.sleep(60.0 - ((time.time() - starttime) % 60.0))
 

@@ -54,6 +54,7 @@ class EventRegistry(object):
         self._lock = threading.Lock()
         self._reqSession = requests.Session()
         self._apiKey = apiKey
+        self._extraParams = None
 
         # if there is a settings.json file in the directory then try using it to load the API key from it
         # and to read the host name from it (if custom host is not specified)
@@ -117,6 +118,12 @@ class EventRegistry(object):
         return self._dailyAvailableRequests
 
 
+    def setExtraParams(self, params):
+        if params != None:
+            assert(isinstance(params, dict))
+        self._extraParams = params
+
+
     def execQuery(self, query):
         """
         main method for executing the search queries.
@@ -154,6 +161,8 @@ class EventRegistry(object):
         # if we have api key then add it to the paramDict
         if self._apiKey:
             paramDict["apiKey"] = self._apiKey
+        if self._extraParams:
+            paramDict.update(self._extraParams)
 
         tryCount = 0
         returnData = None

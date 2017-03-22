@@ -220,8 +220,7 @@ class QueryArticlesIter(QueryArticles):
         """
         return the number of articles that match the criteria
         """
-        self.clearRequestedResults()
-        self.addRequestedResult(RequestArticlesUriList())
+        self.setRequestedResult(RequestArticlesUriList())
         res = eventRegistry.execQuery(self)
         count = res.get("uriList", {}).get("totalResults", 0)
         return count
@@ -262,17 +261,14 @@ class QueryArticlesIter(QueryArticles):
             return
         if self._er._verboseOutput:
             print("Downoading page %d of article uris" % (self._uriPage))
-        self.clearRequestedResults()
-        self.addRequestedResult(RequestArticlesUriList(page = self._uriPage, sortBy = self._sortBy, sortByAsc = self._sortByAsc))
+        self.setRequestedResult(RequestArticlesUriList(page = self._uriPage, sortBy = self._sortBy, sortByAsc = self._sortByAsc))
         res = self._er.execQuery(self)
         self._uriList = res.get("uriList", {}).get("results", [])
         self._allUriPages = res.get("uriList", {}).get("pages", 0)
-        self._getNextArticleBatch()
 
 
     def _getNextArticleBatch(self):
         """download next batch of articles based on the article uris in the uri list"""
-        self.clearRequestedResults()
         # try to get more uris, if none
         if len(self._uriList) == 0:
             self._getNextUriPage()
@@ -281,13 +277,14 @@ class QueryArticlesIter(QueryArticles):
             return
         # get uris to download
         uris = self._uriList[:self._articleBatchSize]
-        if self._er._verboseOutput:
-            print("Downoading %d articles..." % (len(uris)))
         # remove used uris
         self._uriList = self._uriList[self._articleBatchSize:]
-        self.setArticleUriList(uris)
-        self.addRequestedResult(RequestArticlesInfo(page = 1, count = self._articleBatchSize, sortBy = "none", returnInfo = self._returnInfo))
-        res = self._er.execQuery(self)
+        if self._er._verboseOutput:
+            print("Downoading %d articles..." % (len(uris)))
+
+        q = QueryArticles.initWithArticleUriList(uris)
+        q.setRequestedResult(RequestArticlesInfo(page = 1, count = self._articleBatchSize, sortBy = "none", returnInfo = self._returnInfo))
+        res = self._er.execQuery(q)
         self._articleList.extend(res.get("articles", {}).get("results", []))
 
 

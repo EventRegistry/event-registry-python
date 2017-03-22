@@ -61,7 +61,7 @@ class GetTopCorrelations(QueryParamsBase):
         self._clearVal("testData")
 
         assert isinstance(queryArticles, QueryArticles), "'queryArticles' excpected to be an instance of QueryArticles"
-        queryArticles.addRequestedResult(RequestArticlesTimeAggr())
+        queryArticles.setRequestedResult(RequestArticlesTimeAggr())
         res = self._er.execQuery(queryArticles)
         if "timeAggr" in res:
             for obj in res["timeAggr"]:
@@ -125,7 +125,7 @@ class GetTopCorrelations(QueryParamsBase):
         # compute the candidates
         if candidateConceptsQuery != None:
             assert isinstance(candidateConceptsQuery, QueryArticles), "'candidateConceptsQuery' is expected to be of type QueryArticles"
-            candidateConceptsQuery.addRequestedResult(RequestArticlesConceptAggr())
+            candidateConceptsQuery.setRequestedResult(RequestArticlesConceptAggr())
             candidateConceptsQuery._setVal("conceptAggrConceptCountPerType", candidatesPerType)
             candidateConceptsQuery._setVal("conceptAggrConceptIdOnly", True)
             ret = self._er.execQuery(candidateConceptsQuery)

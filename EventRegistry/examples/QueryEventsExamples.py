@@ -6,6 +6,11 @@ er = EventRegistry()
 # query for events related to Barack Obama
 #
 
+q = QueryEventsIter(conceptUri = er.getConceptUri("Obama"))
+for event in q.execQuery(er, sortBy = "date"):
+    print event
+
+
 # get the concept URI that matches label "Barack Obama"
 obamaConceptUri = er.getConceptUri("Obama")
 print("Concept uri for 'Obama' is " + obamaConceptUri)
@@ -14,14 +19,18 @@ print("Concept uri for 'Obama' is " + obamaConceptUri)
 q = QueryEvents()
 q.addConcept(obamaConceptUri)                 # get events related to obama
 # return a list of event URIs
-q.addRequestedResult(RequestEventsUriList())
+q.setRequestedResult(RequestEventsUriList())
+res = er.execQuery(q)
+
 # return details about 30 events that are most related to Obama
-q.addRequestedResult(RequestEventsInfo(count = 30, sortBy = "rel", sortByAsc = False,
+q.setRequestedResult(RequestEventsInfo(count = 30, sortBy = "rel", sortByAsc = False,
     returnInfo = ReturnInfo(conceptInfo = ConceptInfoFlags(lang = "deu", type = ["person", "wiki"]))))
+res = er.execQuery(q)
+
 # compute most relevant concepts of type organization or location extracted from events about Obama
-q.addRequestedResult(RequestEventsConceptAggr(conceptCount = 20,
+q.setRequestedResult(RequestEventsConceptAggr(conceptCount = 20,
     returnInfo = ReturnInfo(conceptInfo = ConceptInfoFlags(type = ["org", "loc"]))))
-#res = er.execQuery(q)
+res = er.execQuery(q)
 
 
 #
@@ -36,8 +45,8 @@ print("Source uri for 'BBC' is " + bbcSourceUri)
 q = QueryEvents()
 q.addNewsSource(bbcSourceUri)
 # return details about 30 events that have been most recently reported by BBC
-q.addRequestedResult(RequestEventsInfo(count = 30, sortBy = "date", sortByAsc = False))
-#res = er.execQuery(q)
+q.setRequestedResult(RequestEventsInfo(count = 30, sortBy = "date", sortByAsc = False))
+res = er.execQuery(q)
 
 
 #
@@ -52,8 +61,8 @@ print("Category uri for 'society issues' is " + issuesCategoryUri)
 q = QueryEvents()
 q.addCategory(issuesCategoryUri)
 # return 30 events that were reported in the highest number of articles
-q.addRequestedResult(RequestEventsInfo(count = 30, sortBy = "size", sortByAsc = False))
-#res = er.execQuery(q)
+q.setRequestedResult(RequestEventsInfo(count = 30, sortBy = "size", sortByAsc = False))
+res = er.execQuery(q)
 
 
 ## use OR operator between concepts
@@ -77,20 +86,24 @@ q.addRequestedResult(RequestEventsInfo(count = 30, sortBy = "size", sortByAsc = 
 q = QueryEvents()
 q.addLocation(er.getLocationUri("Berlin"))
 q.setDateLimit(datetime.date(2015, 4, 16), datetime.date(2015, 4, 28))
-q.addRequestedResult(RequestEventsConceptTrends(conceptCount = 40,
+q.setRequestedResult(RequestEventsConceptTrends(conceptCount = 40,
     returnInfo = ReturnInfo(conceptInfo = ConceptInfoFlags(type = ["person"]))))
-q.addRequestedResult(RequestEventsCategoryAggr())
-q.addRequestedResult(RequestEventsInfo())
+res = er.execQuery(q)
+
+q.setRequestedResult(RequestEventsCategoryAggr())
+res = er.execQuery(q)
+
+q.setRequestedResult(RequestEventsInfo())
 res = er.execQuery(q)
 
 q = QueryEvents()
 q.addConcept(er.getConceptUri("Obama"))                 # get events related to obama
-q.addRequestedResult(RequestEventsConceptGraph(conceptCount = 200, linkCount = 500, eventsSampleSize = 2000))
+q.setRequestedResult(RequestEventsConceptGraph(conceptCount = 200, linkCount = 500, eventsSampleSize = 2000))
 res = er.execQuery(q)
 
 # get recent events related to Obama
 q = QueryEvents()
 q.addConcept(er.getConceptUri("Obama"))
-q.addRequestedResult(RequestEventsRecentActivity())     # get most recently updated events related to obama
+q.setRequestedResult(RequestEventsRecentActivity())     # get most recently updated events related to obama
 res = er.execQuery(q)
 obj = createStructFromDict(res)

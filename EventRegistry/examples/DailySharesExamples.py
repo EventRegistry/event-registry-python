@@ -15,7 +15,7 @@ print(er.format(ret))
 
 # get social shared information for resulting articles
 q = QueryArticles(conceptUri = er.getConceptUri("Apple"))
-q.addRequestedResult(RequestArticlesInfo(
+q.setRequestedResult(RequestArticlesInfo(
     count = 5,
     sortBy = "socialScore",
     returnInfo = ReturnInfo(
@@ -27,7 +27,7 @@ print(er.format(ret))
 
 # get social shared information for resulting events
 q = QueryEvents(conceptUri = er.getConceptUri("Apple"))
-q.addRequestedResult(RequestEventsInfo(
+q.setRequestedResult(RequestEventsInfo(
     count = 5,
     sortBy = "socialScore",
     returnInfo = ReturnInfo(

@@ -9,6 +9,6 @@ print("Most similar info:\n" + er.format(res))
 if res != None and len(res) > 0:
     eventUris = [info["eventUri"] for info in res]
     q = QueryEvent(eventUris)
-    q.addRequestedResult(RequestEventInfo())
+    q.setRequestedResult(RequestEventInfo())
     res = er.execQuery(q)
     print("Event info:\n" + er.format(res))
