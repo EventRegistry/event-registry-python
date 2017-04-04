@@ -8,4 +8,4 @@ The documentation on how to use the library is available at the project's wiki p
 
 Examples of use are in the [Examples folder in the repository](https://github.com/gregorleban/EventRegistry/tree/master/EventRegistry/examples). 
 
-Changes introduced in the different versions of the module are described on the [Relases](https://github.com/EventRegistry/event-registry-python/releases) page.
+Changes introduced in the different versions of the module are described on the [Releases](https://github.com/EventRegistry/event-registry-python/releases) page.
