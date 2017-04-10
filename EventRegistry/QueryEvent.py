@@ -3,6 +3,7 @@ from eventregistry.Base import *
 from eventregistry.ReturnInfo import *
 from eventregistry.QueryArticle import QueryArticle, RequestArticleInfo
 
+
 class QueryEvent(Query):
     """
     Class for obtaining available info for one or more events in the Event Registry
@@ -13,8 +14,10 @@ class QueryEvent(Query):
         self._setVal("action", "getEvent")
         self._setVal("eventUri", eventUriOrList)
 
+
     def _getPath(self):
         return "/json/event"
+
 
     def addRequestedResult(self, requestEvent):
         """
@@ -33,6 +36,7 @@ class QueryEvent(Query):
         """
         assert isinstance(requestEvent, RequestEvent), "QueryEvent class can only accept result requests that are of type RequestEvent"
         self.resultTypeList = [requestEvent]
+
 
 
 class QueryEventArticlesIter(QueryEvent, six.Iterator):

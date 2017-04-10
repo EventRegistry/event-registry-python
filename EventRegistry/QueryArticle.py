@@ -19,18 +19,6 @@ class QueryArticle(Query):
 
 
     @staticmethod
-    @deprecated
-    def queryById(articleIdOrIdList):
-        """
-        obtain information about one or more articles by providing their Event Registry ids
-        @param articleIdOrIdList: single article id or a list of article ids to query
-        """
-        q = QueryArticle([])
-        q.queryParams["articleId"] = articleIdOrIdList
-        return q
-
-
-    @staticmethod
     def queryByUri(articleUriOrUriList):
         """
         obtain information about one or more articles by providing their article uris (newsfeed ids, such as "284017606")

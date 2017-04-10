@@ -1,6 +1,7 @@
-﻿import six
+﻿import six, json
 from eventregistry.Base import *
 from eventregistry.ReturnInfo import *
+from eventregistry.Query import *
 
 
 class QueryEvents(Query):
@@ -166,6 +167,21 @@ class QueryEvents(Query):
         return q
 
 
+    @staticmethod
+    def initWithComplexQuery(query):
+        q = QueryEvents()
+        if isinstance(query, ComplexEventQuery):
+            q._setVal("query", json.dumps(query.getQuery()))
+        elif isinstance(query, six.string_types):
+            foo = json.loads(query)
+            q._setVal("query", query)
+        elif isinstance(query, dict):
+            q._setVal("query", json.dumps(query))
+        else:
+            assert False, "The instance of query parameter was not a ComplexEventQuery, a string or a python dict"
+        return q
+
+
 
 class QueryEventsIter(QueryEvents, six.Iterator):
     """
@@ -207,6 +223,14 @@ class QueryEventsIter(QueryEvents, six.Iterator):
         # how many pages do we have for URIs. set once we call _getNextUriPage first
         self._allUriPages = None
         return self
+
+
+    @staticmethod
+    def initWithComplexQuery(query):
+        assert isinstance(query, ComplexEventQuery), "The instance of query parameter should be of instance ComplexEventQuery"
+        q = QueryEventsIter()
+        q._setVal("query", json.dumps(query.getQuery()))
+        return q
 
 
     def _getNextUriPage(self):

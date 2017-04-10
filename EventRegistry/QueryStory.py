@@ -25,11 +25,6 @@ class QueryStory(Query):
         self._setVal("storyUri", uriOrUriList)
 
 
-    def queryById(self, idOrIdList):
-        """specify stories by their id(s)"""
-        self._setVal("storyId", idOrIdList)
-
-
     def addRequestedResult(self, requestStory):
         """
         Add a result type that you would like to be returned.

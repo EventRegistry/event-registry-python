@@ -6,6 +6,7 @@ import threading
 from eventregistry.Base import *
 from eventregistry.EventForText import *
 from eventregistry.ReturnInfo import *
+from eventregistry.Query import *
 from eventregistry.QueryEvents import *
 from eventregistry.QueryEvent import *
 from eventregistry.QueryArticles import *
@@ -392,15 +393,17 @@ class EventRegistry(object):
         return self.jsonRequest("/json/overview", { "action": "getStats", "addDailyArticles": addDailyArticles, "addDailyAnnArticles": addDailyAnnArticles, "addDailyDuplArticles": addDailyDuplArticles, "addDailyEvents": addDailyEvents })
 
 
-    def getArticleUris(self, articleUrls):
+    def getArticleUris(self, articleUrls, includeAllVersions = False):
         """
         if you have article urls and you want to query them in ER you first have to obtain their uris in the ER.
         @param articleUrls a single article url or a list of article urls
-        @returns dict where key is article url and value is a list with 0, 1 or more article uris. More articles uris can occur if the
+        @param includeAllVersions: return just one article uri (False) or all versions of the article (True)
+        @returns depends on includeAllVersions. If includeAllVersions == False it returns dict where key is article url and value is either None if no match found or a string with article URI.
+            if includeAllVersions == True, we return a dict where the articleUrls are keys and the value is a list with 0, 1 or more article uris. More articles uris can occur if the
             article was updated several times
         """
         assert isinstance(articleUrls, (six.string_types, list)), "Expected a single article url or a list of urls"
-        return self.jsonRequest("/json/articleMapper", { "articleUrl": articleUrls })
+        return self.jsonRequest("/json/articleMapper", { "articleUrl": articleUrls, includeAllVersions: includeAllVersions })
 
 
     def getLatestArticle(self, returnInfo = ReturnInfo()):
@@ -440,7 +443,7 @@ class ArticleMapper:
         self._rememberMappings = rememberMappings
 
 
-    def getArticleUri(self, articleUrl):
+    def getArticleUri(self, articleUrl, includeAllVersions = False):
         """
         given the article url, return an array with 0, 1 or more article uris. Not all returned article uris are necessarily valid anymore. For news sources
         of lower importance we remove the duplicated articles and just keep the latest content
@@ -449,8 +452,17 @@ class ArticleMapper:
         """
         if articleUrl in self._articleUrlToUri:
             return self._articleUrlToUri[articleUrl]
-        res = self._er.getArticleUris(articleUrl)
+        res = self._er.getArticleUris(articleUrl, includeAllVersions)
         if res and articleUrl in res:
+            val = res[articleUrl]
+            # if no match, change to empty array
+            if val == None:
+                val = []
+            # if we wanted just a single article uri change to array with a single item
+            elif not includeAllVersions:
+                val = [val]
+
             if self._rememberMappings:
-                self._articleUrlToUri[articleUrl] = res[articleUrl]
-            return res[articleUrl]
+                self._articleUrlToUri[articleUrl] = val
+            return val
+        return []

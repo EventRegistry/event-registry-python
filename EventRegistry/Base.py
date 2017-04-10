@@ -91,6 +91,19 @@ class QueryParamsBase(object):
         return ret
 
 
+    @staticmethod
+    def encodeDate(val):
+        """encode val that can be a date in different forms as a date that can be sent to Er"""
+        if isinstance(val, datetime.datetime):
+            return val.date().isoformat()
+        elif isinstance(val, datetime.date):
+            return val.isoformat()
+        elif isinstance(val, six.string_types):
+            assert re.match("\d{4}-\d{2}-\d{2}", val)
+            return val
+        raise AssertionError("date was not in the expected format")
+
+
     def _clearVal(self, propName):
         """remove the value of a property propName (if existing)"""
         if propName in self.queryParams:
@@ -118,21 +131,9 @@ class QueryParamsBase(object):
             self._setVal(propName, val)
 
 
-    def _encodeDate(self, val):
-        """encode val that can be a date in different forms as a date that can be sent to Er"""
-        if isinstance(val, datetime.date):
-            return val.isoformat()
-        elif isinstance(val, datetime.datetime):
-            return val.date().isoformat()
-        elif isinstance(val, six.string_types):
-            assert re.match("\d{4}-\d{2}-\d{2}", val)
-            return val
-        raise AssertionError("date was not in the expected format")
-
-
     def _setDateVal(self, propName, val):
         """set a property value that represents date. Value can be string in YYYY-MM-DD format, datetime.date or datetime.datetime"""
-        encodedVal = self._encodeDate(val)
+        encodedVal = self.encodeDate(val)
         self._setVal(propName, encodedVal)
 
 

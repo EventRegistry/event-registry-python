@@ -36,10 +36,10 @@ class GetTopCorrelations(QueryParamsBase):
         for (date, val) in inputDataArr:
             assert isinstance(val, (int, float)), "Value is expected to be a number"
             dateStr = None
-            if isinstance(val, datetime.date):
-                dateStr = val.isoformat()
-            elif isinstance(val, datetime.datetime):
+            if isinstance(val, datetime.datetime):
                 dateStr = val.date().isoformat()
+            elif isinstance(val, datetime.date):
+                dateStr = val.isoformat()
             elif isinstance(val, six.string_types):
                 assert re.match("\d{4}-\d{2}-\d{2}", date)
                 dateStr = date

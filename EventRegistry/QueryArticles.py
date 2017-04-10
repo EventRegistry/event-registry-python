@@ -1,7 +1,7 @@
-﻿
-import six
+﻿import six, json
 from eventregistry.Base import *
 from eventregistry.ReturnInfo import *
+from eventregistry.Query import *
 
 
 class QueryArticles(Query):
@@ -186,12 +186,6 @@ class QueryArticles(Query):
         self.resultTypeList = [requestArticles]
 
 
-    @deprecated
-    def setArticleIdList(self, idList):
-        """set a custom list of article ids. the results will be then computed on this list - no query will be done"""
-        self.queryParams = { "action": "getArticles", "articleIdList": ",".join([str(val) for val in idList])}
-
-
     def setArticleUriList(self, uriList):
         """set a custom list of article uris. the results will be then computed on this list - no query will be done"""
         self.queryParams = { "action": "getArticles", "articleUri": uriList }
@@ -199,15 +193,29 @@ class QueryArticles(Query):
 
     @staticmethod
     def initWithArticleUriList(uriList):
+        """
+        instead of making a query, provide a list of article URIs manually, and then produce the desired results on top of them
+        """
         q = QueryArticles()
         q.setArticleUriList(uriList)
         return q
 
 
     @staticmethod
-    def initWithArticleIdList(idList):
+    def initWithComplexQuery(query):
+        """
+        create a query using a complex article query
+        """
         q = QueryArticles()
-        q.setArticleIdList(idList)
+        if isinstance(query, ComplexArticleQuery):
+            q._setVal("query", json.dumps(query.getQuery()))
+        elif isinstance(query, six.string_types):
+            foo = json.loads(query)
+            q._setVal("query", query)
+        elif isinstance(query, dict):
+            q._setVal("query", json.dumps(query))
+        else:
+            assert False, "The instance of query parameter was not a ComplexArticleQuery, a string or a python dict"
         return q
 
 
@@ -253,6 +261,14 @@ class QueryArticlesIter(QueryArticles, six.Iterator):
         # how many pages do we have for URIs. set once we call _getNextUriPage first
         self._allUriPages = None
         return self
+
+
+    @staticmethod
+    def initWithComplexQuery(query):
+        assert isinstance(query, ComplexArticleQuery), "The instance of query parameter should be of instance ComplexArticleQuery"
+        q = QueryArticlesIter()
+        q._setVal("query", json.dumps(query.getQuery()))
+        return q
 
 
     def _getNextUriPage(self):
@@ -369,28 +385,6 @@ class RequestArticlesUriList(RequestArticles):
         self.uriListCount = count
         self.uriListSortBy = sortBy
         self.uriListSortByAsc = sortByAsc
-
-
-
-class RequestArticlesIdList(RequestArticles):
-    def __init__(self,
-                 page = 1,
-                 count = 10000,
-                 sortBy = "fq", sortByAsc = False):
-        """
-        return a list of article ids
-        @param page: page of the results (1, 2, ...)
-        @param count: number of items to return in a single query (at most 50000)
-        @param sortBy: how are articles sorted. Options: id (internal id), date (publishing date), cosSim (closeness to the event centroid), fq (relevance to the query), socialScore (total shares on social media)
-        @param sortByAsc: should the results be sorted in ascending order (True) or descending (False) according to the sortBy criteria
-        """
-        assert page >= 1, "page has to be >= 1"
-        assert count <= 50000
-        self.resultType = "idList"
-        self.idListPage = page
-        self.idListCount = count
-        self.idListSortBy = sortBy
-        self.idListSortByAsc = sortByAsc
 
 
 
