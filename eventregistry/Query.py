@@ -2,7 +2,7 @@ from .Base import QueryParamsBase
 import six
 
 
-class QueryOper:
+class QueryItems:
     _AND = "$and"
     _OR = "$or"
     _Undef = None
@@ -13,11 +13,11 @@ class QueryOper:
 
     @staticmethod
     def AND(items):
-        return QueryOper(QueryOper._AND, items)
+        return QueryItems(QueryItems._AND, items)
 
     @staticmethod
     def OR(items):
-        return QueryOper(QueryOper._OR, items)
+        return QueryItems(QueryItems._OR, items)
 
     def getOper(self):
         return self._oper
@@ -25,13 +25,6 @@ class QueryOper:
     def getItems(self):
         return self._items
 
-
-
-class QueryType:
-    Event = 1
-    Story = 2
-    Article = 3
-    Undef = None
 
 
 class _QueryCore(object):
@@ -55,7 +48,7 @@ class _QueryCore(object):
 
 class BaseQuery(_QueryCore):
     def __init__(self,
-                 keywords = None,
+                 keyword = None,
                  conceptUri = None,
                  sourceUri = None,
                  locationUri = None,
@@ -67,9 +60,23 @@ class BaseQuery(_QueryCore):
                  dateMentionEnd = None,
                  categoryIncludeSub = True,
                  minMaxArticlesInEvent = None):
+        """
+        @param keyword: keyword(s) to query. Either None, string or QueryItems
+        @param conceptUri: concept(s) to query. Either None, string or QueryItems
+        @param sourceUri: source(s) to query. Either None, string or QueryItems
+        @param locationUri: location(s) to query. Either None, string or QueryItems
+        @param categoryUri: categories to query. Either None, string or QueryItems
+        @param lang: language(s) to query. Either None, string or QueryItems
+        @param dateStart: starting date. Either None, string or date or datetime
+        @param dateEnd: ending date. Either None, string or date or datetime
+        @param dateMentionStart: search by mentioned dates - use this as the starting date. Either None, string or date or datetime
+        @param dateMentionEnd: search by mentioned dates - use this as the ending date. Either None, string or date or datetime
+        @param categoryIncludeSub: should we include the subcategories of the searched categories?
+        @param minMaxArticlesInEvent: a tuple containing the minimum and maximum number of articles that should be in the resulting events. Parameter relevant only if querying events
+        """
         super(BaseQuery, self).__init__()
 
-        self._setQueryArrVal("keywords", keywords)
+        self._setQueryArrVal("keyword", keyword)
         self._setQueryArrVal("conceptUri", conceptUri)
         self._setQueryArrVal("sourceUri", sourceUri)
         self._setQueryArrVal("locationUri", locationUri)
@@ -99,8 +106,8 @@ class BaseQuery(_QueryCore):
         # by default we have None - so don't do anything
         if value is None:
             return
-        # if we have an instance of QueryOper then apply it
-        if isinstance(value, QueryOper):
+        # if we have an instance of QueryItems then apply it
+        if isinstance(value, QueryItems):
             self._queryObj[propName] = { value.getOper(): value.getItems() }
 
         # if we have a string value, just use it
@@ -119,6 +126,10 @@ class CombinedQuery(_QueryCore):
 
     @staticmethod
     def AND(queryArr):
+        """
+        create a combined query with multiple items on which to perform an AND operation
+        @param queryArr: a list of items on which to perform an AND operation. Items can be either a CombinedQuery or BaseQuery instances.
+        """
         assert isinstance(queryArr, list), "provided argument as not a list"
         assert len(queryArr) > 0, "queryArr had an empty list"
         q = CombinedQuery()
@@ -131,6 +142,10 @@ class CombinedQuery(_QueryCore):
 
     @staticmethod
     def OR(queryArr):
+        """
+        create a combined query with multiple items on which to perform an OR operation
+        @param queryArr: a list of items on which to perform an OR operation. Items can be either a CombinedQuery or BaseQuery instances.
+        """
         assert isinstance(queryArr, list), "provided argument as not a list"
         assert len(queryArr) > 0, "queryArr had an empty list"
         q = CombinedQuery()
@@ -149,6 +164,24 @@ class ComplexArticleQuery(_QueryCore):
                  isDuplicateFilter = "keepAll",
                  hasDuplicateFilter = "keepAll",
                  eventFilter = "keepAll"):
+        """
+        create an article query using a complex query
+        @param includeQuery: an instance of CombinedQuery or BaseQuery to use to find articles that match the conditions
+        @param excludeQuery: an instance of CombinedQuery or BaseQuery (or None) to find articles to exclude from the articles matched with the includeQuery
+        @param isDuplicateFilter: some articles can be duplicates of other articles. What should be done with them. Possible values are:
+                "skipDuplicates" (skip the resulting articles that are duplicates of other articles)
+                "keepOnlyDuplicates" (return only the duplicate articles)
+                "keepAll" (no filtering, default)
+        @param hasDuplicateFilter: some articles are later copied by others. What should be done with such articles. Possible values are:
+                "skipHasDuplicates" (skip the resulting articles that have been later copied by others)
+                "keepOnlyHasDuplicates" (return only the articles that have been later copied by others)
+                "keepAll" (no filtering, default)
+        @param eventFilter: some articles describe a known event and some don't. This filter allows you to filter the resulting articles based on this criteria.
+                Possible values are:
+                "skipArticlesWithoutEvent" (skip articles that are not describing any known event in ER)
+                "keepOnlyArticlesWithoutEvent" (return only the articles that are not describing any known event in ER)
+                "keepAll" (no filtering, default)
+        """
         super(ComplexArticleQuery, self).__init__()
 
         assert isinstance(includeQuery, (CombinedQuery, BaseQuery)), "includeQuery parameter was not a CombinedQuery or BaseQuery instance"
@@ -167,6 +200,11 @@ class ComplexEventQuery(_QueryCore):
     def __init__(self,
                  includeQuery,
                  excludeQuery = None):
+        """
+        create an event query suing a complex query
+        @param includeQuery: an instance of CombinedQuery or BaseQuery to use to find events that match the conditions
+        @param excludeQuery: an instance of CombinedQuery or BaseQuery (or None) to find events to exclude from the events matched with the includeQuery
+        """
         super(ComplexEventQuery, self).__init__()
 
         assert isinstance(includeQuery, (CombinedQuery, BaseQuery)), "includeQuery parameter was not a CombinedQuery or BaseQuery instance"

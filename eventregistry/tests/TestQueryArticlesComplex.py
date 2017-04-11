@@ -17,14 +17,14 @@ class TestQueryArticlesComplex(DataValidator):
 
     def testCompareSameResults1(self):
         cq1 = ComplexArticleQuery(
-            includeQuery = BaseQuery(conceptUri = QueryOper.AND([self.er.getConceptUri("obama"), self.er.getConceptUri("trump")])),
-            excludeQuery = BaseQuery(lang = QueryOper.OR(["eng", "deu"])))
+            includeQuery = BaseQuery(conceptUri = QueryItems.AND([self.er.getConceptUri("obama"), self.er.getConceptUri("trump")])),
+            excludeQuery = BaseQuery(lang = QueryItems.OR(["eng", "deu"])))
 
         cq2 = ComplexArticleQuery(
             includeQuery = CombinedQuery.AND([
                 BaseQuery(conceptUri = self.er.getConceptUri("obama")),
                 BaseQuery(conceptUri = self.er.getConceptUri("trump"))]),
-            excludeQuery = BaseQuery(lang = QueryOper.OR(["eng", "deu"])))
+            excludeQuery = BaseQuery(lang = QueryItems.OR(["eng", "deu"])))
 
         q = QueryArticles(conceptUri = [self.er.getConceptUri("obama"), self.er.getConceptUri("trump")], conceptOper = "AND", ignoreLang = ["eng", "deu"])
 
@@ -38,14 +38,14 @@ class TestQueryArticlesComplex(DataValidator):
 
     def testCompareSameResults2(self):
         cq1 = ComplexArticleQuery(
-            includeQuery = BaseQuery(sourceUri = QueryOper.OR([self.er.getNewsSourceUri("bbc"), self.er.getNewsSourceUri("associated press")])),
-            excludeQuery = BaseQuery(conceptUri = QueryOper.OR([self.er.getConceptUri("obama")])))
+            includeQuery = BaseQuery(sourceUri = QueryItems.OR([self.er.getNewsSourceUri("bbc"), self.er.getNewsSourceUri("associated press")])),
+            excludeQuery = BaseQuery(conceptUri = QueryItems.OR([self.er.getConceptUri("obama")])))
 
         cq2 = ComplexArticleQuery(
             includeQuery = CombinedQuery.OR([
                 BaseQuery(sourceUri = self.er.getNewsSourceUri("bbc")),
                 BaseQuery(sourceUri = self.er.getNewsSourceUri("associated press"))]),
-            excludeQuery = BaseQuery(conceptUri = QueryOper.OR([self.er.getConceptUri("obama")])))
+            excludeQuery = BaseQuery(conceptUri = QueryItems.OR([self.er.getConceptUri("obama")])))
 
         q = QueryArticles(sourceUri = [self.er.getNewsSourceUri("bbc"), self.er.getNewsSourceUri("associated press")], ignoreConceptUri = self.er.getConceptUri("obama"))
 
