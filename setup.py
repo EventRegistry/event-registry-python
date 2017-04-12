@@ -5,7 +5,7 @@ def readme():
         return f.read()
 
 setup(name='eventregistry',
-      version='6.4.1',
+      version='6.4.2',
       description = "A package that can be used to query information in Event Registry (http://eventregistry.org/)",
       classifiers=[
         'Development Status :: 4 - Beta',
@@ -16,7 +16,7 @@ setup(name='eventregistry',
         'Topic :: Internet :: WWW/HTTP :: Indexing/Search',
         'Intended Audience :: Information Technology'
       ],
-      url='https://github.com/gregorleban/EventRegistry',
+      url='https://github.com/EventRegistry/event-registry-python',
       author='Gregor Leban',
       author_email='gregor@eventregistry.org',
       license='MIT',
