@@ -1,1 +1,0 @@
-﻿from eventregistry.EventRegistry import *
