@@ -6,6 +6,6 @@ The documentation on how to use the library is available at the project's wiki p
 
 ##### https://github.com/EventRegistry/event-registry-python/wiki
 
-Examples of use are in the [Examples folder in the repository](https://github.com/EventRegistry/event-registry-python/tree/master/EventRegistry/examples). 
+Examples of use are in the [Examples folder in the repository](https://github.com/EventRegistry/event-registry-python/tree/master/eventregistry/examples). 
 
 Changes introduced in the different versions of the module are described on the [Releases](https://github.com/EventRegistry/event-registry-python/releases) page.
