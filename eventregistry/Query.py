@@ -59,7 +59,8 @@ class BaseQuery(_QueryCore):
                  dateMentionStart = None,
                  dateMentionEnd = None,
                  categoryIncludeSub = True,
-                 minMaxArticlesInEvent = None):
+                 minMaxArticlesInEvent = None,
+                 exclude = None):
         """
         @param keyword: keyword(s) to query. Either None, string or QueryItems
         @param conceptUri: concept(s) to query. Either None, string or QueryItems
@@ -73,6 +74,7 @@ class BaseQuery(_QueryCore):
         @param dateMentionEnd: search by mentioned dates - use this as the ending date. Either None, string or date or datetime
         @param categoryIncludeSub: should we include the subcategories of the searched categories?
         @param minMaxArticlesInEvent: a tuple containing the minimum and maximum number of articles that should be in the resulting events. Parameter relevant only if querying events
+        @param exclude: a instance of BaseQuery, CombinedQuery or None. Used to filter out results matching the other criteria specified in this query
         """
         super(BaseQuery, self).__init__()
 
@@ -100,6 +102,9 @@ class BaseQuery(_QueryCore):
             assert isinstance(minMaxArticlesInEvent, tuple), "minMaxArticlesInEvent parameter should either be None or a tuple with two integer values"
             self._queryObj["minArticlesInEvent"] = minMaxArticlesInEvent[0]
             self._queryObj["maxArticlesInEvent"] = minMaxArticlesInEvent[1]
+        if exclude != None:
+            assert isinstance(exclude, (CombinedQuery, BaseQuery)), "exclude parameter was not a CombinedQuery or BaseQuery instance"
+            self._queryObj["$not"] = exclude.getQuery()
 
 
     def _setQueryArrVal(self, propName, value):
@@ -125,10 +130,12 @@ class CombinedQuery(_QueryCore):
 
 
     @staticmethod
-    def AND(queryArr):
+    def AND(queryArr,
+            exclude = None):
         """
         create a combined query with multiple items on which to perform an AND operation
         @param queryArr: a list of items on which to perform an AND operation. Items can be either a CombinedQuery or BaseQuery instances.
+        @param exclude: a instance of BaseQuery, CombinedQuery or None. Used to filter out results matching the other criteria specified in this query
         """
         assert isinstance(queryArr, list), "provided argument as not a list"
         assert len(queryArr) > 0, "queryArr had an empty list"
@@ -137,14 +144,19 @@ class CombinedQuery(_QueryCore):
         for item in queryArr:
             assert isinstance(item, (CombinedQuery, BaseQuery)), "item in the list was not a CombinedQuery or BaseQuery instance"
             q.getQuery()["$and"].append(item.getQuery())
+        if exclude != None:
+            assert isinstance(exclude, (CombinedQuery, BaseQuery)), "exclude parameter was not a CombinedQuery or BaseQuery instance"
+            q.setQueryParam("$not", exclude.getQuery())
         return q
 
 
     @staticmethod
-    def OR(queryArr):
+    def OR(queryArr,
+           exclude = None):
         """
         create a combined query with multiple items on which to perform an OR operation
         @param queryArr: a list of items on which to perform an OR operation. Items can be either a CombinedQuery or BaseQuery instances.
+        @param exclude: a instance of BaseQuery, CombinedQuery or None. Used to filter out results matching the other criteria specified in this query
         """
         assert isinstance(queryArr, list), "provided argument as not a list"
         assert len(queryArr) > 0, "queryArr had an empty list"
@@ -153,21 +165,22 @@ class CombinedQuery(_QueryCore):
         for item in queryArr:
             assert isinstance(item, (CombinedQuery, BaseQuery)), "item in the list was not a CombinedQuery or BaseQuery instance"
             q.getQuery()["$or"].append(item.getQuery())
+        if exclude != None:
+            assert isinstance(exclude, (CombinedQuery, BaseQuery)), "exclude parameter was not a CombinedQuery or BaseQuery instance"
+            q.setQueryParam("$not", exclude.getQuery())
         return q
 
 
 
 class ComplexArticleQuery(_QueryCore):
     def __init__(self,
-                 includeQuery,
-                 excludeQuery = None,
+                 query,
                  isDuplicateFilter = "keepAll",
                  hasDuplicateFilter = "keepAll",
                  eventFilter = "keepAll"):
         """
         create an article query using a complex query
-        @param includeQuery: an instance of CombinedQuery or BaseQuery to use to find articles that match the conditions
-        @param excludeQuery: an instance of CombinedQuery or BaseQuery (or None) to find articles to exclude from the articles matched with the includeQuery
+        @param query: an instance of CombinedQuery or BaseQuery to use to find articles that match the conditions
         @param isDuplicateFilter: some articles can be duplicates of other articles. What should be done with them. Possible values are:
                 "skipDuplicates" (skip the resulting articles that are duplicates of other articles)
                 "keepOnlyDuplicates" (return only the duplicate articles)
@@ -184,31 +197,27 @@ class ComplexArticleQuery(_QueryCore):
         """
         super(ComplexArticleQuery, self).__init__()
 
-        assert isinstance(includeQuery, (CombinedQuery, BaseQuery)), "includeQuery parameter was not a CombinedQuery or BaseQuery instance"
-        self._queryObj["include"] = includeQuery.getQuery()
-        if excludeQuery != None:
-            assert isinstance(excludeQuery, (CombinedQuery, BaseQuery)), "excludeQuery parameter was not a CombinedQuery or BaseQuery instance"
-            self._queryObj["exclude"] = excludeQuery.getQuery()
-
-        self._setValIfNotDefault("isDuplicateFilter", isDuplicateFilter, "keepAll")
-        self._setValIfNotDefault("hasDuplicateFilter", hasDuplicateFilter, "keepAll")
-        self._setValIfNotDefault("eventFilter", eventFilter, "keepAll")
+        assert isinstance(query, (CombinedQuery, BaseQuery)), "query parameter was not a CombinedQuery or BaseQuery instance"
+        self._queryObj["$query"] = query.getQuery()
+        filter = {}
+        if (isDuplicateFilter != "keepAll"):
+            filter["isDuplicate"] = isDuplicateFilter
+        if (hasDuplicateFilter != "keepAll"):
+            filter["hasDuplicate"] = hasDuplicateFilter
+        if (eventFilter != "keepAll"):
+            filter["hasEvent"] = eventFilter
+        if len(filter) > 0:
+            self._queryObj["$filter"] = filter
 
 
 
 class ComplexEventQuery(_QueryCore):
-    def __init__(self,
-                 includeQuery,
-                 excludeQuery = None):
+    def __init__(self, query):
         """
-        create an event query suing a complex query
-        @param includeQuery: an instance of CombinedQuery or BaseQuery to use to find events that match the conditions
-        @param excludeQuery: an instance of CombinedQuery or BaseQuery (or None) to find events to exclude from the events matched with the includeQuery
+        create an event query using a complex query
+        @param query: an instance of CombinedQuery or BaseQuery to use to find events that match the conditions
         """
         super(ComplexEventQuery, self).__init__()
 
-        assert isinstance(includeQuery, (CombinedQuery, BaseQuery)), "includeQuery parameter was not a CombinedQuery or BaseQuery instance"
-        self._queryObj["include"] = includeQuery.getQuery()
-        if excludeQuery != None:
-            assert isinstance(excludeQuery, (CombinedQuery, BaseQuery)), "excludeQuery parameter was not a CombinedQuery or BaseQuery instance"
-            self._queryObj["exclude"] = excludeQuery.getQuery()
+        assert isinstance(query, (CombinedQuery, BaseQuery)), "query parameter was not a CombinedQuery or BaseQuery instance"
+        self._queryObj["$query"] = query.getQuery()

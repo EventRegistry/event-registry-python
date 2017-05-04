@@ -1,11 +1,9 @@
 ﻿from eventregistry import *
 
-#er = EventRegistry()
-er = EventRegistry(host = "http://babaji.ijs.si:8090", logging = True)
+er = EventRegistry()
 
 # search article by uri
 q = QueryArticle("247634888")
-q.setRequestedResult(RequestArticleInfo())                 # get all info about the specified article
 res = er.execQuery(q)
 
 # search article by url

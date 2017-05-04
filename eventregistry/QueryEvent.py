@@ -8,11 +8,17 @@ class QueryEvent(Query):
     """
     Class for obtaining available info for one or more events in the Event Registry
     """
-    def __init__(self, eventUriOrList):
-        """@param eventUriOrUriList: a single event uri or a list of event uris"""
+    def __init__(self,
+                 eventUriOrList,
+                 requestedResult = None):
+        """
+        @param eventUriOrUriList: a single event uri or a list of event uris
+        @param requestedResult: the information to return as the result of the query. By default return the details of the event
+        """
         super(QueryEvent, self).__init__()
         self._setVal("action", "getEvent")
         self._setVal("eventUri", eventUriOrList)
+        self.setRequestedResult(requestedResult or RequestEventInfo())
 
 
     def _getPath(self):
@@ -26,6 +32,7 @@ class QueryEvent(Query):
         Result types can be the classes that extend RequestEvent base class (see classes below).
         """
         assert isinstance(requestEvent, RequestEvent), "QueryEvent class can only accept result requests that are of type RequestEvent"
+        self.resultTypeList = [item for item in self.resultTypeList if item.getResultType() != requestEvent.getResultType()]
         self.resultTypeList.append(requestEvent)
 
 
@@ -57,6 +64,8 @@ class QueryEventArticlesIter(QueryEvent, six.Iterator):
         """
         self.setRequestedResult(RequestEventArticleUris(lang = lang))
         res = eventRegistry.execQuery(self)
+        if "error" in res:
+            print(res["error"])
         count = len(res.get(self.queryParams["eventUri"], {}).get("articleUris", {}).get("results", []))
         return count
 
@@ -65,7 +74,8 @@ class QueryEventArticlesIter(QueryEvent, six.Iterator):
             lang = mainLangs,
             sortBy = "cosSim", sortByAsc = False,
             returnInfo = ReturnInfo(articleInfo = ArticleInfoFlags(bodyLen = 200)),
-            articleBatchSize = 200):
+            articleBatchSize = 200,
+            maxItems = -1):
         """
         @param eventRegistry: instance of EventRegistry class. used to obtain the necessary data
         @param lang: array or a single language in which to return the list of matching articles
@@ -73,6 +83,7 @@ class QueryEventArticlesIter(QueryEvent, six.Iterator):
         @param sortByAsc: should the results be sorted in ascending order (True) or descending (False)
         @param returnInfo: what details should be included in the returned information
         @param articleBatchSize: number of articles to download at once (we are not downloading article by article) (at most 200)
+        @param maxItems: maximum number of items to be returned. Used to stop iteration sooner than results run out
         """
         assert articleBatchSize <= 200, "You can not have a batch size > 200 items"
         self._er = eventRegistry
@@ -81,10 +92,15 @@ class QueryEventArticlesIter(QueryEvent, six.Iterator):
         self._sortByAsc = sortByAsc
         self._returnInfo = returnInfo
         self._articleBatchSize = articleBatchSize
+        # if we want to return only a subset of items:
+        self._maxItems = maxItems
+        self._currItem = 0
         # download the list of article uris
         self._articleList = []
         self.setRequestedResult(RequestEventArticleUris(lang = self._lang, sortBy = self._sortBy, sortByAsc = self._sortByAsc))
         res = self._er.execQuery(self)
+        if "error" in res:
+            print(res["error"])
         self._uriList = res.get(self.queryParams["eventUri"], {}).get("articleUris", {}).get("results", [])
         return self
 
@@ -104,6 +120,8 @@ class QueryEventArticlesIter(QueryEvent, six.Iterator):
         q = QueryArticle(uris)
         q.setRequestedResult(RequestArticleInfo(self._returnInfo))
         res = self._er.execQuery(q)
+        if "error" in res:
+            print(res["error"])
         arts = [ res[key]["info"] for key in uris if key in res and "info" in res[key]]
         self._articleList.extend(arts)
 
@@ -115,6 +133,10 @@ class QueryEventArticlesIter(QueryEvent, six.Iterator):
 
     def __next__(self):
         """iterate over the available events"""
+        self._currItem += 1
+        # if we want to return only the first X items, then finish once reached
+        if self._maxItems >= 0 and self._currItem > self._maxItems:
+            raise StopIteration
         if len(self._articleList) == 0:
             self._getNextArticleBatch()
         if len(self._articleList) > 0:
@@ -126,6 +148,10 @@ class QueryEventArticlesIter(QueryEvent, six.Iterator):
 class RequestEvent:
     def __init__(self):
         self.resultType = None
+
+
+    def getResultType(self):
+        return self.resultType
 
 
 

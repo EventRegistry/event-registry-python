@@ -12,19 +12,23 @@ class TestQueryEventsComplex(DataValidator):
     def getQueryUriListForQueryEvents(self, q):
         q.setRequestedResult(RequestEventsUriList(count = 50000))
         res = self.er.execQuery(q)
+        assert "error" not in res, "Results included error: " + res.get("error", "")
         return res["uriList"]
 
 
     def testCompareSameResults1(self):
         cq1 = ComplexEventQuery(
-            includeQuery = BaseQuery(conceptUri = QueryItems.AND([self.er.getConceptUri("obama"), self.er.getConceptUri("trump")])),
-            excludeQuery = BaseQuery(lang = QueryItems.OR(["eng", "deu"])))
+            BaseQuery(
+                conceptUri = QueryItems.AND([self.er.getConceptUri("obama"), self.er.getConceptUri("trump")]),
+                exclude = BaseQuery(lang = QueryItems.OR(["eng", "deu"]))
+            ))
 
         cq2 = ComplexEventQuery(
-            includeQuery = CombinedQuery.AND([
-                BaseQuery(conceptUri = self.er.getConceptUri("obama")),
-                BaseQuery(conceptUri = self.er.getConceptUri("trump"))]),
-            excludeQuery = BaseQuery(lang = QueryItems.OR(["eng", "deu"])))
+            query = CombinedQuery.AND([
+                    BaseQuery(conceptUri = self.er.getConceptUri("obama")),
+                    BaseQuery(conceptUri = self.er.getConceptUri("trump"))
+                ],
+                exclude = BaseQuery(lang = QueryItems.OR(["eng", "deu"]))))
 
         q = QueryEvents(conceptUri = [self.er.getConceptUri("obama"), self.er.getConceptUri("trump")], conceptOper = "AND", ignoreLang = ["eng", "deu"])
 
@@ -38,14 +42,16 @@ class TestQueryEventsComplex(DataValidator):
 
     def testCompareSameResults2(self):
         cq1 = ComplexEventQuery(
-            includeQuery = BaseQuery(sourceUri = QueryItems.OR([self.er.getNewsSourceUri("bbc"), self.er.getNewsSourceUri("associated press")])),
-            excludeQuery = BaseQuery(conceptUri = QueryItems.OR([self.er.getConceptUri("obama")])))
+            BaseQuery(
+                sourceUri = QueryItems.OR([self.er.getNewsSourceUri("bbc"), self.er.getNewsSourceUri("associated press")]),
+                exclude = BaseQuery(conceptUri = QueryItems.OR([self.er.getConceptUri("obama")]))))
 
         cq2 = ComplexEventQuery(
-            includeQuery = CombinedQuery.OR([
-                BaseQuery(sourceUri = self.er.getNewsSourceUri("bbc")),
-                BaseQuery(sourceUri = self.er.getNewsSourceUri("associated press"))]),
-            excludeQuery = BaseQuery(conceptUri = QueryItems.OR([self.er.getConceptUri("obama")])))
+            CombinedQuery.OR([
+                    BaseQuery(sourceUri = self.er.getNewsSourceUri("bbc")),
+                    BaseQuery(sourceUri = self.er.getNewsSourceUri("associated press"))
+                ],
+                exclude = BaseQuery(conceptUri = QueryItems.OR([self.er.getConceptUri("obama")]))))
 
         q = QueryEvents(sourceUri = [self.er.getNewsSourceUri("bbc"), self.er.getNewsSourceUri("associated press")], ignoreConceptUri = self.er.getConceptUri("obama"))
 
@@ -59,14 +65,15 @@ class TestQueryEventsComplex(DataValidator):
 
     def testCompareSameResults3(self):
         cq1 = ComplexEventQuery(
-            includeQuery = BaseQuery(dateStart = "2017-02-05", dateEnd = "2017-02-06"),
-            excludeQuery = BaseQuery(categoryUri = self.er.getCategoryUri("Business")))
+            BaseQuery(dateStart = "2017-02-05", dateEnd = "2017-02-06",
+                      exclude = BaseQuery(categoryUri = self.er.getCategoryUri("Business"))))
 
         cq2 = ComplexEventQuery(
-            includeQuery = CombinedQuery.AND([
-                BaseQuery(dateStart = "2017-02-05"),
-                BaseQuery(dateEnd = "2017-02-06")]),
-            excludeQuery = BaseQuery(categoryUri = self.er.getCategoryUri("Business")))
+            query = CombinedQuery.AND([
+                    BaseQuery(dateStart = "2017-02-05"),
+                    BaseQuery(dateEnd = "2017-02-06")
+                ],
+                exclude = BaseQuery(categoryUri = self.er.getCategoryUri("Business"))))
 
         q = QueryEvents(dateStart = "2017-02-05", dateEnd = "2017-02-06", ignoreCategoryUri = self.er.getCategoryUri("business"))
 
@@ -82,14 +89,14 @@ class TestQueryEventsComplex(DataValidator):
         businessUri = categoryUri = self.er.getCategoryUri("Business")
         q1 = QueryEvents.initWithComplexQuery("""
         {
-            "include": {
-                "dateStart": "2017-02-05", "dateEnd": "2017-02-06"
-            },
-            "exclude": {
-                "categoryUri": "%s"
+            "$query": {
+                "dateStart": "2017-02-05", "dateEnd": "2017-02-06",
+                "$not": {
+                    "categoryUri": "%s"
+                }
             }
         }
-            """ % (businessUri))
+        """ % (businessUri))
 
         q = QueryEvents(dateStart = "2017-02-05", dateEnd = "2017-02-06", ignoreCategoryUri = self.er.getCategoryUri("business"))
 
@@ -105,33 +112,33 @@ class TestQueryEventsComplex(DataValidator):
         politicsUri = self.er.getCategoryUri("politics")
         qStr = """
         {
-            "include": {
+            "$query": {
                 "$or": [
                     { "dateStart": "2017-02-05", "dateEnd": "2017-02-05" },
                     { "conceptUri": "%s" },
                     { "categoryUri": "%s" }
-                ]
-            },
-            "exclude": {
-                "$or": [
-                    { "dateStart": "2017-02-04", "dateEnd": "2017-02-04" },
-                    { "conceptUri": "%s" }
-                ]
+                ],
+                "$not": {
+                    "$or": [
+                        { "dateStart": "2017-02-04", "dateEnd": "2017-02-04" },
+                        { "conceptUri": "%s" }
+                    ]
+                }
             }
         }
-            """ % (trumpUri, politicsUri, obamaUri)
+        """ % (trumpUri, politicsUri, obamaUri)
         q1 = QueryEvents.initWithComplexQuery(qStr)
 
         cq2 = ComplexEventQuery(
-            includeQuery = CombinedQuery.OR([
-                BaseQuery(dateStart = "2017-02-04", dateEnd = "2017-02-05"),
-                BaseQuery(conceptUri = trumpUri),
-                BaseQuery(categoryUri = politicsUri)
-            ]),
-            excludeQuery = CombinedQuery.OR([
-                BaseQuery(dateStart = "2017-02-04", dateEnd = "2017-02-04"),
-                BaseQuery(conceptUri = obamaUri)]
-            ))
+            query = CombinedQuery.OR([
+                    BaseQuery(dateStart = "2017-02-04", dateEnd = "2017-02-05"),
+                    BaseQuery(conceptUri = trumpUri),
+                    BaseQuery(categoryUri = politicsUri)
+                ],
+                exclude = CombinedQuery.OR([
+                    BaseQuery(dateStart = "2017-02-04", dateEnd = "2017-02-04"),
+                    BaseQuery(conceptUri = obamaUri)]
+                )))
 
         listRes1 = self.getQueryUriListForQueryEvents(q1)
         listRes2 = self.getQueryUriListForComplexQuery(cq2)
@@ -143,15 +150,15 @@ class TestQueryEventsComplex(DataValidator):
         obamaUri = self.er.getConceptUri("Obama")
         politicsUri = self.er.getCategoryUri("politics")
         cq = ComplexEventQuery(
-            includeQuery = CombinedQuery.OR([
-                BaseQuery(dateStart = "2017-02-04", dateEnd = "2017-02-05"),
-                BaseQuery(conceptUri = trumpUri),
-                BaseQuery(categoryUri = politicsUri)
-            ]),
-            excludeQuery = CombinedQuery.OR([
-                BaseQuery(dateStart = "2017-02-04", dateEnd = "2017-02-04"),
-                BaseQuery(conceptUri = obamaUri)]
-            ))
+            query = CombinedQuery.OR([
+                    BaseQuery(dateStart = "2017-02-04", dateEnd = "2017-02-05"),
+                    BaseQuery(conceptUri = trumpUri),
+                    BaseQuery(categoryUri = politicsUri)
+                ],
+                exclude = CombinedQuery.OR([
+                    BaseQuery(dateStart = "2017-02-04", dateEnd = "2017-02-04"),
+                    BaseQuery(conceptUri = obamaUri)]
+                )))
 
         retInfo = ReturnInfo(eventInfo = EventInfoFlags(concepts = True, categories = True, stories = True))
 

@@ -1,12 +1,12 @@
 ﻿import unittest
 from eventregistry import *
-from .DataValidator import DataValidator
+from DataValidator import DataValidator
 
 class TestQueryArticle(DataValidator):
 
     def createQuery(self):
         q = QueryArticles(conceptUri = self.er.getConceptUri("Obama"))
-        q.addRequestedResult(RequestArticlesUriList(count = 10))
+        q.setRequestedResult(RequestArticlesUriList(count = 10))
         res = self.er.execQuery(q)
         q = QueryArticle(res["uriList"]["results"])
         return q
@@ -31,7 +31,7 @@ class TestQueryArticle(DataValidator):
             # getArticleUri returns a list, so we extend the list of items
             mappedUris.extend(mapper.getArticleUri(url))
         q = QueryArticle.queryByUri(mappedUris)
-        q.addRequestedResult(RequestArticleInfo(returnInfo = self.returnInfo))
+        q.setRequestedResult(RequestArticleInfo(returnInfo = self.returnInfo))
         res = self.er.execQuery(q)
         for article in list(res.values()):
             # it's possible that the article was removed from ER
@@ -40,7 +40,7 @@ class TestQueryArticle(DataValidator):
             self.ensureValidArticle(article["info"], "articleList")
 
         q = QueryArticle.queryByUri(uris)
-        q.addRequestedResult(RequestArticleInfo(returnInfo = self.returnInfo))
+        q.setRequestedResult(RequestArticleInfo(returnInfo = self.returnInfo))
         res = self.er.execQuery(q)
         self.assertEqual(len(res), 10, "Expected to get a list of 10 articles when searching by uris")
         for article in list(res.values()):

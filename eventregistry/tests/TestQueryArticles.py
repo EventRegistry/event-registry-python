@@ -1,6 +1,6 @@
 ﻿import unittest
 from eventregistry import *
-from .DataValidator import DataValidator
+from DataValidator import DataValidator
 
 class TestQueryArticles(DataValidator):
 
@@ -23,6 +23,9 @@ class TestQueryArticles(DataValidator):
         res = self.er.execQuery(q)
         self.validateGeneralArticleList(res)
 
+    #
+    # test different search query params
+    #
 
     def testArticleListWithKeywordSearch(self):
         q = QueryArticles(keywords = "iphone")
@@ -30,26 +33,50 @@ class TestQueryArticles(DataValidator):
         res = self.er.execQuery(q)
         self.validateGeneralArticleList(res)
 
+        q2 = QueryArticles()
+        q2.addKeyword("iphone")
+        q2.addRequestedResult(RequestArticlesInfo(count = 30,  returnInfo = self.returnInfo))
+        res2 = self.er.execQuery(q2)
+        self.validateGeneralArticleList(res2)
+
+        self.ensureSameResults(res, res2, '[articles][].totalResults')
+
 
     def testArticleListWithPublisherSearch(self):
         bbcUri = self.er.getNewsSourceUri("bbc")
         q = QueryArticles(sourceUri = bbcUri)
-        q.addRequestedResult(RequestArticlesInfo(count = 30,  returnInfo = self.returnInfo))
+        q.setRequestedResult(RequestArticlesInfo(count = 30,  returnInfo = self.returnInfo))
         res = self.er.execQuery(q)
         self.validateGeneralArticleList(res)
+
+        q2 = QueryArticles()
+        q2.addNewsSource(bbcUri)
+        q2.setRequestedResult(RequestArticlesInfo(count = 30,  returnInfo = self.returnInfo))
+        res2 = self.er.execQuery(q2)
+        self.validateGeneralArticleList(res2)
+
+        self.ensureSameResults(res, res2, '[articles][].totalResults')
 
 
     def testArticleListWithCategorySearch(self):
         disasterUri = self.er.getCategoryUri("disa")
         q = QueryArticles(categoryUri = disasterUri)
-        q.addRequestedResult(RequestArticlesInfo(count = 30,  returnInfo = self.returnInfo))
+        q.setRequestedResult(RequestArticlesInfo(count = 30,  returnInfo = self.returnInfo))
         res = self.er.execQuery(q)
         self.validateGeneralArticleList(res)
+
+        q2 = QueryArticles()
+        q2.addCategory(disasterUri)
+        q2.setRequestedResult(RequestArticlesInfo(count = 30,  returnInfo = self.returnInfo))
+        res2 = self.er.execQuery(q2)
+        self.validateGeneralArticleList(res)
+
+        self.ensureSameResults(res, res2, '[articles][].totalResults')
 
 
     def testArticleListWithLangSearch(self):
         q = QueryArticles(lang = "deu")
-        q.addRequestedResult(RequestArticlesInfo(count = 30,  returnInfo = self.returnInfo))
+        q.setRequestedResult(RequestArticlesInfo(count = 30,  returnInfo = self.returnInfo))
         res = self.er.execQuery(q)
         self.validateGeneralArticleList(res)
 
@@ -57,12 +84,39 @@ class TestQueryArticles(DataValidator):
     def testArticleListWithLocationSearch(self):
         location = self.er.getLocationUri("united")
         q = QueryArticles(locationUri = location)
-        q.addRequestedResult(RequestArticlesInfo(count = 30,  returnInfo = self.returnInfo))
+        q.setRequestedResult(RequestArticlesInfo(count = 30,  returnInfo = self.returnInfo))
         res = self.er.execQuery(q)
         if "error" in res:
             return
         self.validateGeneralArticleList(res)
 
+        q2 = QueryArticles()
+        q2.addLocation(location)
+        q2.setRequestedResult(RequestArticlesInfo(count = 30,  returnInfo = self.returnInfo))
+        res2 = self.er.execQuery(q2)
+        self.validateGeneralArticleList(res2)
+
+        self.ensureSameResults(res, res2, '[articles][].totalResults')
+
+
+    def testEventListWithCombinedSearch1(self):
+        q = QueryArticles(keywords="germany", lang = ["eng", "deu"], conceptUri = [self.er.getConceptUri("Merkel")], categoryUri = self.er.getCategoryUri("Business"))
+        q.setRequestedResult(RequestArticlesInfo(count = 30, returnInfo = self.returnInfo))
+        res = self.er.execQuery(q)
+        self.validateGeneralArticleList(res)
+
+        q2 = QueryArticles(keywords="germany", lang = ["eng", "deu"])
+        q2.addConcept(self.er.getConceptUri("Merkel"))
+        q2.addCategory(self.er.getCategoryUri("Business"))
+        q2.setRequestedResult(RequestArticlesInfo(count = 30, returnInfo = self.returnInfo))
+        res2 = self.er.execQuery(q2)
+        self.validateGeneralArticleList(res2)
+
+        self.ensureSameResults(res, res2, '[articles][].totalResults')
+
+    #
+    # test different return types
+    #
 
     def testConceptTrends(self):
         q = self.createQuery()
@@ -149,11 +203,13 @@ class TestQueryArticles(DataValidator):
             self.assertIsNotNone(counts.get("frequency"), "Counts should contain a frequency")
             self.assertIsNotNone(counts.get("ratio"), "Counts should contain a ratio")
 
+    #
+    # tests for iterators
+    #
 
     def testQueryArticlesIterator(self):
         # check that the iterator really downloads all articles
-        obamaUri = self.er.getConceptUri("Obama")
-        iter = QueryArticlesIter(keywords = "trump", conceptUri = obamaUri, sourceUri = self.er.getNewsSourceUri("los angeles times"))
+        iter = QueryArticlesIter(keywords = "trump", conceptUri = self.er.getConceptUri("Obama"), sourceUri = self.er.getNewsSourceUri("los angeles times"))
         articleCount = iter.count(self.er)
         articles = list(iter.execQuery(self.er, returnInfo = self.returnInfo))
         self.assertTrue(articleCount == len(articles), "Article iterator did not generate the full list of aticles")
@@ -163,7 +219,7 @@ class TestQueryArticles(DataValidator):
         obamaUri = self.er.getConceptUri("Obama")
         LAsourceUri = self.er.getNewsSourceUri("los angeles times")
         iter = QueryArticlesIter(keywords = "trump", conceptUri = obamaUri, sourceUri = LAsourceUri)
-        for article in iter.execQuery(self.er, returnInfo = self.returnInfo):
+        for article in iter.execQuery(self.er, returnInfo = self.returnInfo, maxItems = 500):
             self.ensureArticleHasConcept(article, obamaUri)
             self.ensureArticleSource(article, LAsourceUri)
             self.ensureArticleBodyContainsText(article, "trump")
@@ -174,7 +230,7 @@ class TestQueryArticles(DataValidator):
         LAsourceUri = self.er.getNewsSourceUri("los angeles times")
         businessCatUri = self.er.getCategoryUri("business")
         iter = QueryArticlesIter(conceptUri = obamaUri, sourceUri = LAsourceUri, categoryUri = businessCatUri)
-        for article in iter.execQuery(self.er, returnInfo = self.returnInfo):
+        for article in iter.execQuery(self.er, returnInfo = self.returnInfo, maxItems = 500):
             self.ensureArticleHasCategory(article, businessCatUri)
             self.ensureArticleSource(article, LAsourceUri)
             self.ensureArticleHasConcept(article, obamaUri)
@@ -198,7 +254,7 @@ class TestQueryArticles(DataValidator):
                                  ignoreKeywords=["trump", "politics", "michelle"],
                                  ignoreSourceUri = [srcDailyCallerUri, srcAawsatUri, srcSvodkaUri],
                                  ignoreCategoryUri = [catBusinessUri, catPoliticsUri])
-        for article in iter.execQuery(self.er, returnInfo = self.returnInfo):
+        for article in iter.execQuery(self.er, returnInfo = self.returnInfo, maxItems = 500):
             self.ensureArticleHasConcept(article, obamaUri)
             self.ensureArticleHasNotConcept(article, politicsUri)
             self.ensureArticleHasNotConcept(article, chinaUri)

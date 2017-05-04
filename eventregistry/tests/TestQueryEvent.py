@@ -1,19 +1,20 @@
 ﻿import unittest
 from eventregistry import *
-from .DataValidator import DataValidator
+from DataValidator import DataValidator
 
 class TestQueryEvent(DataValidator):
 
     def createQuery(self):
-        q = QueryEvents(conceptUri = self.er.getConceptUri("Obama"), lang = "eng")
-        q.addRequestedResult(RequestEventsUriList(count = 10))
+        q = QueryEvents(lang = "eng")
+        q.addConcept(self.er.getConceptUri("Obama"))
+        q.setRequestedResult(RequestEventsUriList(count = 10))
         res = self.er.execQuery(q)
         return QueryEvent(res["uriList"]["results"])
 
 
     def testArticleList(self):
         q = self.createQuery()
-        q.addRequestedResult(RequestEventArticles(returnInfo = self.returnInfo))
+        q.setRequestedResult(RequestEventArticles(returnInfo = self.returnInfo))
         res = self.er.execQuery(q)
 
         for event in list(res.values()):
@@ -25,7 +26,7 @@ class TestQueryEvent(DataValidator):
 
     def testArticleUris(self):
         q = self.createQuery()
-        q.addRequestedResult(RequestEventArticleUris())
+        q.setRequestedResult(RequestEventArticleUris())
         res = self.er.execQuery(q)
 
         for event in list(res.values()):
@@ -52,7 +53,7 @@ class TestQueryEvent(DataValidator):
 
     def testSourceAggr(self):
         q = self.createQuery()
-        q.addRequestedResult(RequestEventSourceAggr())
+        q.setRequestedResult(RequestEventSourceAggr())
         res = self.er.execQuery(q)
 
         for event in list(res.values()):
@@ -63,7 +64,7 @@ class TestQueryEvent(DataValidator):
 
     def testArticleTrend(self):
         q = self.createQuery()
-        q.addRequestedResult(RequestEventArticleTrend())
+        q.setRequestedResult(RequestEventArticleTrend())
         res = self.er.execQuery(q)
 
         for event in list(res.values()):
@@ -88,7 +89,7 @@ class TestQueryEvent(DataValidator):
 
     def testSimilarStories(self):
         q = self.createQuery()
-        q.addRequestedResult(RequestEventSimilarStories(returnInfo = self.returnInfo))
+        q.setRequestedResult(RequestEventSimilarStories(returnInfo = self.returnInfo))
         res = self.er.execQuery(q)
 
         for event in list(res.values()):

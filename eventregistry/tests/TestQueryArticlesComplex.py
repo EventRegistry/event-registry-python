@@ -12,19 +12,20 @@ class TestQueryArticlesComplex(DataValidator):
     def getQueryUriListForQueryArticles(self, q):
         q.setRequestedResult(RequestArticlesUriList(count = 50000))
         res = self.er.execQuery(q)
+        assert "error" not in res, "Results included error: " + res.get("error", "")
         return res["uriList"]
 
 
     def testCompareSameResults1(self):
         cq1 = ComplexArticleQuery(
-            includeQuery = BaseQuery(conceptUri = QueryItems.AND([self.er.getConceptUri("obama"), self.er.getConceptUri("trump")])),
-            excludeQuery = BaseQuery(lang = QueryItems.OR(["eng", "deu"])))
+            BaseQuery(conceptUri = QueryItems.AND([self.er.getConceptUri("obama"), self.er.getConceptUri("trump")]),
+                exclude = BaseQuery(lang = QueryItems.OR(["eng", "deu"]))))
 
         cq2 = ComplexArticleQuery(
-            includeQuery = CombinedQuery.AND([
+            query = CombinedQuery.AND([
                 BaseQuery(conceptUri = self.er.getConceptUri("obama")),
-                BaseQuery(conceptUri = self.er.getConceptUri("trump"))]),
-            excludeQuery = BaseQuery(lang = QueryItems.OR(["eng", "deu"])))
+                BaseQuery(conceptUri = self.er.getConceptUri("trump")) ],
+                exclude = BaseQuery(lang = QueryItems.OR(["eng", "deu"]))))
 
         q = QueryArticles(conceptUri = [self.er.getConceptUri("obama"), self.er.getConceptUri("trump")], conceptOper = "AND", ignoreLang = ["eng", "deu"])
 
@@ -38,14 +39,14 @@ class TestQueryArticlesComplex(DataValidator):
 
     def testCompareSameResults2(self):
         cq1 = ComplexArticleQuery(
-            includeQuery = BaseQuery(sourceUri = QueryItems.OR([self.er.getNewsSourceUri("bbc"), self.er.getNewsSourceUri("associated press")])),
-            excludeQuery = BaseQuery(conceptUri = QueryItems.OR([self.er.getConceptUri("obama")])))
+            query = BaseQuery(sourceUri = QueryItems.OR([self.er.getNewsSourceUri("bbc"), self.er.getNewsSourceUri("associated press")]),
+                exclude = BaseQuery(conceptUri = QueryItems.OR([self.er.getConceptUri("obama")]))))
 
         cq2 = ComplexArticleQuery(
-            includeQuery = CombinedQuery.OR([
+            query = CombinedQuery.OR([
                 BaseQuery(sourceUri = self.er.getNewsSourceUri("bbc")),
-                BaseQuery(sourceUri = self.er.getNewsSourceUri("associated press"))]),
-            excludeQuery = BaseQuery(conceptUri = QueryItems.OR([self.er.getConceptUri("obama")])))
+                BaseQuery(sourceUri = self.er.getNewsSourceUri("associated press"))],
+                exclude = BaseQuery(conceptUri = QueryItems.OR([self.er.getConceptUri("obama")]))))
 
         q = QueryArticles(sourceUri = [self.er.getNewsSourceUri("bbc"), self.er.getNewsSourceUri("associated press")], ignoreConceptUri = self.er.getConceptUri("obama"))
 
@@ -59,14 +60,14 @@ class TestQueryArticlesComplex(DataValidator):
 
     def testCompareSameResults3(self):
         cq1 = ComplexArticleQuery(
-            includeQuery = BaseQuery(dateStart = "2017-02-05", dateEnd = "2017-02-06"),
-            excludeQuery = BaseQuery(categoryUri = self.er.getCategoryUri("Business")))
+            query = BaseQuery(dateStart = "2017-02-05", dateEnd = "2017-02-06",
+                exclude = BaseQuery(categoryUri = self.er.getCategoryUri("Business"))))
 
         cq2 = ComplexArticleQuery(
-            includeQuery = CombinedQuery.AND([
+            query = CombinedQuery.AND([
                 BaseQuery(dateStart = "2017-02-05"),
-                BaseQuery(dateEnd = "2017-02-06")]),
-            excludeQuery = BaseQuery(categoryUri = self.er.getCategoryUri("Business")))
+                BaseQuery(dateEnd = "2017-02-06")],
+                exclude = BaseQuery(categoryUri = self.er.getCategoryUri("Business"))))
 
         q = QueryArticles(dateStart = "2017-02-05", dateEnd = "2017-02-06", ignoreCategoryUri = self.er.getCategoryUri("business"))
 
@@ -82,14 +83,14 @@ class TestQueryArticlesComplex(DataValidator):
         businessUri = categoryUri = self.er.getCategoryUri("Business")
         q1 = QueryArticles.initWithComplexQuery("""
         {
-            "include": {
-                "dateStart": "2017-02-05", "dateEnd": "2017-02-06"
-            },
-            "exclude": {
-                "categoryUri": "%s"
+            "$query": {
+                "dateStart": "2017-02-05", "dateEnd": "2017-02-06",
+                "$not": {
+                    "categoryUri": "%s"
+                }
             }
         }
-            """ % (businessUri))
+        """ % (businessUri))
 
         q = QueryArticles(dateStart = "2017-02-05", dateEnd = "2017-02-06", ignoreCategoryUri = self.er.getCategoryUri("business"))
 
@@ -105,33 +106,33 @@ class TestQueryArticlesComplex(DataValidator):
         politicsUri = self.er.getCategoryUri("politics")
         qStr = """
         {
-            "include": {
+            "$query": {
                 "$or": [
                     { "dateStart": "2017-02-05", "dateEnd": "2017-02-05" },
                     { "conceptUri": "%s" },
                     { "categoryUri": "%s" }
-                ]
-            },
-            "exclude": {
-                "$or": [
-                    { "dateStart": "2017-02-04", "dateEnd": "2017-02-04" },
-                    { "conceptUri": "%s" }
-                ]
+                ],
+                "$not": {
+                    "$or": [
+                        { "dateStart": "2017-02-04", "dateEnd": "2017-02-04" },
+                        { "conceptUri": "%s" }
+                    ]
+                }
             }
         }
             """ % (trumpUri, politicsUri, obamaUri)
         q1 = QueryArticles.initWithComplexQuery(qStr)
 
         cq2 = ComplexArticleQuery(
-            includeQuery = CombinedQuery.OR([
-                BaseQuery(dateStart = "2017-02-04", dateEnd = "2017-02-05"),
-                BaseQuery(conceptUri = trumpUri),
-                BaseQuery(categoryUri = politicsUri)
-            ]),
-            excludeQuery = CombinedQuery.OR([
-                BaseQuery(dateStart = "2017-02-04", dateEnd = "2017-02-04"),
-                BaseQuery(conceptUri = obamaUri)]
-            ))
+            query = CombinedQuery.OR([
+                    BaseQuery(dateStart = "2017-02-04", dateEnd = "2017-02-05"),
+                    BaseQuery(conceptUri = trumpUri),
+                    BaseQuery(categoryUri = politicsUri)
+                ],
+                exclude = CombinedQuery.OR([
+                    BaseQuery(dateStart = "2017-02-04", dateEnd = "2017-02-04"),
+                    BaseQuery(conceptUri = obamaUri)]
+                )))
 
         listRes1 = self.getQueryUriListForQueryArticles(q1)
         listRes2 = self.getQueryUriListForComplexQuery(cq2)
@@ -147,9 +148,10 @@ class TestQueryArticlesComplex(DataValidator):
 
         qStr = """
         {
-            "include": {
+            "$query": {
                 "$or": [
                     { "dateStart": "2017-02-05", "dateEnd": "2017-02-05" },
+                    { "dateStart": "2017-02-04", "dateEnd": "2017-02-04" },
                     { "conceptUri": "%s" },
                     { "categoryUri": "%s" },
                     {
@@ -158,32 +160,32 @@ class TestQueryArticlesComplex(DataValidator):
                             { "categoryUri": "%s" }
                         ]
                     }
-                ]
-            },
-            "exclude": {
-                "$or": [
-                    { "dateStart": "2017-02-04", "dateEnd": "2017-02-04" },
-                    { "conceptUri": "%s" }
-                ]
+                ],
+                "$not": {
+                    "$or": [
+                        { "dateStart": "2017-02-04", "dateEnd": "2017-02-04" },
+                        { "conceptUri": "%s" }
+                    ]
+                }
             }
         }
             """ % (trumpUri, politicsUri, merkelUri, businessUri, obamaUri)
         q1 = QueryArticles.initWithComplexQuery(qStr)
 
         cq2 = ComplexArticleQuery(
-            includeQuery = CombinedQuery.OR([
-                BaseQuery(dateStart = "2017-02-04", dateEnd = "2017-02-05"),
-                BaseQuery(conceptUri = trumpUri),
-                BaseQuery(categoryUri = politicsUri),
-                CombinedQuery.AND([
-                    BaseQuery(conceptUri = merkelUri),
-                    BaseQuery(categoryUri = businessUri)
-                    ])
-            ]),
-            excludeQuery = CombinedQuery.OR([
-                BaseQuery(dateStart = "2017-02-04", dateEnd = "2017-02-04"),
-                BaseQuery(conceptUri = obamaUri)]
-            ))
+            query = CombinedQuery.OR([
+                    BaseQuery(dateStart = "2017-02-04", dateEnd = "2017-02-05"),
+                    BaseQuery(conceptUri = trumpUri),
+                    BaseQuery(categoryUri = politicsUri),
+                    CombinedQuery.AND([
+                        BaseQuery(conceptUri = merkelUri),
+                        BaseQuery(categoryUri = businessUri)
+                        ])
+                ],
+                exclude = CombinedQuery.OR([
+                    BaseQuery(dateStart = "2017-02-04", dateEnd = "2017-02-04"),
+                    BaseQuery(conceptUri = obamaUri)]
+                )))
 
         listRes1 = self.getQueryUriListForQueryArticles(q1)
         listRes2 = self.getQueryUriListForComplexQuery(cq2)
@@ -195,15 +197,15 @@ class TestQueryArticlesComplex(DataValidator):
         obamaUri = self.er.getConceptUri("Obama")
         politicsUri = self.er.getCategoryUri("politics")
         cq = ComplexArticleQuery(
-            includeQuery = CombinedQuery.OR([
-                BaseQuery(dateStart = "2017-02-04", dateEnd = "2017-02-05"),
-                BaseQuery(conceptUri = trumpUri),
-                BaseQuery(categoryUri = politicsUri)
-            ]),
-            excludeQuery = CombinedQuery.OR([
-                BaseQuery(dateStart = "2017-02-04", dateEnd = "2017-02-04"),
-                BaseQuery(conceptUri = obamaUri)]
-            ))
+            query = CombinedQuery.OR([
+                    BaseQuery(dateStart = "2017-02-04", dateEnd = "2017-02-05"),
+                    BaseQuery(conceptUri = trumpUri),
+                    BaseQuery(categoryUri = politicsUri)
+                ],
+                exclude = CombinedQuery.OR([
+                    BaseQuery(dateStart = "2017-02-04", dateEnd = "2017-02-04"),
+                    BaseQuery(conceptUri = obamaUri)]
+                )))
 
         retInfo = ReturnInfo(articleInfo = ArticleInfoFlags(concepts = True, categories = True))
 

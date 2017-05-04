@@ -32,6 +32,7 @@ class QueryStory(Query):
         Result types can be the classes that extend RequestStory base class (see classes below).
         """
         assert isinstance(requestStory, RequestStory), "QueryStory class can only accept result requests that are of type RequestStory"
+        self.resultTypeList = [item for item in self.resultTypeList if item.getResultType() != requestStory.getResultType()]
         self.resultTypeList.append(requestStory)
 
 
@@ -48,6 +49,10 @@ class QueryStory(Query):
 class RequestStory:
     def __init__(self):
         self.resultType = None
+
+
+    def getResultType(self):
+        return self.resultType
 
 
 

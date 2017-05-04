@@ -1,4 +1,4 @@
-import unittest
+import unittest, jmespath
 from eventregistry import *
 
 class DataValidator(unittest.TestCase):
@@ -30,7 +30,7 @@ class DataValidator(unittest.TestCase):
 
 
     def ensureValidConcept(self, concept, testName):
-        for prop in ["id", "uri", "label", "synonyms", "image", "description", "details", "conceptClassMembership", "trendingScore", "trendingHistory", "details"]:
+        for prop in ["id", "uri", "label", "synonyms", "image", "details", "trendingScore"]:
             self.assertTrue(prop in concept, "Property '%s' was expected in concept for test %s" % (prop, testName))
         self.assertTrue(concept.get("type") in ["person", "loc", "org"], "Expected concept to be an entity type, but got %s" % (concept.get("type")))
         if concept.get("location"):
@@ -51,7 +51,7 @@ class DataValidator(unittest.TestCase):
 
 
     def ensureValidCategory(self, category, testName):
-        for prop in ["id", "uri", "parentUri", "childrenUris", "trendingScore", "trendingHistory"]:
+        for prop in ["id", "uri", "parentUri", "trendingScore"]:
             self.assertTrue(prop in category, "Property '%s' was expected in source for test %s" % (prop, testName))
 
 
@@ -192,3 +192,16 @@ class DataValidator(unittest.TestCase):
         for category in event["categories"]:
             if category["uri"].find(categoryUri) != -1:
                 self.fail("Event categories contained an incorrect category '%s'" % (categoryUri))
+
+
+    def ensureSameResults(self, res1, res2, queryStr):
+        arr1 = jmespath.compile(queryStr).search(res1)
+        arr2 = jmespath.compile(queryStr).search(res2)
+        if not isinstance(arr1, list) or not isinstance(arr2, list):
+            return
+        if arr1 != [] and arr2 != []:
+            if arr1[0] != arr2[0]:
+                self.fail("Found different results for query %s" % (queryStr))
+        elif len(arr1) != len(arr2):
+            self.fail("Found different number of results for query %s" % (queryStr))
+

@@ -27,7 +27,8 @@ class QueryArticles(Query):
                  ignoreCategoryIncludeSub = True,
                  isDuplicateFilter = "keepAll",
                  hasDuplicateFilter = "keepAll",
-                 eventFilter = "keepAll"):
+                 eventFilter = "keepAll",
+                 requestedResult = None):
         """
         Query class for searching for individual articles in the Event Registry.
         The resulting articles have to match all specified conditions. If a parameter value equals "" or [], then it is ignored.
@@ -78,6 +79,7 @@ class QueryArticles(Query):
                 "skipArticlesWithoutEvent" (skip articles that are not describing any known event in ER)
                 "keepOnlyArticlesWithoutEvent" (return only the articles that are not describing any known event in ER)
                 "keepAll" (no filtering, default)
+        @param requestedResult: the information to return as the result of the query. By default return the list of matching articles
         """
         super(QueryArticles, self).__init__()
         self._setVal("action", "getArticles")
@@ -116,6 +118,9 @@ class QueryArticles(Query):
         self._setValIfNotDefault("isDuplicateFilter", isDuplicateFilter, "keepAll")
         self._setValIfNotDefault("hasDuplicateFilter", hasDuplicateFilter, "keepAll")
         self._setValIfNotDefault("eventFilter", eventFilter, "keepAll")
+
+        # set the information that should be returned
+        self.setRequestedResult(requestedResult or RequestArticlesInfo())
 
 
     def _getPath(self):
@@ -174,6 +179,7 @@ class QueryArticles(Query):
         Result types can be the classes that extend RequestArticles base class (see classes below).
         """
         assert isinstance(requestArticles, RequestArticles), "QueryArticles class can only accept result requests that are of type RequestArticles"
+        self.resultTypeList = [item for item in self.resultTypeList if item.getResultType() != requestArticles.getResultType()]
         self.resultTypeList.append(requestArticles)
 
 
@@ -207,11 +213,14 @@ class QueryArticles(Query):
         create a query using a complex article query
         """
         q = QueryArticles()
+        # provided an instance of ComplexArticleQuery
         if isinstance(query, ComplexArticleQuery):
             q._setVal("query", json.dumps(query.getQuery()))
+        # provided query as a string containing the json object
         elif isinstance(query, six.string_types):
             foo = json.loads(query)
             q._setVal("query", query)
+        # provided query as a python dict
         elif isinstance(query, dict):
             q._setVal("query", json.dumps(query))
         else:
@@ -232,6 +241,8 @@ class QueryArticlesIter(QueryArticles, six.Iterator):
         """
         self.setRequestedResult(RequestArticlesUriList())
         res = eventRegistry.execQuery(self)
+        if "error" in res:
+            print(res["error"])
         count = res.get("uriList", {}).get("totalResults", 0)
         return count
 
@@ -240,13 +251,15 @@ class QueryArticlesIter(QueryArticles, six.Iterator):
                   sortBy = "rel",
                   sortByAsc = False,
                   returnInfo = ReturnInfo(),
-                  articleBatchSize = 200):
+                  articleBatchSize = 200,
+                  maxItems = -1):
         """
         @param eventRegistry: instance of EventRegistry class. used to query new article list and uris
         @param sortBy: how are articles sorted. Options: id (internal id), date (publishing date), cosSim (closeness to the event centroid), fq (relevance to the query), socialScore (total shares on social media)
         @param sortByAsc: should the results be sorted in ascending order (True) or descending (False)
         @param returnInfo: what details should be included in the returned information
         @param articleBatchSize: number of articles to download at once (we are not downloading article by article) (at most 200)
+        @param maxItems: maximum number of items to be returned. Used to stop iteration sooner than results run out
         """
         assert articleBatchSize <= 200, "You can not have a batch size > 200 items"
         self._er = eventRegistry
@@ -255,6 +268,9 @@ class QueryArticlesIter(QueryArticles, six.Iterator):
         self._returnInfo = returnInfo
         self._articleBatchSize = articleBatchSize
         self._uriPage = 0
+        # if we want to return only a subset of items:
+        self._maxItems = maxItems
+        self._currItem = 0
         # list of cached articles that are yet to be returned by the iterator
         self._articleList = []
         self._uriList = []
@@ -281,6 +297,8 @@ class QueryArticlesIter(QueryArticles, six.Iterator):
             print("Downoading page %d of article uris" % (self._uriPage))
         self.setRequestedResult(RequestArticlesUriList(page = self._uriPage, sortBy = self._sortBy, sortByAsc = self._sortByAsc))
         res = self._er.execQuery(self)
+        if "error" in res:
+            print(res["error"])
         self._uriList = res.get("uriList", {}).get("results", [])
         self._allUriPages = res.get("uriList", {}).get("pages", 0)
 
@@ -303,6 +321,10 @@ class QueryArticlesIter(QueryArticles, six.Iterator):
         q = QueryArticles.initWithArticleUriList(uris)
         q.setRequestedResult(RequestArticlesInfo(page = 1, count = self._articleBatchSize, sortBy = "none", returnInfo = self._returnInfo))
         res = self._er.execQuery(q)
+        if "error" in res:
+            print("Error while obtaining a list of articles: " + res["error"])
+        else:
+            assert res.get("articles", {}).get("pages", 0) == 1
         self._articleList.extend(res.get("articles", {}).get("results", []))
 
 
@@ -312,6 +334,10 @@ class QueryArticlesIter(QueryArticles, six.Iterator):
 
     def __next__(self):
         """iterate over the available articles"""
+        self._currItem += 1
+        # if we want to return only the first X items, then finish once reached
+        if self._maxItems >= 0 and self._currItem > self._maxItems:
+            raise StopIteration
         if len(self._articleList) == 0:
             self._getNextArticleBatch()
         if len(self._articleList) > 0:
@@ -323,6 +349,10 @@ class QueryArticlesIter(QueryArticles, six.Iterator):
 class RequestArticles:
     def __init__(self):
         self.resultType = None
+
+
+    def getResultType(self):
+        return self.resultType
 
 
 

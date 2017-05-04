@@ -43,6 +43,7 @@ class QueryEvents(Query):
     @param conceptOper: Boolean operator to use in cases when multiple concepts are specified. Possible values are:
             "AND" if all concepts should be mentioned in the resulting events
             "OR" if any of the concept should be mentioned in the resulting events
+    @param requestedResult: the information to return as the result of the query. By default return the list of matching events
     """
     def __init__(self,
                  keywords = "",
@@ -99,8 +100,7 @@ class QueryEvents(Query):
         self._setValIfNotDefault("ignoreCategoryIncludeSub", ignoreCategoryIncludeSub, True)
         self._setValIfNotDefault("conceptOper", conceptOper, "AND")
 
-        if requestedResult:
-            self.addRequestedResult(requestedResult)
+        self.addRequestedResult(requestedResult or RequestEventsInfo())
 
 
     def _getPath(self):
@@ -148,6 +148,7 @@ class QueryEvents(Query):
         Result types can be the classes that extend RequestEvents base class (see classes below).
         """
         assert isinstance(requestEvents, RequestEvents), "QueryEvents class can only accept result requests that are of type RequestEvents"
+        self.resultTypeList = [item for item in self.resultTypeList if item.getResultType() != requestEvents.getResultType()]
         self.resultTypeList.append(requestEvents)
 
 
@@ -170,13 +171,17 @@ class QueryEvents(Query):
     @staticmethod
     def initWithComplexQuery(query):
         q = QueryEvents()
+        # provided an instance of ComplexEventQuery
         if isinstance(query, ComplexEventQuery):
             q._setVal("query", json.dumps(query.getQuery()))
+        # provided query as a string containing the json object
         elif isinstance(query, six.string_types):
             foo = json.loads(query)
             q._setVal("query", query)
+        # provided query as a python dict
         elif isinstance(query, dict):
             q._setVal("query", json.dumps(query))
+        # unrecognized value provided
         else:
             assert False, "The instance of query parameter was not a ComplexEventQuery, a string or a python dict"
         return q
@@ -195,6 +200,8 @@ class QueryEventsIter(QueryEvents, six.Iterator):
         """
         self.setRequestedResult(RequestEventsUriList())
         res = eventRegistry.execQuery(self)
+        if "error" in res:
+            print(res["error"])
         count = res.get("uriList", {}).get("totalResults", 0)
         return count
 
@@ -203,12 +210,14 @@ class QueryEventsIter(QueryEvents, six.Iterator):
                   sortBy = "rel",
                   sortByAsc = False,
                   returnInfo = ReturnInfo(),
-                  eventBatchSize = 200):
+                  eventBatchSize = 200,
+                  maxItems = -1):
         """
         @param eventRegistry: instance of EventRegistry class. used to query new event list and uris
         @param sortBy: how should the resulting events be sorted. Options: date (by event date), rel (relevance to the query), size (number of articles), socialScore (amount of shares in social media)
         @param sortByAsc: should the results be sorted in ascending order (True) or descending (False)
         @param eventBatchSize: number of events to download at once (we are not downloading event by event)
+        @param maxItems: maximum number of items to be returned. Used to stop iteration sooner than results run out
         """
         assert eventBatchSize <= 200, "You can not have a batch size > 200 items"
         self._er = eventRegistry
@@ -217,6 +226,9 @@ class QueryEventsIter(QueryEvents, six.Iterator):
         self._returnInfo = returnInfo
         self._eventBatchSize = eventBatchSize
         self._uriPage = 0
+        # if we want to return only a subset of items:
+        self._maxItems = maxItems
+        self._currItem = 0
         # list of cached events that are yet to be returned by the iterator
         self._eventList = []
         self._uriList = []
@@ -243,6 +255,8 @@ class QueryEventsIter(QueryEvents, six.Iterator):
             print("Downoading page %d of event uris" % (self._uriPage))
         self.setRequestedResult(RequestEventsUriList(page = self._uriPage, sortBy = self._sortBy, sortByAsc = self._sortByAsc))
         res = self._er.execQuery(self)
+        if "error" in res:
+            print(res["error"])
         self._uriList = res.get("uriList", {}).get("results", [])
         self._allUriPages = res.get("uriList", {}).get("pages", 0)
         self._getNextEventBatch()
@@ -263,10 +277,13 @@ class QueryEventsIter(QueryEvents, six.Iterator):
         self._uriList = self._uriList[self._eventBatchSize:]
         if self._er._verboseOutput:
             print("Downoading %d events..." % (len(uris)))
-        q = QueryEvents()
-        q.setEventUriList(uris)
-        self.setRequestedResult(RequestEventsInfo(page = 1, count = self._eventBatchSize, sortBy = "none", returnInfo = self._returnInfo))
-        res = self._er.execQuery(self)
+        q = QueryEvents.initWithEventUriList(uris)
+        q.setRequestedResult(RequestEventsInfo(page = 1, count = self._eventBatchSize, sortBy = "none", returnInfo = self._returnInfo))
+        res = self._er.execQuery(q)
+        if "error" in res:
+            print("Error while obtaining a list of events: " + res["error"])
+        else:
+            assert res.get("events", {}).get("pages", 0) == 1
         self._eventList.extend(res.get("events", {}).get("results", []))
 
 
@@ -276,6 +293,10 @@ class QueryEventsIter(QueryEvents, six.Iterator):
 
     def __next__(self):
         """iterate over the available events"""
+        self._currItem += 1
+        # if we want to return only the first X items, then finish once reached
+        if self._maxItems >= 0 and self._currItem > self._maxItems:
+            raise StopIteration
         if len(self._eventList) == 0:
             self._getNextEventBatch()
         if len(self._eventList) > 0:
@@ -287,6 +308,10 @@ class QueryEventsIter(QueryEvents, six.Iterator):
 class RequestEvents:
     def __init__(self):
         self.resultType = None
+
+
+    def getResultType(self):
+        return self.resultType
 
 
 

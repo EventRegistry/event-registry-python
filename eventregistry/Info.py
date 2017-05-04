@@ -18,7 +18,6 @@ class GetSourceInfo(QueryParamsBase):
         self._update(returnInfo.getParams())
 
 
-
     def queryByUri(self, uriOrUriList):
         """search sources by uri(s)"""
         self._setVal("uri", uriOrUriList)

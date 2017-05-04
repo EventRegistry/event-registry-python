@@ -2,46 +2,43 @@
 
 er = EventRegistry()
 
-#
-# query for events related to Barack Obama
-#
-
-q = QueryEventsIter(conceptUri = er.getConceptUri("Obama"))
-for event in q.execQuery(er, sortBy = "date"):
-    print event
-
-
 # get the concept URI that matches label "Barack Obama"
 obamaConceptUri = er.getConceptUri("Obama")
 print("Concept uri for 'Obama' is " + obamaConceptUri)
 
-# make a query for events
+# query for events related to Barack Obama. return the matching events sorted from the latest to oldest event
+# use the iterator class and easily iterate over all matching events
+q = QueryEventsIter(conceptUri = obamaConceptUri)
+for event in q.execQuery(er, sortBy = "date"):
+    print event
+
+
+# make a query for events - specify each condition independently
 q = QueryEvents()
-q.addConcept(obamaConceptUri)                 # get events related to obama
+# get events related to obama
+q.addConcept(obamaConceptUri)
 # return a list of event URIs
 q.setRequestedResult(RequestEventsUriList())
 res = er.execQuery(q)
 
-# return details about 30 events that are most related to Obama
+
+# use the previous query, but change the return details to return 30 events that are most related to Obama
 q.setRequestedResult(RequestEventsInfo(count = 30, sortBy = "rel", sortByAsc = False,
     returnInfo = ReturnInfo(conceptInfo = ConceptInfoFlags(lang = "deu", type = ["person", "wiki"]))))
 res = er.execQuery(q)
 
-# compute most relevant concepts of type organization or location extracted from events about Obama
+
+# use the previous query, but this time compute most relevant concepts of type organization or location extracted from events about Obama
 q.setRequestedResult(RequestEventsConceptAggr(conceptCount = 20,
     returnInfo = ReturnInfo(conceptInfo = ConceptInfoFlags(type = ["org", "loc"]))))
 res = er.execQuery(q)
 
 
-#
-# query for events reported by BBC News
-#
-
 # get the news source URI that matches label "BBC"
 bbcSourceUri = er.getNewsSourceUri("BBC")
 print("Source uri for 'BBC' is " + bbcSourceUri)
 
-# make a query for events
+# query for events reported by BBC News
 q = QueryEvents()
 q.addNewsSource(bbcSourceUri)
 # return details about 30 events that have been most recently reported by BBC
@@ -49,34 +46,17 @@ q.setRequestedResult(RequestEventsInfo(count = 30, sortBy = "date", sortByAsc = 
 res = er.execQuery(q)
 
 
-#
-# query for events related to issues in society
-#
-
 # get the category URI that matches label "society issues"
 issuesCategoryUri = er.getCategoryUri("society issues")
 print("Category uri for 'society issues' is " + issuesCategoryUri)
 
-# make a query for events
+# query for events related to issues in society
 q = QueryEvents()
 q.addCategory(issuesCategoryUri)
 # return 30 events that were reported in the highest number of articles
 q.setRequestedResult(RequestEventsInfo(count = 30, sortBy = "size", sortByAsc = False))
 res = er.execQuery(q)
 
-
-## use OR operator between concepts
-## find events where either Sandra Bullock or Gerge Clooney are relevant. since we use OR, res3 should have more results than res1 and res2
-#res1 = er.execQuery(QueryEvents(conceptUri = er.getConceptUri("sandra bullock"), requestedResult = RequestEventsInfo(count = 0)))
-#res2 = er.execQuery(QueryEvents(conceptUri = er.getConceptUri("george clooney"), requestedResult = RequestEventsInfo(count = 0)))
-#res3 = er.execQuery(QueryEvents(conceptUri = [er.getConceptUri("sandra bullock"), er.getConceptUri("george clooney")],
-#                                conceptOper = "OR",
-#                                requestedResult = RequestEventsInfo(count = 0)))
-#c1 = res1["events"]["totalResults"]
-#c2 = res2["events"]["totalResults"]
-#c3 = res3["events"]["totalResults"]
-#assert c3 > c1
-#assert c3 > c2
 
 # find events that occured in Berlin between 2014-04-16 and 2014-04-28
 # from the resulting events produce
@@ -96,14 +76,38 @@ res = er.execQuery(q)
 q.setRequestedResult(RequestEventsInfo())
 res = er.execQuery(q)
 
+# query for events about Obama and produce the concept co-occurence graph - which concepts appear frequently together in the matching events
 q = QueryEvents()
-q.addConcept(er.getConceptUri("Obama"))                 # get events related to obama
+q.addConcept(er.getConceptUri("Obama"))
 q.setRequestedResult(RequestEventsConceptGraph(conceptCount = 200, linkCount = 500, eventsSampleSize = 2000))
 res = er.execQuery(q)
 
-# get recent events related to Obama
-q = QueryEvents()
-q.addConcept(er.getConceptUri("Obama"))
-q.setRequestedResult(RequestEventsRecentActivity())     # get most recently updated events related to obama
-res = er.execQuery(q)
-obj = createStructFromDict(res)
+# example of a complex query containing a combination of OR and AND parameters
+# get events that happened on 2017-02-05 or are about trump or are about politics or are about Merkel and business
+# # and did not happen on 2017-02-05 or are about Obama
+qStr = """
+{
+    "include": {
+        "$or": [
+            { "dateStart": "2017-02-05", "dateEnd": "2017-02-05" },
+            { "conceptUri": "%s" },
+            { "categoryUri": "%s" },
+            {
+                "$and": [
+                    { "conceptUri": "%s" },
+                    { "categoryUri": "%s" }
+                ]
+            }
+        ]
+    },
+    "exclude": {
+        "$or": [
+            { "dateStart": "2017-02-04", "dateEnd": "2017-02-04" },
+            { "conceptUri": "%s" }
+        ]
+    }
+}
+    """ % (trumpUri, politicsUri, merkelUri, businessUri, obamaUri)
+q1 = QueryEvents.initWithComplexQuery(qStr)
+res = er.execQuery(q1)
+

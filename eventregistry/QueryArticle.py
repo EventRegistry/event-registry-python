@@ -4,14 +4,17 @@ from eventregistry.ReturnInfo import *
 
 class QueryArticle(Query):
     def __init__(self,
-                 articleUriOrUriList):
+                 articleUriOrUriList,
+                 requestedResult = None):
         """
         Class for obtaining available info for one or more articles in the Event Registry
         @param articleUriOrUriList: a single article uri or a list of article uris
+        @param requestedResult: the information to return as the result of the query. By default return the information about the article
         """
         super(QueryArticle, self).__init__()
         self._setVal("articleUri", articleUriOrUriList)
         self._setVal("action", "getArticle")
+        self.setRequestedResult(requestedResult or RequestArticleInfo())
 
 
     def _getPath(self):
@@ -36,6 +39,7 @@ class QueryArticle(Query):
         @param requestArticle: an instance of type RequestArticle*. Determines what info should be returned as a result of the query
         """
         assert isinstance(requestArticle, RequestArticle), "QueryArticle class can only accept result requests that are of type RequestArticle"
+        self.resultTypeList = [item for item in self.resultTypeList if item.getResultType() != requestArticle.getResultType()]
         self.resultTypeList.append(requestArticle)
 
 
@@ -52,6 +56,10 @@ class QueryArticle(Query):
 class RequestArticle:
     def __init__(self):
         self.resultType = None
+
+
+    def getResultType(self):
+        return self.resultType
 
 
 
