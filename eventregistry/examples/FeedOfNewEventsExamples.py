@@ -1,8 +1,9 @@
 ﻿"""
 this is a simple script that makes a query to ER to get the feed of events that were added or
-updated since the last query. For the received set of events it prints the basic event info
-and then goes and also downloads the top 20 articles assigned to this event in any of the
-languages
+updated in the last minute.
+
+For the received set of events, the script prints the basic event info and then goes and
+also downloads the top 20 articles assigned to this event in any of the languages
 """
 
 from eventregistry import *

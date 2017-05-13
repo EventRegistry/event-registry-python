@@ -1,4 +1,8 @@
-﻿from eventregistry import *
+﻿"""
+examples that illustrate how to obtain the currently top trending concepts or categories
+The trends can be computed based on the number of mentions in the news or based on the shares on social media
+"""
+from eventregistry import *
 
 er = EventRegistry()
 

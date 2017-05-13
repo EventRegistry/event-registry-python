@@ -1,4 +1,7 @@
-﻿from eventregistry import *
+﻿"""
+examples that illustrate how to query articles using different search options
+"""
+from eventregistry import *
 
 er = EventRegistry()
 
@@ -26,8 +29,9 @@ res = er.execQuery(q)
 
 # query articles using the iterator class
 # iterator class simplifies retrieving and listing the list of matching articles
+# by specifying maxItems we say that we want to retrieve maximum 500 articles
 q = QueryArticlesIter(conceptUri = er.getConceptUri("George Clooney"))
-for art in q.execQuery(er, sortBy = "date"):
+for art in q.execQuery(er, sortBy = "date", maxItems = 500):
     print art
 
 
@@ -49,7 +53,7 @@ q = QueryArticles()
 # articles published between 2016-03-22 and 2016-03-23
 q.setDateLimit(datetime.date(2016, 3, 22), datetime.date(2016, 3, 23))
 # related to Brussels
-#q.addConcept(er.getConceptUri("Brussels"))
+q.addConcept(er.getConceptUri("Brussels"))
 # published by New York Times
 q.addNewsSource(er.getNewsSourceUri("New York Times"))
 # return details about the articles, including the concepts, categories, location and image
@@ -60,7 +64,7 @@ q.setRequestedResult(RequestArticlesInfo(count = 30,
 res = er.execQuery(q)
 
 
-# get recent articles about Obama
+# get latest articles about Obama
 q = QueryArticles()
 q.addConcept(er.getConceptUri("Obama"))
 q.setRequestedResult(RequestArticlesRecentActivity())     # get most recently added articles related to obama
@@ -81,7 +85,7 @@ businessUri = er.getCategoryUri("business")
 
 # find articles that (1) were published on 2017-04-22 and (2) are either about Obama or mention keyword Trump and (3) are related to business
 cq1 = ComplexArticleQuery(
-    includeQuery = CombinedQuery.AND([
+    CombinedQuery.AND([
         BaseQuery(dateStart = "2017-04-22", dateEnd = "2017-04-22"),
         CombinedQuery.OR([
             BaseQuery(conceptUri = QueryItems.OR([obamaUri])),
@@ -96,10 +100,10 @@ res = er.execQuery(q)
 
 # find articles that are both about Obama and Trump and are not in English or German language
 cq2 = ComplexArticleQuery(
-    includeQuery = BaseQuery(
-        conceptUri = QueryItems.AND([obamaUri, trumpUri])),
-    excludeQuery = BaseQuery(lang = QueryItems.OR(["eng", "deu"])))
-listRes1 = getQueryUriListForComplexQuery(cq1)
+    BaseQuery(
+        conceptUri = QueryItems.AND([obamaUri, trumpUri]),
+        exclude = BaseQuery(lang = QueryItems.OR(["eng", "deu"])))
+    )
 q = QueryArticles.initWithComplexQuery(cq2)
 res = er.execQuery(q)
 
@@ -108,7 +112,7 @@ res = er.execQuery(q)
 # # and are not published on 2017-02-05 or are about Obama
 qStr = """
 {
-    "include": {
+    "$query": {
         "$or": [
             { "dateStart": "2017-02-05", "dateEnd": "2017-02-05" },
             { "conceptUri": "%s" },
@@ -119,13 +123,13 @@ qStr = """
                     { "categoryUri": "%s" }
                 ]
             }
-        ]
-    },
-    "exclude": {
-        "$or": [
-            { "dateStart": "2017-02-04", "dateEnd": "2017-02-04" },
-            { "conceptUri": "%s" }
-        ]
+        ],
+        "$not": {
+            "$or": [
+                { "dateStart": "2017-02-04", "dateEnd": "2017-02-04" },
+                { "conceptUri": "%s" }
+            ]
+        }
     }
 }
     """ % (trumpUri, politicsUri, merkelUri, businessUri, obamaUri)

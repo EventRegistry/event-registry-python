@@ -1,4 +1,7 @@
-﻿from eventregistry import *
+﻿"""
+examples of how to search for events using different search criteria
+"""
+from eventregistry import *
 
 er = EventRegistry()
 
@@ -8,8 +11,9 @@ print("Concept uri for 'Obama' is " + obamaConceptUri)
 
 # query for events related to Barack Obama. return the matching events sorted from the latest to oldest event
 # use the iterator class and easily iterate over all matching events
+# we specify maxItems to limit the results to maximum 300 results
 q = QueryEventsIter(conceptUri = obamaConceptUri)
-for event in q.execQuery(er, sortBy = "date"):
+for event in q.execQuery(er, sortBy = "date", maxItems = 300):
     print event
 
 
@@ -17,12 +21,12 @@ for event in q.execQuery(er, sortBy = "date"):
 q = QueryEvents()
 # get events related to obama
 q.addConcept(obamaConceptUri)
-# return a list of event URIs
+# return a list of event URIs (i.e. ["eng-234", "deu-234", ...])
 q.setRequestedResult(RequestEventsUriList())
 res = er.execQuery(q)
 
 
-# use the previous query, but change the return details to return 30 events that are most related to Obama
+# use the previous query, but change the return details to return information about 30 events that are most related to Obama
 q.setRequestedResult(RequestEventsInfo(count = 30, sortBy = "rel", sortByAsc = False,
     returnInfo = ReturnInfo(conceptInfo = ConceptInfoFlags(lang = "deu", type = ["person", "wiki"]))))
 res = er.execQuery(q)
@@ -34,7 +38,7 @@ q.setRequestedResult(RequestEventsConceptAggr(conceptCount = 20,
 res = er.execQuery(q)
 
 
-# get the news source URI that matches label "BBC"
+# get the URI for the BBC news source
 bbcSourceUri = er.getNewsSourceUri("BBC")
 print("Source uri for 'BBC' is " + bbcSourceUri)
 
@@ -82,12 +86,36 @@ q.addConcept(er.getConceptUri("Obama"))
 q.setRequestedResult(RequestEventsConceptGraph(conceptCount = 200, linkCount = 500, eventsSampleSize = 2000))
 res = er.execQuery(q)
 
+#
+# examples of complex queries that combine various OR and AND operators
+#
+
+# events that are occured between 2017-02-05 and 2017-02-05 and are not about business
+businessUri = er.getCategoryUri("Business")
+q = QueryEvents.initWithComplexQuery("""
+{
+    "$query": {
+        "dateStart": "2017-02-05", "dateEnd": "2017-02-06",
+        "$not": {
+            "categoryUri": "%s"
+        }
+    }
+}
+""" % (businessUri))
+res = er.execQuery(q)
+
 # example of a complex query containing a combination of OR and AND parameters
 # get events that happened on 2017-02-05 or are about trump or are about politics or are about Merkel and business
 # # and did not happen on 2017-02-05 or are about Obama
+trumpUri = er.getConceptUri("Trump")
+obamaUri = er.getConceptUri("Obama")
+politicsUri = er.getCategoryUri("politics")
+merkelUri = er.getConceptUri("merkel")
+businessUri = er.getCategoryUri("business")
+
 qStr = """
 {
-    "include": {
+    "$query": {
         "$or": [
             { "dateStart": "2017-02-05", "dateEnd": "2017-02-05" },
             { "conceptUri": "%s" },
@@ -98,16 +126,32 @@ qStr = """
                     { "categoryUri": "%s" }
                 ]
             }
-        ]
-    },
-    "exclude": {
-        "$or": [
-            { "dateStart": "2017-02-04", "dateEnd": "2017-02-04" },
-            { "conceptUri": "%s" }
-        ]
+        ],
+        "$not": {
+            "$or": [
+                { "dateStart": "2017-02-04", "dateEnd": "2017-02-04" },
+                { "conceptUri": "%s" }
+            ]
+        }
     }
 }
     """ % (trumpUri, politicsUri, merkelUri, businessUri, obamaUri)
 q1 = QueryEvents.initWithComplexQuery(qStr)
 res = er.execQuery(q1)
 
+cq = ComplexEventQuery(
+    query = CombinedQuery.OR([
+            BaseQuery(dateStart = "2017-02-04", dateEnd = "2017-02-05"),
+            BaseQuery(conceptUri = trumpUri),
+            BaseQuery(categoryUri = politicsUri)
+        ],
+        exclude = CombinedQuery.OR([
+            BaseQuery(dateStart = "2017-02-04", dateEnd = "2017-02-04"),
+            BaseQuery(conceptUri = obamaUri)]
+        )))
+
+retInfo = ReturnInfo(eventInfo = EventInfoFlags(concepts = True, categories = True, stories = True))
+
+iter = QueryEventsIter.initWithComplexQuery(cq)
+for event in iter.execQuery(er, returnInfo =  retInfo, maxItems = 10):
+    print event

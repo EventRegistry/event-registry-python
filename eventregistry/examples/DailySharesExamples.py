@@ -1,4 +1,9 @@
-﻿from eventregistry import *
+﻿"""
+examples to obtain information what are the top fb shared articles on a particular day or
+what are the events, for which the articles were shared the most
+"""
+
+from eventregistry import *
 
 er = EventRegistry()
 
@@ -22,7 +27,6 @@ q.setRequestedResult(RequestArticlesInfo(
         articleInfo = ArticleInfoFlags(socialScore = True))))
 ret = er.execQuery(q)
 print(er.format(ret))
-
 
 
 # get social shared information for resulting events

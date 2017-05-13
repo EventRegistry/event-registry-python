@@ -1,6 +1,7 @@
 ﻿"""
 this is a simple script that makes a query to ER to get the feed of articles that were added
-since the last query.
+in the last minute (from the first to the last second of the minute).
+Note: In order to get all the data you have to make the query each minute
 """
 
 from eventregistry import *

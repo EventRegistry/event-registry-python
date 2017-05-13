@@ -23,6 +23,11 @@ class GetSourceInfo(QueryParamsBase):
         self._setVal("uri", uriOrUriList)
 
 
+    def queryById(self, idOrIdList):
+        """search concepts by id(s)"""
+        self._setVal("id", idOrIdList)
+
+
     def _getPath(self):
         return "/json/source"
 

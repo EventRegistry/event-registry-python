@@ -1,4 +1,10 @@
-﻿from eventregistry import *
+﻿"""
+examples showing how to obtain information how frequently a particular concept is mentioined in
+the news articles, or an article is about a particular category
+"""
+
+
+from eventregistry import *
 
 er = EventRegistry()
 
