@@ -2,10 +2,10 @@
 
 This library contains classes that allow one to easily access the event and article information from Event Registry (http://eventregistry.org).
 
-The documentation on how to use the library is available at the project's wiki page: 
+The documentation on how to use the library is available at the project's wiki page:
 
 ##### https://github.com/EventRegistry/event-registry-python/wiki
 
-Examples of use are in the [Examples folder in the repository](https://github.com/EventRegistry/event-registry-python/tree/master/eventregistry/examples). 
+Examples of use are in the [Examples folder in the repository](https://github.com/EventRegistry/event-registry-python/tree/master/eventregistry/examples).
 
-Changes introduced in the different versions of the module are described on the [Releases](https://github.com/EventRegistry/event-registry-python/releases) page.
+Changes introduced in the different versions of the module are described in the [CHANGELOG.md](https://github.com/EventRegistry/event-registry-python/blob/master/CHANGELOG.md) as well as on the [Releases](https://github.com/EventRegistry/event-registry-python/releases) page.
