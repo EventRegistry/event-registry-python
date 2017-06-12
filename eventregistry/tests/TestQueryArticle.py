@@ -14,7 +14,7 @@ class TestQueryArticle(DataValidator):
 
     def testArticleList(self):
         q = self.createQuery()
-        q.addRequestedResult(RequestArticleInfo(returnInfo = self.returnInfo))
+        q.setRequestedResult(RequestArticleInfo(returnInfo = self.returnInfo))
         res = self.er.execQuery(q)
 
         self.assertEqual(len(res), 10, "Expected to get a list of 10 articles")

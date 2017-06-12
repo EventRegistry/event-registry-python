@@ -10,9 +10,9 @@ class TestInfo(DataValidator):
             sourceInfo = SourceInfoFlags(title = True,
                                          description = True,
                                          location = True,
-                                         importance = True,
+                                         ranking = True,
                                          articleCount = True,
-                                         tags = True,
+                                         sourceGroups = True,
                                          details = True)))
         res = self.er.execQuery(q)
         self.assertEqual(len(res), len(sourceUriList), "Expected different number of sources")
@@ -21,10 +21,10 @@ class TestInfo(DataValidator):
             self.assertIsNotNone(item.get("uri"), "Source uri is missing")
             self.assertIsNotNone(item.get("title"), "Source title is missing")
             self.assertIsNotNone(item.get("description"), "Source description is missing")
-            self.assertIsNotNone(item.get("importance"), "Source importance is missing")
+            self.assertIsNotNone(item.get("ranking"), "Source ranking is missing")
             self.assertIsNotNone(item.get("articleCount"), "Source articleCount is missing")
-            self.assertIsNotNone(item.get("tags"), "Source tags is missing")
-            self.assertIsNotNone(item.get("details"), "Source tags is missing")
+            self.assertIsNotNone(item.get("sourceGroups"), "Source sourceGroups is missing")
+            self.assertIsNotNone(item.get("details"), "Source details is missing")
 
 
     def test_conceptsByUri(self):

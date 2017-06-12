@@ -13,8 +13,7 @@ class TestQueryEvents(DataValidator):
 
 
     def createQuery(self):
-        q = QueryEvents()
-        q.addConcept(self.er.getConceptUri("Obama"))
+        q = QueryEvents(conceptUri = self.er.getConceptUri("Obama"))
         return q
 
 
@@ -34,8 +33,7 @@ class TestQueryEvents(DataValidator):
         res = self.er.execQuery(q)
         self.validateGeneralEventList(res)
 
-        q2 = QueryEvents()
-        q2.addKeyword("germany")
+        q2 = QueryEvents(keywords = "germany")
         q2.setRequestedResult(RequestEventsInfo(count = 10, returnInfo = self.returnInfo))
         res2 = self.er.execQuery(q2)
         self.validateGeneralEventList(res2)
@@ -61,8 +59,7 @@ class TestQueryEvents(DataValidator):
         q = QueryEvents(categoryUri = self.er.getCategoryUri("disa"))
         res = self.er.execQuery(q)
 
-        q2 = QueryEvents()
-        q2.addCategory(self.er.getCategoryUri("disa"))
+        q2 = QueryEvents(categoryUri = self.er.getCategoryUri("disa"))
         res2 = self.er.execQuery(q2)
 
         self.ensureSameResults(res, res2, '[events][].totalResults')
@@ -85,8 +82,7 @@ class TestQueryEvents(DataValidator):
 
 
     def testSearchByKeyword(self):
-        q = QueryEvents()
-        q.addKeyword("car")  # get events containing word car
+        q = QueryEvents(keywords = "car")  # get events containing word car
         q.addRequestedResult(RequestEventsInfo(page = 1, count = 10, sortBy = "date", sortByAsc = False,
             returnInfo = ReturnInfo(
                 conceptInfo = ConceptInfoFlags(type = "org"),
@@ -120,8 +116,7 @@ class TestQueryEvents(DataValidator):
 
 
     def testSearchByLocation(self):
-        q = QueryEvents()
-        q.addLocation(self.er.getLocationUri("Washington"))
+        q = QueryEvents(locationUri = self.er.getLocationUri("Washington"))
         q.addRequestedResult(RequestEventsConceptTrends(conceptCount = 40, returnInfo = ReturnInfo(
                 conceptInfo = ConceptInfoFlags(type = "person"))))
         q.addRequestedResult(RequestEventsCategoryAggr())
@@ -135,9 +130,11 @@ class TestQueryEvents(DataValidator):
         res = self.er.execQuery(q)
         self.validateGeneralEventList(res)
 
-        q2 = QueryEvents(keywords="germany", lang = ["eng", "deu"])
-        q2.addConcept(self.er.getConceptUri("Merkel"))
-        q2.addCategory(self.er.getCategoryUri("Business"))
+        q2 = QueryEvents(
+            keywords="germany",
+            lang = ["eng", "deu"],
+            conceptUri = self.er.getConceptUri("Merkel"),
+            categoryUri = self.er.getCategoryUri("Business"))
         q2.setRequestedResult(RequestEventsInfo(count = 10, returnInfo = self.returnInfo))
         res2 = self.er.execQuery(q2)
         self.validateGeneralEventList(res2)
@@ -238,8 +235,7 @@ class TestQueryEvents(DataValidator):
 
 
     def testSearchBySource(self):
-        q = QueryEvents()
-        q.addNewsSource(self.er.getNewsSourceUri("bbc"))             # and have been reported by BBC
+        q = QueryEvents(sourceUri = self.er.getNewsSourceUri("bbc"))             # and have been reported by BBC
         q.addRequestedResult(RequestEventsUriList())            # return uris of all events
         q.addRequestedResult(RequestEventsInfo(page = 1, count = 100, sortBy = "size", sortByAsc = True,
             returnInfo = ReturnInfo(

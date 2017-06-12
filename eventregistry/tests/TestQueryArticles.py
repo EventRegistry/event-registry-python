@@ -5,8 +5,7 @@ from DataValidator import DataValidator
 class TestQueryArticles(DataValidator):
 
     def createQuery(self):
-        q = QueryArticles()
-        q.addConcept(self.er.getConceptUri("Obama"))
+        q = QueryArticles(conceptUri = self.er.getConceptUri("Obama"))
         return q
 
     def validateGeneralArticleList(self, res):
@@ -19,7 +18,7 @@ class TestQueryArticles(DataValidator):
 
     def testArticleList(self):
         q = self.createQuery()
-        q.addRequestedResult(RequestArticlesInfo(count = 30,  returnInfo = self.returnInfo))
+        q.setRequestedResult(RequestArticlesInfo(count = 30,  returnInfo = self.returnInfo))
         res = self.er.execQuery(q)
         self.validateGeneralArticleList(res)
 
@@ -29,13 +28,12 @@ class TestQueryArticles(DataValidator):
 
     def testArticleListWithKeywordSearch(self):
         q = QueryArticles(keywords = "iphone")
-        q.addRequestedResult(RequestArticlesInfo(count = 30,  returnInfo = self.returnInfo))
+        q.setRequestedResult(RequestArticlesInfo(count = 30,  returnInfo = self.returnInfo))
         res = self.er.execQuery(q)
         self.validateGeneralArticleList(res)
 
-        q2 = QueryArticles()
-        q2.addKeyword("iphone")
-        q2.addRequestedResult(RequestArticlesInfo(count = 30,  returnInfo = self.returnInfo))
+        q2 = QueryArticles(keywords = "iphone")
+        q2.setRequestedResult(RequestArticlesInfo(count = 30,  returnInfo = self.returnInfo))
         res2 = self.er.execQuery(q2)
         self.validateGeneralArticleList(res2)
 
@@ -49,8 +47,7 @@ class TestQueryArticles(DataValidator):
         res = self.er.execQuery(q)
         self.validateGeneralArticleList(res)
 
-        q2 = QueryArticles()
-        q2.addNewsSource(bbcUri)
+        q2 = QueryArticles(sourceUri = bbcUri)
         q2.setRequestedResult(RequestArticlesInfo(count = 30,  returnInfo = self.returnInfo))
         res2 = self.er.execQuery(q2)
         self.validateGeneralArticleList(res2)
@@ -65,8 +62,7 @@ class TestQueryArticles(DataValidator):
         res = self.er.execQuery(q)
         self.validateGeneralArticleList(res)
 
-        q2 = QueryArticles()
-        q2.addCategory(disasterUri)
+        q2 = QueryArticles(categoryUri = disasterUri)
         q2.setRequestedResult(RequestArticlesInfo(count = 30,  returnInfo = self.returnInfo))
         res2 = self.er.execQuery(q2)
         self.validateGeneralArticleList(res)
@@ -90,8 +86,7 @@ class TestQueryArticles(DataValidator):
             return
         self.validateGeneralArticleList(res)
 
-        q2 = QueryArticles()
-        q2.addLocation(location)
+        q2 = QueryArticles(locationUri = location)
         q2.setRequestedResult(RequestArticlesInfo(count = 30,  returnInfo = self.returnInfo))
         res2 = self.er.execQuery(q2)
         self.validateGeneralArticleList(res2)
@@ -105,9 +100,11 @@ class TestQueryArticles(DataValidator):
         res = self.er.execQuery(q)
         self.validateGeneralArticleList(res)
 
-        q2 = QueryArticles(keywords="germany", lang = ["eng", "deu"])
-        q2.addConcept(self.er.getConceptUri("Merkel"))
-        q2.addCategory(self.er.getCategoryUri("Business"))
+        q2 = QueryArticles(
+            keywords="germany",
+            lang = ["eng", "deu"],
+            conceptUri = self.er.getConceptUri("Merkel"),
+            categoryUri = self.er.getCategoryUri("Business"))
         q2.setRequestedResult(RequestArticlesInfo(count = 30, returnInfo = self.returnInfo))
         res2 = self.er.execQuery(q2)
         self.validateGeneralArticleList(res2)
@@ -120,7 +117,7 @@ class TestQueryArticles(DataValidator):
 
     def testConceptTrends(self):
         q = self.createQuery()
-        q.addRequestedResult(RequestArticlesConceptTrends(count = 5, returnInfo = self.returnInfo))
+        q.setRequestedResult(RequestArticlesConceptTrends(count = 5, returnInfo = self.returnInfo))
         res = self.er.execQuery(q)
 
         self.assertIsNotNone(res.get("conceptTrends"), "Expected to get 'conceptTrends'")
@@ -140,7 +137,7 @@ class TestQueryArticles(DataValidator):
 
     def testConceptAggr(self):
         q = self.createQuery()
-        q.addRequestedResult(RequestArticlesConceptAggr(conceptCount = 50, returnInfo = self.returnInfo))
+        q.setRequestedResult(RequestArticlesConceptAggr(conceptCount = 50, returnInfo = self.returnInfo))
         res = self.er.execQuery(q)
 
         self.assertIsNotNone(res.get("conceptAggr"), "Expected to get 'conceptAggr'")
@@ -152,7 +149,7 @@ class TestQueryArticles(DataValidator):
 
     def testKeywordAggr(self):
         q = self.createQuery()
-        q.addRequestedResult(RequestArticlesKeywordAggr())
+        q.setRequestedResult(RequestArticlesKeywordAggr())
         res = self.er.execQuery(q)
 
         self.assertIsNotNone(res.get("keywordAggr"), "Expected to get 'keywordAggr'")
@@ -165,7 +162,7 @@ class TestQueryArticles(DataValidator):
 
     def testCategoryAggr(self):
         q = self.createQuery()
-        q.addRequestedResult(RequestArticlesCategoryAggr(returnInfo = self.returnInfo))
+        q.setRequestedResult(RequestArticlesCategoryAggr(returnInfo = self.returnInfo))
         res = self.er.execQuery(q)
 
         self.assertIsNotNone(res.get("categoryAggr"), "Expected to get 'categoryAggr'")
@@ -177,7 +174,7 @@ class TestQueryArticles(DataValidator):
 
     def testConceptMatrix(self):
         q = self.createQuery()
-        q.addRequestedResult(RequestArticlesConceptMatrix(conceptCount = 20, returnInfo = self.returnInfo))
+        q.setRequestedResult(RequestArticlesConceptMatrix(conceptCount = 20, returnInfo = self.returnInfo))
         res = self.er.execQuery(q)
 
         self.assertIsNotNone(res.get("conceptMatrix"), "Expected to get 'conceptMatrix'")
@@ -192,7 +189,7 @@ class TestQueryArticles(DataValidator):
 
     def testSourceAggr(self):
         q = self.createQuery()
-        q.addRequestedResult(RequestArticlesSourceAggr(returnInfo = self.returnInfo))
+        q.setRequestedResult(RequestArticlesSourceAggr(returnInfo = self.returnInfo))
         res = self.er.execQuery(q)
 
         self.assertIsNotNone(res.get("sourceAggr"), "Expected to get 'sourceAggr'")

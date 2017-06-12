@@ -5,12 +5,14 @@ from eventregistry import *
 
 er = EventRegistry()
 
-# search for the phrase "Barack Obama" - both words have to appear together
-q = QueryArticles(keywords = "Barack Obama")
-res = er.execQuery(q)
+## search for the phrase "Barack Obama" - both words have to appear together
+#q = QueryArticles(keywords = "Barack Obama")
+#res = er.execQuery(q)
 
 
-# search for articles that mention the two words - maybe together, maybe apart
+# search for articles that mention both of the two words - maybe together, maybe apart
+# this form of specifying multiple keywords, concepts, etc is now depricated. When you have a list,
+# use it with QueryItems.AND() or QueryItems.OR() to explicitly specify how the query should be processed
 q = QueryArticles(keywords = ["Barack", "Obama"])
 # set some custom information that should be returned as a result of the query
 q.setRequestedResult(RequestArticlesInfo(count = 30,
@@ -19,18 +21,35 @@ q.setRequestedResult(RequestArticlesInfo(count = 30,
 res = er.execQuery(q)
 
 
-# search for articles that mention the phrase "Barack Obama" and Trump - the phrase and the word are not necessarily next to each other
-q = QueryArticles(keywords = ["Barack Obama", "Trump"])
+# search for articles that mention both of the two words - maybe together, maybe apart
+# the correct way of specifying multiple keywords - using QueryItems.AND or .OR classes
+q = QueryArticles(keywords = QueryItems.AND(["Barack", "Obama"]))
+# set some custom information that should be returned as a result of the query
 q.setRequestedResult(RequestArticlesInfo(count = 30,
     returnInfo = ReturnInfo(
         articleInfo = ArticleInfoFlags(duplicateList = True, concepts = True, categories = True, location = True, image = True))))
 res = er.execQuery(q)
 
 
-# query articles using the iterator class
+# search for articles that mention the phrase "Barack Obama" or Trump
+q = QueryArticles(keywords = QueryItems.OR(["Barack Obama", "Trump"]))
+q.setRequestedResult(RequestArticlesInfo(count = 30,
+    returnInfo = ReturnInfo(
+        articleInfo = ArticleInfoFlags(duplicateList = True, concepts = True, categories = True, location = True, image = True))))
+res = er.execQuery(q)
+
+
+#
+# USE OF ITERATOR
+# example of using the QueryArticlesIter to easily iterate through all results matching the search
+#
+
+# Search for articles mentioning George Clooney that were reported from sources from Germany or sources from Los Angeles
 # iterator class simplifies retrieving and listing the list of matching articles
-# by specifying maxItems we say that we want to retrieve maximum 500 articles
-q = QueryArticlesIter(conceptUri = er.getConceptUri("George Clooney"))
+# by specifying maxItems we say that we want to retrieve maximum 500 articles (without specifying the parameter we would iterate through all results)
+q = QueryArticlesIter(
+    conceptUri = er.getConceptUri("George Clooney"),
+    sourceLocationUri = QueryItems.OR([er.getLocationUri("Germany"), er.getLocationUri("Los Angeles")]))
 for art in q.execQuery(er, sortBy = "date", maxItems = 500):
     print art
 
@@ -49,13 +68,14 @@ while True:
     page += 1
 
 
-q = QueryArticles()
 # articles published between 2016-03-22 and 2016-03-23
-q.setDateLimit(datetime.date(2016, 3, 22), datetime.date(2016, 3, 23))
-# related to Brussels
-q.addConcept(er.getConceptUri("Brussels"))
+# mentioning Brussels
 # published by New York Times
-q.addNewsSource(er.getNewsSourceUri("New York Times"))
+q = QueryArticles(
+    dateStart = datetime.date(2016, 3, 22), dateEnd = datetime.date(2016, 3, 23),
+    conceptUri = er.getConceptUri("Brussels"),
+    sourceUri = er.getNewsSourceUri("New York Times"))
+
 # return details about the articles, including the concepts, categories, location and image
 q.setRequestedResult(RequestArticlesInfo(count = 30,
     returnInfo = ReturnInfo(
@@ -63,15 +83,27 @@ q.setRequestedResult(RequestArticlesInfo(count = 30,
 # execute the query
 res = er.execQuery(q)
 
+#
+# RECENT ACTIVITY
+# example of querying most recently added content related to a particular thing
+#
 
 # get latest articles about Obama
-q = QueryArticles()
-q.addConcept(er.getConceptUri("Obama"))
+q = QueryArticles(conceptUri = er.getConceptUri("Obama"))
 q.setRequestedResult(RequestArticlesRecentActivity())     # get most recently added articles related to obama
+res = er.execQuery(q)
+
+# assume some time has passed
+# time.sleep(60)
+
+# updated the requested result type to return only information that was published after the time that was returned in the last API call
+q.setRequestedResult(RequestArticlesRecentActivity(updatesAfterTm = res.get("recentActivity", {}).get("newestUpdate", None)))
+# get only the matching articles that were added since the last call
 res = er.execQuery(q)
 
 
 #
+# COMPLEX QUERIES
 # examples of complex queries that combine various OR and AND operators
 #
 

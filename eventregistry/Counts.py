@@ -15,7 +15,7 @@ class CountsBase(QueryParamsBase):
 
 class GetCounts(CountsBase):
     def __init__(self,
-                 uriOrUriList = None,
+                 uriOrUriList,
                  source = "news",
                  type = "concept",
                  startDate = None,
@@ -62,24 +62,7 @@ class GetCounts(CountsBase):
         self._setVal("source", source)
         self._setVal("type", type)
         self._update(returnInfo.getParams())
-        if uriOrUriList != None:
-            self.queryByUri(uriOrUriList)
-        if startDate != None or endDate != None:
-            self.setDateRange(startDate, endDate)
-
-
-    def queryById(self, idOrIdList):
-        """search concepts by id(s)"""
-        self._setVal("id", idOrIdList)
-
-
-    def queryByUri(self, uriOrUriList):
-        """search concepts by uri(s)"""
         self._setVal("uri", uriOrUriList)
-
-
-    def setDateRange(self, startDate, endDate):
-        """set the starting and ending dates for the returned counts"""
         if startDate != None:
             self._setDateVal("startDate", startDate)
         if endDate != None:
@@ -89,7 +72,7 @@ class GetCounts(CountsBase):
 
 class GetCountsEx(CountsBase):
     def __init__(self,
-                 uriOrUriList = None,
+                 uriOrUriList,
                  source = "news",
                  type = "concept",
                  startDate = None,
@@ -138,24 +121,7 @@ class GetCountsEx(CountsBase):
         self._setVal("source", source)
         self._setVal("type", type)
         self._update(returnInfo.getParams())
-        if uriOrUriList != None:
-            self.queryByUri(uriOrUriList)
-        if startDate != None or endDate != None:
-            self.setDateRange(startDate, endDate)
-
-
-    def queryById(self, idOrIdList):
-        """search concepts by id(s)"""
-        self._setVal("id", idOrIdList)
-
-
-    def queryByUri(self, uriOrUriList):
-        """search concepts by uri(s)"""
         self._setVal("uri", uriOrUriList)
-
-
-    def setDateRange(self, startDate, endDate):
-        """set the starting and ending dates for the returned counts"""
         if startDate != None:
             self._setDateVal("startDate", startDate)
         if endDate != None:

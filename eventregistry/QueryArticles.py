@@ -6,24 +6,27 @@ from eventregistry.Query import *
 
 class QueryArticles(Query):
     def __init__(self,
-                 keywords = "",
-                 conceptUri = [],
-                 sourceUri = [],
-                 locationUri = [],
-                 categoryUri = [],
-                 lang = [],
-                 dateStart = "",
-                 dateEnd = "",
-                 dateMentionStart = "",
-                 dateMentionEnd = "",
-                 ignoreKeywords = "",
-                 ignoreConceptUri = [],
-                 ignoreLocationUri = [],
-                 ignoreSourceUri = [],
-                 ignoreCategoryUri = [],
-                 ignoreLang = [],
+                 keywords = None,
+                 conceptUri = None,
+                 categoryUri = None,
+                 sourceUri = None,
+                 sourceLocationUri = None,
+                 sourceGroupUri = None,
+                 locationUri = None,
+                 lang = None,
+                 dateStart = None,
+                 dateEnd = None,
+                 dateMentionStart = None,
+                 dateMentionEnd = None,
+                 ignoreKeywords = None,
+                 ignoreConceptUri = None,
+                 ignoreCategoryUri = None,
+                 ignoreSourceUri = None,
+                 ignoreSourceLocationUri = None,
+                 ignoreSourceGroupUri = None,
+                 ignoreLocationUri = None,
+                 ignoreLang = None,
                  categoryIncludeSub = True,
-                 conceptOper = "AND",
                  ignoreCategoryIncludeSub = True,
                  isDuplicateFilter = "keepAll",
                  hasDuplicateFilter = "keepAll",
@@ -34,22 +37,29 @@ class QueryArticles(Query):
         The resulting articles have to match all specified conditions. If a parameter value equals "" or [], then it is ignored.
         In order for query to be valid, it has to have at least one positive condition (condition that does not start with ignore*).
 
-        @param keywords: find articles that mention all the specified keywords.
-            In case of multiple keywords, separate them with space. Example: "apple iphone".
+        @param keywords: find articles that mention the specified keywords.
+            A single keyword/phrase can be provided as a string, multiple keywords/phrases can be provided as a list of strings.
+            Use QueryItems.AND() if *all* provided keywords/phrases should be mentioned, or QueryItems.OR() if *any* of the keywords/phrases should be mentioned.
+            or QueryItems.OR() to specify a list of keywords where any of the keywords have to appear
         @param conceptUri: find articles where the concept with concept uri is mentioned.
             A single concept uri can be provided as a string, multiple concept uris can be provided as a list of strings.
-            If multiple concept uris are provided, resulting articles have to mention *all* of them.
+            Use QueryItems.AND() if *all* provided concepts should be mentioned, or QueryItems.OR() if *any* of the concepts should be mentioned.
             To obtain a concept uri using a concept label use EventRegistry.getConceptUri().
-        @param sourceUri: find articles that were written by a news source sourceUri.
-            If multiple sources are provided, resulting articles have to be written by *any* of the provided news sources.
-            Source uri for a given news source name can be obtained using EventRegistry.getNewsSourceUri().
-        @param locationUri: find articles that describe an event that occured at a particular location.
-            Location uri can either be a city or a country.
-            If multiple locations are provided, resulting articles have to match *any* of the locations.
-            Location uri for a given name can be obtained using EventRegistry.getLocationUri().
         @param categoryUri: find articles that are assigned into a particular category.
-            If multiple categories are provided, resulting articles have to be assigned to *any* of the categories.
+            A single category can be provided as a string, while multiple categories can be provided as a list in QueryItems.AND() or QueryItems.OR().
             A category uri can be obtained from a category name using EventRegistry.getCategoryUri().
+        @param sourceUri: find articles that were written by a news source sourceUri.
+            If multiple sources should be considered use QueryItems.OR() to provide the list of sources.
+            Source uri for a given news source name can be obtained using EventRegistry.getNewsSourceUri().
+        @param sourceLocationUri: find articles that were written by news sources located in the given geographic location.
+            If multiple source locations are provided, then put them into a list inside QueryItems.OR()
+            Location uri can either be a city or a country. Location uri for a given name can be obtained using EventRegistry.getLocationUri().
+        @param sourceGroupUri: find articles that were written by news sources that are assigned to the specified source group.
+            If multiple source groups are provided, then put them into a list inside QueryItems.OR()
+            Source group uri for a given name can be obtained using EventRegistry.getSourceGroupUri().
+        @param locationUri: find articles that describe something that occured at a particular location.
+            If value can be a string or a list of strings provided in QueryItems.OR().
+            Location uri can either be a city or a country. Location uri for a given name can be obtained using EventRegistry.getLocationUri().
         @param lang: find articles that are written in the specified language.
             If more than one language is specified, resulting articles has to be written in *any* of the languages.
         @param dateStart: find articles that were written on or after dateStart. Date should be provided in YYYY-MM-DD format, datetime.time or datetime.datetime.
@@ -58,14 +68,14 @@ class QueryArticles(Query):
         @param dateMentionEnd: find articles that explicitly mention a date that is lower or equal to dateMentionEnd.
         @param ignoreKeywords: ignore articles that mention all provided keywords
         @param ignoreConceptUri: ignore articles that mention all provided concepts
-        @param ignoreLocationUri: ignore articles that occured in any of the provided locations. A location can be a city or a place
+        @param ignoreCategoryUri: ignore articles that are assigned to a particular category
         @param ignoreSourceUri: ignore articles that have been written by *any* of the specified news sources
+        @param ignoreSourceLocationUri: ignore articles that have been written by sources located at *any* of the specified locations
+        @param ignoreSourceGroupUri: ignore articles that have been written by sources in *any* of the specified source groups
+        @param ignoreLocationUri: ignore articles that occured in any of the provided locations. A location can be a city or a place
         @param ignoreLang: ignore articles that are written in *any* of the provided languages
         @param categoryIncludeSub: when a category is specified using categoryUri, should also all subcategories be included?
         @param ignoreCategoryIncludeSub: when a category is specified using ignoreCategoryUri, should also all subcategories be included?
-        @param conceptOper: Boolean operator to use in cases when multiple concepts are specified. Possible values are:
-                "AND" if all concepts should be mentioned in the resulting articles
-                "OR" if any of the concept should be mentioned in the resulting articles
         @param isDuplicateFilter: some articles can be duplicates of other articles. What should be done with them. Possible values are:
                 "skipDuplicates" (skip the resulting articles that are duplicates of other articles)
                 "keepOnlyDuplicates" (return only the duplicate articles)
@@ -84,36 +94,44 @@ class QueryArticles(Query):
         super(QueryArticles, self).__init__()
         self._setVal("action", "getArticles")
 
-        self._setValIfNotDefault("keywords", keywords, "")          # e.g. "bla bla"
-        self._setValIfNotDefault("conceptUri", conceptUri, [])      # a single concept uri or a list (e.g. ["http://en.wikipedia.org/wiki/Barack_Obama"])
-        self._setValIfNotDefault("sourceUri", sourceUri, [])        # a single source uri or a list (e.g. ["www.bbc.co.uk"])
-        self._setValIfNotDefault("locationUri", locationUri, [])    # a single location uri or a list (e.g. ["http://en.wikipedia.org/wiki/Ljubljana"])
-        self._setValIfNotDefault("categoryUri", categoryUri, [])    # a single category uri or a list (e.g. ["http://www.dmoz.org/Science/Astronomy"])
+        self._setQueryArrVal(keywords, "keyword", "keywordOper", "and")
+        self._setQueryArrVal(conceptUri, "conceptUri", "conceptOper", "and")
+        self._setQueryArrVal(categoryUri, "categoryUri", "categoryOper", "or")
+        self._setQueryArrVal(sourceUri, "sourceUri", None, "or")
+        self._setQueryArrVal(sourceLocationUri, "sourceLocationUri", None, "or")
+        self._setQueryArrVal(sourceGroupUri, "sourceGroupUri", None, "or")
+        self._setQueryArrVal(locationUri, "locationUri", None, "or")        # location such as "http://en.wikipedia.org/wiki/Ljubljana"
+
+        self._setQueryArrVal(lang, "lang", None, "or")                      # a single lang or list (possible: eng, deu, spa, zho, slv)
+
         self._setValIfNotDefault("categoryIncludeSub", categoryIncludeSub, True)    # also include the subcategories for the given categories
-        self._setValIfNotDefault("lang", lang, [])                  # a single lang or list (possible: eng, deu, spa, zho, slv)
 
         # starting date of the published articles (e.g. 2014-05-02)
-        if (dateStart != ""):
+        if dateStart != None:
             self._setDateVal("dateStart", dateStart)
         # ending date of the published articles (e.g. 2014-05-02)
-        if (dateEnd != ""):
+        if dateEnd != None:
             self._setDateVal("dateEnd", dateEnd)
 
         # first valid mentioned date detected in articles (e.g. 2014-05-02)
-        if (dateMentionStart != ""):
+        if dateMentionStart != None:
             self._setDateVal("dateMentionStart", dateMentionStart)
         # last valid mentioned date detected in articles (e.g. 2014-05-02)
-        if (dateMentionEnd != ""):
+        if dateMentionEnd != None:
             self._setDateVal("dateMentionEnd", dateMentionEnd)
 
-        self._setValIfNotDefault("ignoreKeywords", ignoreKeywords, "")
-        self._setValIfNotDefault("ignoreConceptUri", ignoreConceptUri, [])
-        self._setValIfNotDefault("ignoreLang", ignoreLang, [])
-        self._setValIfNotDefault("ignoreLocationUri", ignoreLocationUri, [])
-        self._setValIfNotDefault("ignoreSourceUri", ignoreSourceUri, [])
-        self._setValIfNotDefault("ignoreCategoryUri", ignoreCategoryUri, [])
+        # for the negative conditions, only the OR is a valid operator type
+        self._setQueryArrVal(ignoreKeywords, "ignoreKeywords", None, "or")
+        self._setQueryArrVal(ignoreConceptUri, "ignoreConceptUri", None, "or")
+        self._setQueryArrVal(ignoreCategoryUri, "ignoreCategoryUri", None, "or")
+        self._setQueryArrVal(ignoreSourceUri, "ignoreSourceUri", None, "or")
+        self._setQueryArrVal(ignoreSourceLocationUri, "ignoreSourceLocationUri", None, "or")
+        self._setQueryArrVal(ignoreSourceGroupUri, "ignoreSourceGroupUri", None, "or")
+        self._setQueryArrVal(ignoreLocationUri, "ignoreLocationUri", None, "or")
+
+        self._setQueryArrVal(ignoreLang, "ignoreLang", None, "or")
+
         self._setValIfNotDefault("ignoreCategoryIncludeSub", ignoreCategoryIncludeSub, True)
-        self._setValIfNotDefault("conceptOper", conceptOper, "AND")
 
         self._setValIfNotDefault("isDuplicateFilter", isDuplicateFilter, "keepAll")
         self._setValIfNotDefault("hasDuplicateFilter", hasDuplicateFilter, "keepAll")
@@ -127,55 +145,10 @@ class QueryArticles(Query):
         return "/json/article"
 
 
-    def addConcept(self, conceptUri):
-        """add concept to the search"""
-        self._addArrayVal("conceptUri", conceptUri)
-
-
-    def addLocation(self, locationUri):
-        """add a location to the search"""
-        self._addArrayVal("locationUri", locationUri)
-
-
-    def addCategory(self, categoryUri):
-        """add a category to the search"""
-        self._addArrayVal("categoryUri", categoryUri)
-
-
-    def addNewsSource(self, newsSourceUri):
-        """add a news source to the search"""
-        self._addArrayVal("sourceUri", newsSourceUri)
-
-
-    def addKeyword(self, keyword):
-        """add a keyword or a phrase to the search"""
-        self.queryParams["keywords"] = self.queryParams.pop("keywords", "") + " " + keyword
-
-
-    def setDateLimit(self, startDate, endDate):
-        """
-        add a date restriction to the search
-        @param startDate: instance of a string, date or datetime
-        @param endDate: instance of a string, date or datetime
-        """
-        self._setDateVal("dateStart", startDate)
-        self._setDateVal("dateEnd", endDate)
-
-
-    def setDateMentionLimit(self, startDate, endDate):
-        """
-        require date mentiones to the search
-        @param startDate: instance of a string, date or datetime
-        @param endDate: instance of a string, date or datetime
-        """
-        self._setDateVal("dateMentionStart", startDate)
-        self._setDateVal("dateMentionEnd", endDate)
-
-
     def addRequestedResult(self, requestArticles):
         """
         Add a result type that you would like to be returned.
-        In one QueryArticles you can ask for multiple result types.
+        In case you are a subscribed customer you can ask for multiple result types in a single query (for free users, only a single result type can be required per call).
         Result types can be the classes that extend RequestArticles base class (see classes below).
         """
         assert isinstance(requestArticles, RequestArticles), "QueryArticles class can only accept result requests that are of type RequestArticles"
@@ -185,16 +158,11 @@ class QueryArticles(Query):
 
     def setRequestedResult(self, requestArticles):
         """
-        Set the single result type that you would like to be returned. If some other request type was previously set, it will be overwritten.
+        Set the single result type that you would like to be returned. Any previously set result types will be overwritten.
         Result types can be the classes that extend RequestArticles base class (see classes below).
         """
         assert isinstance(requestArticles, RequestArticles), "QueryArticles class can only accept result requests that are of type RequestArticles"
         self.resultTypeList = [requestArticles]
-
-
-    def setArticleUriList(self, uriList):
-        """set a custom list of article uris. the results will be then computed on this list - no query will be done"""
-        self.queryParams = { "action": "getArticles", "articleUri": uriList }
 
 
     @staticmethod
@@ -203,7 +171,8 @@ class QueryArticles(Query):
         instead of making a query, provide a list of article URIs manually, and then produce the desired results on top of them
         """
         q = QueryArticles()
-        q.setArticleUriList(uriList)
+        assert isinstance(uriList, list), "uriList has to be a list of strings that represent article uris"
+        q.queryParams = { "action": "getArticles", "articleUri": uriList }
         return q
 
 
@@ -255,7 +224,7 @@ class QueryArticlesIter(QueryArticles, six.Iterator):
                   maxItems = -1):
         """
         @param eventRegistry: instance of EventRegistry class. used to query new article list and uris
-        @param sortBy: how are articles sorted. Options: id (internal id), date (publishing date), cosSim (closeness to the event centroid), fq (relevance to the query), socialScore (total shares on social media)
+        @param sortBy: how are articles sorted. Options: id (internal id), date (publishing date), cosSim (closeness to the event centroid), rel (relevance to the query), sourceImportance (manually curated score of source importance - high value, high importance), sourceImportanceRank (reverse of sourceImportance), sourceAlexaGlobalRank (global rank of the news source), sourceAlexaCountryRank (country rank of the news source), socialScore (total shares on social media), facebookShares (shares on Facebook only)
         @param sortByAsc: should the results be sorted in ascending order (True) or descending (False)
         @param returnInfo: what details should be included in the returned information
         @param articleBatchSize: number of articles to download at once (we are not downloading article by article) (at most 200)
@@ -281,9 +250,19 @@ class QueryArticlesIter(QueryArticles, six.Iterator):
 
     @staticmethod
     def initWithComplexQuery(query):
-        assert isinstance(query, ComplexArticleQuery), "The instance of query parameter should be of instance ComplexArticleQuery"
         q = QueryArticlesIter()
-        q._setVal("query", json.dumps(query.getQuery()))
+        # provided an instance of ComplexArticleQuery
+        if isinstance(query, ComplexArticleQuery):
+            q._setVal("query", json.dumps(query.getQuery()))
+        # provided query as a string containing the json object
+        elif isinstance(query, six.string_types):
+            foo = json.loads(query)
+            q._setVal("query", query)
+        # provided query as a python dict
+        elif isinstance(query, dict):
+            q._setVal("query", json.dumps(query))
+        else:
+            assert False, "The instance of query parameter was not a ComplexArticleQuery, a string or a python dict"
         return q
 
 
@@ -366,7 +345,7 @@ class RequestArticlesInfo(RequestArticles):
         return article details for resulting articles
         @param page: page of the articles to return
         @param count: number of articles to return for the given page (at most 200)
-        @param sortBy: how are articles sorted. Options: id (internal id), date (publishing date), cosSim (closeness to the event centroid), fq (relevance to the query), socialScore (total shares on social media)
+        @param sortBy: how are articles sorted. Options: id (internal id), date (publishing date), cosSim (closeness to the event centroid), rel (relevance to the query), sourceImportance (manually curated score of source importance - high value, high importance), sourceImportanceRank (reverse of sourceImportance), sourceAlexaGlobalRank (global rank of the news source), sourceAlexaCountryRank (country rank of the news source), socialScore (total shares on social media), facebookShares (shares on Facebook only)
         @param sortByAsc: should the results be sorted in ascending order (True) or descending (False)
         @param returnInfo: what details should be included in the returned information
         """
@@ -405,7 +384,7 @@ class RequestArticlesUriList(RequestArticles):
         return a list of article uris
         @param page: page of the results (1, 2, ...)
         @param count: number of items to return in a single query (at most 50000)
-        @param sortBy: how are articles sorted. Options: id (internal id), date (publishing date), cosSim (closeness to the event centroid), fq (relevance to the query), socialScore (total shares on social media)
+        @param sortBy: how are articles sorted. Options: id (internal id), date (publishing date), cosSim (closeness to the event centroid), rel (relevance to the query), sourceImportance (manually curated score of source importance - high value, high importance), sourceImportanceRank (reverse of sourceImportance), sourceAlexaGlobalRank (global rank of the news source), sourceAlexaCountryRank (country rank of the news source), socialScore (total shares on social media), facebookShares (shares on Facebook only)
         @param sortByAsc: should the results be sorted in ascending order (True) or descending (False) according to the sortBy criteria
         """
         assert page >= 1, "page has to be >= 1"
@@ -427,7 +406,7 @@ class RequestArticlesUrlList(RequestArticles):
         return a list of article urls
         @param page: page of the results (1, 2, ...)
         @param count: number of items to return in a single query (at most 50000)
-        @param sortBy: how are articles sorted. Options: id (internal id), date (publishing date), cosSim (closeness to the event centroid), fq (relevance to the query), socialScore (total shares on social media)
+        @param sortBy: how are articles sorted. Options: id (internal id), date (publishing date), cosSim (closeness to the event centroid), rel (relevance to the query), sourceImportance (manually curated score of source importance - high value, high importance), sourceImportanceRank (reverse of sourceImportance), sourceAlexaGlobalRank (global rank of the news source), sourceAlexaCountryRank (country rank of the news source), socialScore (total shares on social media), facebookShares (shares on Facebook only)
         @param sortByAsc: should the results be sorted in ascending order (True) or descending (False) according to the sortBy criteria
         """
         assert page >= 1, "page has to be >= 1"
@@ -595,16 +574,14 @@ class RequestArticlesDateMentionAggr(RequestArticles):
 class RequestArticlesRecentActivity(RequestArticles):
     def __init__(self,
                  maxArticleCount = 60,
-                 maxMinsBack = 10 * 60,
-                 lastActivityId = 0,
+                 updatesAfterTm = None,
                  lang = None,
                  mandatorySourceLocation = False,
                  returnInfo = ReturnInfo()):
         """
         get the list of articles that were recently added to the Event Registry and match the selected criteria
         @param maxArticleCount: max articles to return (at most 500)
-        @param: maxMinsBack: maximum number of minutes in the history to look at
-        @param lastActivityId: id of the last activity (returned by previous call to the same method)
+        @param updatesAfterTm: the time after which the articles were added (returned by previous call to the same method)
         @param lang: return only articles in the specified languages (None if no limits). accepts string or a list of strings
         @param mandatorySourceLocation: return only articles for which we know the source's geographic location
         @param returnInfo: what details should be included in the returned information
@@ -612,8 +589,8 @@ class RequestArticlesRecentActivity(RequestArticles):
         assert maxArticleCount <= 100
         self.resultType = "recentActivity"
         self.recentActivityArticlesMaxArticleCount  = maxArticleCount
-        self.recentActivityArticlesMaxMinsBack = maxMinsBack
-        self.recentActivityArticlesLastActivityId  = lastActivityId
+        if updatesAfterTm != None:
+            self.recentActivityArticlesUpdatesAfterTm  = updatesAfterTm
         if lang != None:
             self.recentActivityArticlesLang = lang
 

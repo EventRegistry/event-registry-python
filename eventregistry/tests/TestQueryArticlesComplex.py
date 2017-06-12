@@ -27,7 +27,7 @@ class TestQueryArticlesComplex(DataValidator):
                 BaseQuery(conceptUri = self.er.getConceptUri("trump")) ],
                 exclude = BaseQuery(lang = QueryItems.OR(["eng", "deu"]))))
 
-        q = QueryArticles(conceptUri = [self.er.getConceptUri("obama"), self.er.getConceptUri("trump")], conceptOper = "AND", ignoreLang = ["eng", "deu"])
+        q = QueryArticles(conceptUri = QueryItems.AND([self.er.getConceptUri("obama"), self.er.getConceptUri("trump")]), ignoreLang = ["eng", "deu"])
 
         listRes1 = self.getQueryUriListForComplexQuery(cq1)
         listRes2 = self.getQueryUriListForComplexQuery(cq2)

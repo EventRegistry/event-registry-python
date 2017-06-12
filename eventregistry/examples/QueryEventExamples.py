@@ -33,6 +33,5 @@ eventRes = er.execQuery(q)
 q = QueryEvent(["spa-32", "spa-45"])
 q.setRequestedResult(RequestEventArticles(page =1, count = 200))
 res = er.execQuery(q)
-obj = createStructFromDict(res)
 
 

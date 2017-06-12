@@ -5,8 +5,7 @@ from DataValidator import DataValidator
 class TestQueryEvent(DataValidator):
 
     def createQuery(self):
-        q = QueryEvents(lang = "eng")
-        q.addConcept(self.er.getConceptUri("Obama"))
+        q = QueryEvents(lang = "eng", conceptUri = self.er.getConceptUri("Obama"))
         q.setRequestedResult(RequestEventsUriList(count = 10))
         res = self.er.execQuery(q)
         return QueryEvent(res["uriList"]["results"])
@@ -37,7 +36,7 @@ class TestQueryEvent(DataValidator):
 
     def testKeywords(self):
         q = self.createQuery()
-        q.addRequestedResult(RequestEventKeywordAggr())
+        q.setRequestedResult(RequestEventKeywordAggr())
         res = self.er.execQuery(q)
 
         for event in list(res.values()):
@@ -75,7 +74,7 @@ class TestQueryEvent(DataValidator):
 
     def testSimilarEvents(self):
         q = self.createQuery()
-        q.addRequestedResult(RequestEventSimilarEvents(addArticleTrendInfo = True, returnInfo = self.returnInfo))
+        q.setRequestedResult(RequestEventSimilarEvents(addArticleTrendInfo = True, returnInfo = self.returnInfo))
         res = self.er.execQuery(q)
 
         for event in list(res.values()):

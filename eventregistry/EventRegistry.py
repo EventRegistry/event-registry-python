@@ -196,7 +196,7 @@ class EventRegistry(object):
                 self._lastException = ex
                 print("Event Registry exception while executing the request:")
                 self.printLastException()
-                time.sleep(10)   # sleep for 10 seconds on error
+                #time.sleep(10)   # sleep for 10 seconds on error
         self._lock.release()
         return returnData
 
@@ -227,6 +227,17 @@ class EventRegistry(object):
         """
         assert page > 0, "page parameter should be above 0"
         return self.jsonRequest("/json/suggestSourcesFast", { "prefix": prefix, "page": page, "count": count })
+
+
+    def suggestSourceGroups(self, prefix, page = 1, count = 20):
+        """
+        return a list of news source groups that match the prefix
+        @param prefix: input text that should be contained in the source group name or uri
+        @param page:  page of the results (1, 2, ...)
+        @param count: number of returned suggestions
+        """
+        assert page > 0, "page parameter should be above 0"
+        return self.jsonRequest("/json/suggestSourceGroups", { "prefix": prefix, "page": page, "count": count })
 
 
     def suggestLocations(self, prefix, sources = ["place", "country"], lang = "eng", count = 20, countryUri = None, sortByDistanceTo = None, returnInfo = ReturnInfo()):
@@ -346,6 +357,17 @@ class EventRegistry(object):
         return None
 
 
+    def getSourceGroupUri(self, sourceGroupName):
+        """
+        return the URI of the source group that best matches the name
+        @param sourceGroupName: partial or full name of the source group
+        """
+        matches = self.suggestSourceGroups(sourceGroupName)
+        if matches != None and isinstance(matches, list) and len(matches) > 0 and "uri" in matches[0]:
+            return matches[0]["uri"]
+        return None
+
+
     def getConceptClassUri(self, classLabel, lang = "eng"):
         """
         return a uri of the concept class that is the best match for the given label
@@ -413,7 +435,7 @@ class EventRegistry(object):
         stats = self.getRecentStats()
         latestId = stats["totalArticleCount"]-1
         q = QueryArticle.queryById(latestId)
-        q.addRequestedResult(RequestArticleInfo(returnInfo))
+        q.setRequestedResult(RequestArticleInfo(returnInfo))
         ret = self.execQuery(q)
         if ret and len(list(ret.keys())) > 0:
             return ret[list(ret.keys())[0]].get("info")

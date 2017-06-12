@@ -71,6 +71,29 @@ def createStructFromDict(data):
         return Struct(data)
 
 
+class QueryItems:
+    _AND = "$and"
+    _OR = "$or"
+    _Undef = None
+
+    def __init__(self, oper, items):
+        self._oper = oper
+        self._items = items;
+
+    @staticmethod
+    def AND(items):
+        return QueryItems(QueryItems._AND, items)
+
+    @staticmethod
+    def OR(items):
+        return QueryItems(QueryItems._OR, items)
+
+    def getOper(self):
+        return self._oper
+
+    def getItems(self):
+        return self._items
+
 
 class QueryParamsBase(object):
     """
@@ -182,3 +205,39 @@ class Query(QueryParamsBase):
         allParams["resultType"] = [request.__dict__["resultType"] for request in self.resultTypeList]
         return allParams
 
+
+    def _setQueryArrVal(self, value, propName, propOperName, defaultOperName):
+        """
+        parse the value "value" and use it to set the property propName and the operator with name propOperName
+        @param value: None, string, QueryItems or list. Values to be set using property name propName
+        @param propOperName: property to set containing the "and" or "or". Relevant only if multiple items are provided in "value". Can be None if only one value is possible
+        @param defaultOperName: which operator should be used in case "value" is a list. If a list, we will print also a warning to suggest use of QueryItems
+        """
+        # by default we have None - so don't do anything
+        if value is None or value == "":
+            return
+        # if we have an instance of QueryItems then apply it
+        if isinstance(value, QueryItems):
+            self.queryParams[propName] = value.getItems()
+            # if we need to specify the operator for the property
+            if propOperName != None:
+                self.queryParams[propOperName] = value.getOper().replace("$", "")
+            # if the user specified the QueryItems class but used the invalid operator type then raise an error
+            assert propOperName != None or value.getOper().replace("$", "") == defaultOperName, "An invalid operator type '%s' was used for property '%s'" % (value.getOper().replace("$", ""), propName)
+            
+        # if we have a string value, just use it
+        elif isinstance(value, six.string_types):
+            self.queryParams[propName] = value
+
+        # if we have a list, set it, but also weport 
+        elif isinstance(value, list):
+            self.queryParams[propName] = value
+            # if we need to specify the operator for the property
+            if propOperName != None:
+                self.queryParams[propOperName] = defaultOperName
+                if len(value) > 1:
+                    print("Warning: The value of parameter '%s' was provided as a list and '%s' operator was used implicitly between the items. We suggest specifying the list using the QueryItems.AND() or QueryItems.OR() to ensure the appropriate operator is used." % (propName, defaultOperName))
+
+        # there should be no other valid types
+        else:
+            assert False, "Parameter '%s' was of unsupported type. It should either be None, a string or an instance of QueryItems" % (propName)

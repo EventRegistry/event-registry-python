@@ -15,7 +15,7 @@ class DataValidator(unittest.TestCase):
 
         self.articleInfo = ArticleInfoFlags(bodyLen = -1, concepts = True, storyUri = True, duplicateList = True, originalArticle = True, categories = True,
                 location = True, image = True, extractedDates = True, socialScore = True, details = True)
-        self.sourceInfo = SourceInfoFlags(description = True, location = True, importance = True, articleCount = True, tags = True, details = True)
+        self.sourceInfo = SourceInfoFlags(description = True, location = True, ranking = True, articleCount = True, sourceGroups = True, details = True)
         self.conceptInfo = ConceptInfoFlags(type=["entities"], lang = ["eng", "spa"], synonyms = True, image = True, description = True, details = True,
                 conceptClassMembership = True, trendingScore = True, trendingHistory = True, maxConceptsPerType = 50)
         self.locationInfo = LocationInfoFlags(wikiUri = True, label = True, geoNamesId = True, geoLocation = True, population = True,
@@ -46,7 +46,7 @@ class DataValidator(unittest.TestCase):
 
 
     def ensureValidSource(self, source, testName):
-        for prop in ["id", "uri", "location", "importance", "articleCount", "tags", "details"]:
+        for prop in ["id", "uri", "location", "ranking", "articleCount", "sourceGroups", "details"]:
             self.assertTrue(prop in source, "Property '%s' was expected in source for test %s" % (prop, testName))
 
 

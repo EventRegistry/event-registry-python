@@ -222,27 +222,29 @@ class SourceInfoFlags(ReturnInfoFlagsBase):
     @param title: title of the news source
     @param description: description of the news source
     @param location: geographic location of the news source
-    @param importance: a score of importance assigned to the news source
+    @param ranking: a set of rankings for the news source
     @param articleCount: the number of articles from this news source that are stored in Event Registry
-    @param tags: custom tags assigned to the news source
+    @param sourceGroups: info about the names of the source groups to which the source belongs to
     @param flags: various binary flags related to the news source
     """
     def __init__(self,
                  title = True,
                  description = False,
                  location = False,
-                 importance = False,
+                 ranking = False,
+                 image = False,
                  articleCount = False,
-                 tags = False,
+                 sourceGroups = False,
                  details = False,
                  flags = False):
         self._setFlag("IncludeSourceTitle", title, True)
 
         self._setFlag("IncludeSourceDescription", description, False)
         self._setFlag("IncludeSourceLocation", location, False)
-        self._setFlag("IncludeSourceImportance", importance, False)
+        self._setFlag("IncludeSourceRanking", ranking, False)
+        self._setFlag("IncludeSourceImage", image, False)
         self._setFlag("IncludeSourceArticleCount", articleCount, False)
-        self._setFlag("IncludeSourceTags", tags, False)
+        self._setFlag("IncludeSourceSourceGroups", sourceGroups, False)
         self._setFlag("IncludeSourceDetails", details, False)
 
 

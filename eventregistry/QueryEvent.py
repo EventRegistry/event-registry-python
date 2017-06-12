@@ -28,7 +28,7 @@ class QueryEvent(Query):
     def addRequestedResult(self, requestEvent):
         """
         Add a result type that you would like to be returned.
-        In one QueryEvent you can ask for multiple result types.
+        In case you are a subscribed customer you can ask for multiple result types in a single query (for free users, only a single result type can be required per call).
         Result types can be the classes that extend RequestEvent base class (see classes below).
         """
         assert isinstance(requestEvent, RequestEvent), "QueryEvent class can only accept result requests that are of type RequestEvent"
@@ -38,7 +38,7 @@ class QueryEvent(Query):
 
     def setRequestedResult(self, requestEvent):
         """
-        Set the single result type that you would like to be returned. If some other request type was previously set, it will be overwritten.
+        Set the single result type that you would like to be returned. Any previously set result types will be overwritten.
         Result types can be the classes that extend RequestEvent base class (see classes below).
         """
         assert isinstance(requestEvent, RequestEvent), "QueryEvent class can only accept result requests that are of type RequestEvent"
@@ -79,7 +79,7 @@ class QueryEventArticlesIter(QueryEvent, six.Iterator):
         """
         @param eventRegistry: instance of EventRegistry class. used to obtain the necessary data
         @param lang: array or a single language in which to return the list of matching articles
-        @param sortBy: order in which event articles are sorted. Options: id (internal id), date (published date), cosSim (closeness to event centroid), sourceImportance (importance of the news source), socialScore (total shares in social media)
+        @param sortBy: order in which event articles are sorted. Options: none (no specific sorting), id (internal id), date (published date), cosSim (closeness to event centroid), sourceImportance (manually curated score of source importance - high value, high importance), sourceImportanceRank (reverse of sourceImportance), sourceAlexaGlobalRank (global rank of the news source), sourceAlexaCountryRank (country rank of the news source), socialScore (total shares on social media), facebookShares (shares on Facebook only)
         @param sortByAsc: should the results be sorted in ascending order (True) or descending (False)
         @param returnInfo: what details should be included in the returned information
         @param articleBatchSize: number of articles to download at once (we are not downloading article by article) (at most 200)
@@ -177,7 +177,7 @@ class RequestEventArticles(RequestEvent):
         @param page: page of the articles to return (1, 2, ...)
         @param count: number of articles to return per page (at most 200)
         @param lang: a single lanugage or a list of languages in which to return the articles
-        @param sortBy: order in which event articles are sorted. Options: id (internal id), date (published date), cosSim (closeness to event centroid), sourceImportance (importance of the news source), socialScore (total shares in social media)
+        @param sortBy: order in which event articles are sorted. Options: id (internal id), date (published date), cosSim (closeness to event centroid), sourceSocialRank (importance of the news source, based on shares of articles from it), sourceAlexaGlobalRank (global rank of the news source), sourceAlexaCountryRank (country rank of the news source), socialScore (total shares in social media)
         @param sortByAsc: should the articles be sorted in ascending order (True) or descending (False) based on sortBy value
         @param returnInfo: what details should be included in the returned information
         """
@@ -201,7 +201,7 @@ class RequestEventArticleUris(RequestEvent):
         """
         return just a list of article uris
         @param lang: a single lanugage or a list of languages in which to return the articles
-        @param sortBy: order in which event articles are sorted. Options: id (internal id), date (published date), cosSim (closeness to event centroid), sourceImportance (importance of the news source), socialScore (total shares in social media)
+        @param sortBy: order in which event articles are sorted. Options: id (internal id), date (published date), cosSim (closeness to event centroid), sourceSocialRank (importance of the news source, based on shares of articles from it), sourceAlexaGlobalRank (global rank of the news source), sourceAlexaCountryRank (country rank of the news source), socialScore (total shares in social media)
         @param sortByAsc: should the articles be sorted in ascending order (True) or descending (False) based on sortBy value
         """
         self.articleUrisLang = lang
