@@ -122,9 +122,24 @@ class QueryParamsBase(object):
         elif isinstance(val, datetime.date):
             return val.isoformat()
         elif isinstance(val, six.string_types):
-            assert re.match("\d{4}-\d{2}-\d{2}", val)
+            assert re.match("^\d{4}-\d{2}-\d{2}$", val), "date value '%s' was not provided in the 'YYYY-MM-DD' format" % (val)
             return val
         raise AssertionError("date was not in the expected format")
+
+
+    @staticmethod
+    def encodeDateTime(val):
+        """encode datetime into UTC ISO format which can be sent to ER"""
+        if isinstance(val, datetime.datetime):
+            # if we have a datetime in some tz, we convert it first to UTC
+            if val.utcoffset() != None:
+                import pytz
+                val = val.astimezone(pytz.utc)
+            return val.isoformat()
+        elif isinstance(val, six.string_types):
+            assert re.match("^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?$", val), "datetime value '%s' was not provided in the 'YYYY-MM-DDTHH:MM:SS.SSSS' format" % (val)
+            return val
+        raise AssertionError("datetime was not in the recognizable data type. Use datetime or string in ISO format")
 
 
     def _clearVal(self, propName):
@@ -224,12 +239,12 @@ class Query(QueryParamsBase):
                 self.queryParams[propOperName] = value.getOper().replace("$", "")
             # if the user specified the QueryItems class but used the invalid operator type then raise an error
             assert propOperName != None or value.getOper().replace("$", "") == defaultOperName, "An invalid operator type '%s' was used for property '%s'" % (value.getOper().replace("$", ""), propName)
-            
+
         # if we have a string value, just use it
         elif isinstance(value, six.string_types):
             self.queryParams[propName] = value
 
-        # if we have a list, set it, but also weport 
+        # if we have a list, set it, but also weport
         elif isinstance(value, list):
             self.queryParams[propName] = value
             # if we need to specify the operator for the property

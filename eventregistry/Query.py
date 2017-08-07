@@ -27,7 +27,7 @@ class BaseQuery(_QueryCore):
                  conceptUri = None,
                  categoryUri = None,
                  sourceUri = None,
-                 locationUri = None,                 
+                 locationUri = None,
                  lang = None,
                  dateStart = None,
                  dateEnd = None,
@@ -61,7 +61,7 @@ class BaseQuery(_QueryCore):
         self._setQueryArrVal("conceptUri", conceptUri)
         self._setQueryArrVal("categoryUri", categoryUri)
         self._setQueryArrVal("sourceUri", sourceUri)
-        self._setQueryArrVal("locationUri", locationUri)        
+        self._setQueryArrVal("locationUri", locationUri)
         self._setQueryArrVal("lang", lang)
 
         # starting date of the published articles (e.g. 2014-05-02)

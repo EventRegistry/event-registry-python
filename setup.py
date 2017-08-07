@@ -5,7 +5,7 @@ def readme():
         return f.read()
 
 setup(name='eventregistry',
-      version='6.5.0',
+      version='6.5.1',
       description = "A package that can be used to query information in Event Registry (http://eventregistry.org/)",
       classifiers=[
         'Development Status :: 4 - Beta',
@@ -22,6 +22,6 @@ setup(name='eventregistry',
       license='MIT',
       packages=['eventregistry'],
       install_requires=[
-          'requests', 'six'
+          'requests', 'six', 'pytz'
       ],
       zip_safe=False)

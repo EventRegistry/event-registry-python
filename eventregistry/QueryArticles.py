@@ -242,7 +242,7 @@ class QueryArticlesIter(QueryArticles, six.Iterator):
         self._currItem = 0
         # list of cached articles that are yet to be returned by the iterator
         self._articleList = []
-        self._uriList = []
+        self._uriWgtList = []
         # how many pages do we have for URIs. set once we call _getNextUriPage first
         self._allUriPages = None
         return self
@@ -269,31 +269,34 @@ class QueryArticlesIter(QueryArticles, six.Iterator):
     def _getNextUriPage(self):
         """download a simple list of article uris"""
         self._uriPage += 1
-        self._uriList = []
+        self._uriWgtList = []
         if self._allUriPages != None and self._uriPage > self._allUriPages:
             return
         if self._er._verboseOutput:
             print("Downoading page %d of article uris" % (self._uriPage))
-        self.setRequestedResult(RequestArticlesUriList(page = self._uriPage, sortBy = self._sortBy, sortByAsc = self._sortByAsc))
+        self.setRequestedResult(RequestArticlesUriWgtList(page = self._uriPage, sortBy = self._sortBy, sortByAsc = self._sortByAsc))
         res = self._er.execQuery(self)
         if "error" in res:
             print(res["error"])
-        self._uriList = res.get("uriList", {}).get("results", [])
-        self._allUriPages = res.get("uriList", {}).get("pages", 0)
+        self._uriWgtList = res.get("uriWgtList", {}).get("results", [])
+        self._allUriPages = res.get("uriWgtList", {}).get("pages", 0)
 
 
     def _getNextArticleBatch(self):
         """download next batch of articles based on the article uris in the uri list"""
         # try to get more uris, if none
-        if len(self._uriList) == 0:
+        if len(self._uriWgtList) == 0:
             self._getNextUriPage()
         # if still no uris, then we have nothing to download
-        if len(self._uriList) == 0:
+        if len(self._uriWgtList) == 0:
             return
         # get uris to download
-        uris = self._uriList[:self._articleBatchSize]
+        uriWgts = self._uriWgtList[:self._articleBatchSize]
+        # create a list of uris, without the weights
+        uriToWgts = dict([val.split(":") for val in uriWgts])
+        uris = [val.split(":")[0] for val in uriWgts]
         # remove used uris
-        self._uriList = self._uriList[self._articleBatchSize:]
+        self._uriWgtList = self._uriWgtList[self._articleBatchSize:]
         if self._er._verboseOutput:
             print("Downoading %d articles..." % (len(uris)))
 
@@ -304,7 +307,11 @@ class QueryArticlesIter(QueryArticles, six.Iterator):
             print("Error while obtaining a list of articles: " + res["error"])
         else:
             assert res.get("articles", {}).get("pages", 0) == 1
-        self._articleList.extend(res.get("articles", {}).get("results", []))
+        results = res.get("articles", {}).get("results", [])
+        for result in results:
+            if "uri" in result:
+                result["wgt"] = int(uriToWgts.get(result["uri"], "1"))
+        self._articleList.extend(results)
 
 
     def __iter__(self):
@@ -367,13 +374,6 @@ class RequestArticlesInfo(RequestArticles):
         self.articlesPage = page
 
 
-    def setCount(self, count):
-        """
-        set the number of articles to return per query
-        """
-        self.articlesCount = count
-
-
 
 class RequestArticlesUriList(RequestArticles):
     def __init__(self,
@@ -394,6 +394,38 @@ class RequestArticlesUriList(RequestArticles):
         self.uriListCount = count
         self.uriListSortBy = sortBy
         self.uriListSortByAsc = sortByAsc
+
+
+    def setPage(self, page):
+        assert page >= 1, "page has to be >= 1"
+        self.uriListPage = page
+
+
+
+class RequestArticlesUriWgtList(RequestArticles):
+    def __init__(self,
+                 page = 1,
+                 count = 10000,
+                 sortBy = "fq", sortByAsc = False):
+        """
+        return a list of article uris together with the scores
+        @param page: page of the results (1, 2, ...)
+        @param count: number of items to return in a single query (at most 50000)
+        @param sortBy: how are articles sorted. Options: id (internal id), date (publishing date), cosSim (closeness to the event centroid), rel (relevance to the query), sourceImportance (manually curated score of source importance - high value, high importance), sourceImportanceRank (reverse of sourceImportance), sourceAlexaGlobalRank (global rank of the news source), sourceAlexaCountryRank (country rank of the news source), socialScore (total shares on social media), facebookShares (shares on Facebook only)
+        @param sortByAsc: should the results be sorted in ascending order (True) or descending (False) according to the sortBy criteria
+        """
+        assert page >= 1, "page has to be >= 1"
+        assert count <= 50000
+        self.resultType = "uriWgtList"
+        self.uriWgtListPage = page
+        self.uriWgtListCount = count
+        self.uriWgtListSortBy = sortBy
+        self.uriWgtListSortByAsc = sortByAsc
+
+
+    def setPage(self, page):
+        assert page >= 1, "page has to be >= 1"
+        self.uriWgtListPage = page
 
 
 
@@ -575,6 +607,7 @@ class RequestArticlesRecentActivity(RequestArticles):
     def __init__(self,
                  maxArticleCount = 60,
                  updatesAfterTm = None,
+                 updatesAfterMinsAgo = None,
                  lang = None,
                  mandatorySourceLocation = False,
                  returnInfo = ReturnInfo()):
@@ -582,17 +615,20 @@ class RequestArticlesRecentActivity(RequestArticles):
         get the list of articles that were recently added to the Event Registry and match the selected criteria
         @param maxArticleCount: max articles to return (at most 500)
         @param updatesAfterTm: the time after which the articles were added (returned by previous call to the same method)
+        @param updatesAfterMinsAgo: how many minutes into the past should we check (set either this or updatesAfterTm property, but not both)
         @param lang: return only articles in the specified languages (None if no limits). accepts string or a list of strings
         @param mandatorySourceLocation: return only articles for which we know the source's geographic location
         @param returnInfo: what details should be included in the returned information
         """
-        assert maxArticleCount <= 100
+        assert maxArticleCount <= 1000
+        assert updatesAfterTm == None or updatesAfterMinsAgo == None, "You should specify either updatesAfterTm or updatesAfterMinsAgo parameter, but not both"
         self.resultType = "recentActivity"
         self.recentActivityArticlesMaxArticleCount  = maxArticleCount
         if updatesAfterTm != None:
-            self.recentActivityArticlesUpdatesAfterTm  = updatesAfterTm
+            self.recentActivityArticlesUpdatesAfterTm = QueryParamsBase.encodeDateTime(updatesAfterTm)
+        if updatesAfterMinsAgo != None:
+            self.recentActivityEventsUpdatesAfterMinsAgo = updatesAfterMinsAgo
         if lang != None:
             self.recentActivityArticlesLang = lang
-
         self.recentActivityArticlesMandatorySourceLocation = mandatorySourceLocation
         self.__dict__.update(returnInfo.getParams("recentActivityArticles"))

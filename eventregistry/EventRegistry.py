@@ -125,6 +125,20 @@ class EventRegistry(object):
         self._extraParams = params
 
 
+    def getUrl(self, query):
+        """
+        return the url that can be used to get the content that matches the query
+        @param query: instance of Query class
+        """
+        assert isinstance(query, QueryParamsBase), "query parameter should be an instance of a class that has Query as a base class, such as QueryArticles or QueryEvents"
+        import urllib
+        # don't modify original query params
+        allParams = query._getQueryParams()
+        # make the url
+        url = self._host + query._getPath() + "?" + urllib.urlencode(allParams, doseq=True)
+        return url
+
+
     def execQuery(self, query):
         """
         main method for executing the search queries.
@@ -170,7 +184,7 @@ class EventRegistry(object):
         while self._repeatFailedRequestCount < 0 or tryCount < self._repeatFailedRequestCount:
             tryCount += 1
             try:
-                url = self._host + methodUrl;
+                url = self._host + methodUrl
 
                 # make the request
                 respInfo = self._reqSession.post(url, json = paramDict)
@@ -196,7 +210,9 @@ class EventRegistry(object):
                 self._lastException = ex
                 print("Event Registry exception while executing the request:")
                 self.printLastException()
-                #time.sleep(10)   # sleep for 10 seconds on error
+                time.sleep(10)   # sleep for 10 seconds on error
+        if returnData == None:
+            raise self._lastException
         self._lock.release()
         return returnData
 
@@ -215,7 +231,21 @@ class EventRegistry(object):
         assert page > 0, "page parameter should be above 0"
         params = { "prefix": prefix, "source": sources, "lang": lang, "conceptLang": conceptLang, "page": page, "count": count}
         params.update(returnInfo.getParams())
-        return self.jsonRequest("/json/suggestConceptsFast", params)
+        return self.jsonRequest("/json/suggestConcepts", params)
+
+
+    def suggestCategories(self, prefix, page = 1, count = 20, returnInfo = ReturnInfo()):
+        """
+        return a list of dmoz categories that contain the prefix
+        @param prefix: input text that should be contained in the category name
+        @param page:  page of the results (1, 2, ...)
+        @param count: number of returned suggestions
+        @param returnInfo: what details about categories should be included in the returned information
+        """
+        assert page > 0, "page parameter should be above 0"
+        params = { "prefix": prefix, "page": page, "count": count }
+        params.update(returnInfo.getParams())
+        return self.jsonRequest("/json/suggestCategories", params)
 
 
     def suggestNewsSources(self, prefix, page = 1, count = 20):
@@ -226,7 +256,8 @@ class EventRegistry(object):
         @param count: number of returned suggestions
         """
         assert page > 0, "page parameter should be above 0"
-        return self.jsonRequest("/json/suggestSourcesFast", { "prefix": prefix, "page": page, "count": count })
+        params = { "prefix": prefix, "page": page, "count": count }
+        return self.jsonRequest("/json/suggestSources", params)
 
 
     def suggestSourceGroups(self, prefix, page = 1, count = 20):
@@ -261,18 +292,37 @@ class EventRegistry(object):
         return self.jsonRequest("/json/suggestLocations", params)
 
 
-    def suggestCategories(self, prefix, page = 1, count = 20, returnInfo = ReturnInfo()):
+    def suggestLocationsAtCoordinate(self, latitude, longitude, radiusKm, limitToCities = False, lang = "eng", count = 20, ignoreNonWiki = True, returnInfo = ReturnInfo()):
         """
-        return a list of dmoz categories that contain the prefix
-        @param prefix: input text that should be contained in the category name
-        @param page:  page of the results (1, 2, ...)
+        return a list of geo locations (cities or places) that are close to the provided (lat, long) values
+        @param latitude: latitude part of the coordinate
+        @param longitude: longitude part of the coordinate
+        @param radiusKm: radius in kilometres around the coordinates inside which the locations should be returned
+        @param limitToCities: limit the set of results only to cities (True) or also to general places (False)
+        @param lang: language in which the location label should be returned
         @param count: number of returned suggestions
-        @param returnInfo: what details about categories should be included in the returned information
+        @param ignoreNonWiki: ignore locations that don't have a wiki page and can not be used for concept search
+        @param returnInfo: what details about locations should be included in the returned information
         """
-        assert page > 0, "page parameter should be above 0"
-        params = { "prefix": prefix, "page": page, "count": count }
+        assert isinstance(latitude, (int, float)), "The 'latitude' should be a number"
+        assert isinstance(longitude, (int, float)), "The 'longitude' should be a number"
+        params = { "action": "getLocationsAtCoordinate", "lat": latitude, "lon": longitude, "radius": radiusKm, "limitToCities": limitToCities, "count": count, "lang": lang }
         params.update(returnInfo.getParams())
-        return self.jsonRequest("/json/suggestCategoriesFast", params)
+        return self.jsonRequest("/json/suggestLocations", params)
+
+
+    def suggestSourcesAtCoordinate(self, latitude, longitude, radiusKm, count = 20):
+        """
+        return a list of news sources that are close to the provided (lat, long) values
+        @param latitude: latitude part of the coordinate
+        @param longitude: longitude part of the coordinate
+        @param radiusKm: radius in kilometres around the coordinates inside which the news sources should be located
+        @param count: number of returned suggestions
+        """
+        assert isinstance(latitude, (int, float)), "The 'latitude' should be a number"
+        assert isinstance(longitude, (int, float)), "The 'longitude' should be a number"
+        params = { "action": "getSourcesAtCoordinate", "lat": latitude, "lon": longitude, "radius": radiusKm, "count": count }
+        return self.jsonRequest("/json/suggestSources", params)
 
 
     def suggestConceptClasses(self, prefix, lang = "eng", conceptLang = "eng", source = ["dbpedia", "custom"], page = 1, count = 20, returnInfo = ReturnInfo()):
