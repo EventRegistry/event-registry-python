@@ -2,6 +2,7 @@
 examples of how to search for events using different search criteria
 """
 from eventregistry import *
+import json
 
 er = EventRegistry()
 
@@ -19,7 +20,7 @@ print("Concept uri for 'Obama' is " + obamaConceptUri)
 # we specify maxItems to limit the results to maximum 300 results
 q = QueryEventsIter(conceptUri = obamaConceptUri)
 for event in q.execQuery(er, sortBy = "date", maxItems = 300):
-    print event
+    print(json.dumps(event, indent=2))
 
 
 # make a query for events - specify each condition independently
@@ -157,4 +158,4 @@ retInfo = ReturnInfo(eventInfo = EventInfoFlags(concepts = True, categories = Tr
 # example of an ITERATOR with a COMPLEX QUERY
 iter = QueryEventsIter.initWithComplexQuery(cq)
 for event in iter.execQuery(er, returnInfo =  retInfo, maxItems = 10):
-    print event
+    print(json.dumps(event, indent=2))
