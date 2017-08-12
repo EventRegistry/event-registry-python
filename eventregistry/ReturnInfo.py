@@ -74,34 +74,36 @@ class ArticleInfoFlags(ReturnInfoFlagsBase):
     @param url: article url
     @param eventUri: uri of the event to which the article belongs
     @param concepts: the list of concepts mentioned in the article
-    @param storyUri: uri of the story (cluster) to which the article belongs
-    @param duplicateList: the list of articles that are a copy of this article
-    @param originalArticle: if the article is a duplicate, this will provide information about the original article
     @param categories: the list of categories assigned to the article
-    @param location: the geographic location that the event mentioned in the article is about
+    @param videos: the list of videos assigned to the article
     @param image: url to the image associated with the article
+    @param socialScore: information about the number of times the article was shared on facebook and linkedin, instagram, ...
+    @param location: the geographic location that the event mentioned in the article is about
     @param dates: the dates when the articles was crawled and the date when it was published (based on the rss feed date)
     @param extractedDates: the list of dates found mentioned in the article
-    @param socialScore: information about the number of times the article was shared on facebook and twitter
+    @param duplicateList: the list of articles that are a copy of this article
+    @param originalArticle: if the article is a duplicate, this will provide information about the original article
+    @param storyUri: uri of the story (cluster) to which the article belongs
     @param details: potential additional details
     """
     def __init__(self,
-                 bodyLen = 300,
+                 bodyLen = -1,
                  basicInfo = True,
                  title = True,
                  body = True,
                  url = True,
                  eventUri = True,
                  concepts = False,
-                 storyUri = False,
+                 categories = False,
+                 videos = False,
+                 image = False,
+                 socialScore = False,
                  duplicateList = False,
                  originalArticle = False,
-                 categories = False,
                  location = False,
-                 image = False,
                  dates = False,
                  extractedDates = False,
-                 socialScore = False,
+                 storyUri = False,
                  details = False):
         self._setVal("ArticleBodyLen", bodyLen, 300)
         self._setFlag("IncludeArticleBasicInfo", basicInfo, True)
@@ -110,15 +112,16 @@ class ArticleInfoFlags(ReturnInfoFlagsBase):
         self._setFlag("IncludeArticleUrl", url, True)
         self._setFlag("IncludeArticleEventUri", eventUri, True)
         self._setFlag("IncludeArticleConcepts", concepts, False)
-        self._setFlag("IncludeArticleStoryUri", storyUri, False)
-        self._setFlag("IncludeArticleDuplicateList", duplicateList, False)
-        self._setFlag("IncludeArticleOriginalArticle", originalArticle, False)
         self._setFlag("IncludeArticleCategories", categories, False)
-        self._setFlag("IncludeArticleLocation", location, False)
+        self._setFlag("IncludeArticleVideos", videos, False)
         self._setFlag("IncludeArticleImage", image, False)
+        self._setFlag("IncludeArticleSocialScore", socialScore, False)
+        self._setFlag("IncludeArticleLocation", location, False)
         self._setFlag("IncludeArticleDates", dates, False)
         self._setFlag("IncludeArticleExtractedDates", extractedDates, False)
-        self._setFlag("IncludeArticleSocialScore", socialScore, False)
+        self._setFlag("IncludeArticleDuplicateList", duplicateList, False)
+        self._setFlag("IncludeArticleOriginalArticle", originalArticle, False)
+        self._setFlag("IncludeArticleStoryUri", storyUri, False)
         self._setFlag("IncludeArticleDetails", details, False)
 
 

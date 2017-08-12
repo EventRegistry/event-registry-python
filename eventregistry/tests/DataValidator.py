@@ -14,7 +14,7 @@ class DataValidator(unittest.TestCase):
         super(DataValidator, self).__init__(*args, **kwargs)
 
         self.articleInfo = ArticleInfoFlags(bodyLen = -1, concepts = True, storyUri = True, duplicateList = True, originalArticle = True, categories = True,
-                location = True, image = True, extractedDates = True, socialScore = True, details = True)
+                videos = True, image = True, location = True, extractedDates = True, socialScore = True, details = True)
         self.sourceInfo = SourceInfoFlags(description = True, location = True, ranking = True, articleCount = True, sourceGroups = True, details = True)
         self.conceptInfo = ConceptInfoFlags(type=["entities"], lang = ["eng", "spa"], synonyms = True, image = True, description = True, details = True,
                 conceptClassMembership = True, trendingScore = True, trendingHistory = True, maxConceptsPerType = 50)

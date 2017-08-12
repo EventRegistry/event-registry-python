@@ -5,10 +5,9 @@ from eventregistry import *
 
 er = EventRegistry()
 
-## search for the phrase "Barack Obama" - both words have to appear together
-#q = QueryArticles(keywords = "Barack Obama")
-#res = er.execQuery(q)
-
+# search for the phrase "Barack Obama" - both words have to appear together
+q = QueryArticles(keywords = "Barack Obama")
+res = er.execQuery(q)
 
 # search for articles that mention both of the two words - maybe together, maybe apart
 # this form of specifying multiple keywords, concepts, etc is now depricated. When you have a list,

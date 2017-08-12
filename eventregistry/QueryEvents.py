@@ -28,6 +28,8 @@ class QueryEvents(Query):
                  ignoreSourceGroupUri = None,
                  ignoreLocationUri = None,
                  ignoreLang = None,
+                 keywordsLoc = "body",
+                 ignoreKeywordsLoc = "body",
                  categoryIncludeSub = True,
                  ignoreCategoryIncludeSub = True,
                  requestedResult = None):
@@ -75,6 +77,8 @@ class QueryEvents(Query):
         @param ignoreSourceGroupUri: ignore events that have articles which have been written by sources in *any* of the specified source groups
         @param ignoreLocationUri: ignore events that occured in any of the provided locations. A location can be a city or a place
         @param ignoreLang: ignore events that are reported in any of the provided languages
+        @param keywordsLoc: what data should be used when searching using the keywords provided by "keywords" parameter. "body" (default), "title", or "body,title"
+        @param ignoreKeywordsLoc: what data should be used when searching using the keywords provided by "ignoreKeywords" parameter. "body" (default), "title", or "body,title"
         @param categoryIncludeSub: when a category is specified using categoryUri, should also all subcategories be included?
         @param ignoreCategoryIncludeSub: when a category is specified using ignoreCategoryUri, should also all subcategories be included?
         @param requestedResult: the information to return as the result of the query. By default return the list of matching events
@@ -92,8 +96,6 @@ class QueryEvents(Query):
         self._setQueryArrVal(locationUri, "locationUri", None, "or")        # location such as "http://en.wikipedia.org/wiki/Ljubljana"
 
         self._setQueryArrVal(lang, "lang", None, "or")                      # a single lang or list (possible: eng, deu, spa, zho, slv)
-
-        self._setValIfNotDefault("categoryIncludeSub", categoryIncludeSub, True)    # also include the subcategories for the given categories
 
         if (dateStart != None):
             self._setDateVal("dateStart", dateStart)   # 2014-05-02
@@ -116,6 +118,9 @@ class QueryEvents(Query):
         self._setQueryArrVal(ignoreLocationUri, "ignoreLocationUri", None, "or")
 
         self._setQueryArrVal(ignoreLang, "ignoreLang", None, "or")
+
+        self._setValIfNotDefault("keywordLoc", keywordsLoc, "body")
+        self._setValIfNotDefault("ignoreKeywordLoc", ignoreKeywordsLoc, "body")
 
         self._setValIfNotDefault("categoryIncludeSub", categoryIncludeSub, True)
         self._setValIfNotDefault("ignoreCategoryIncludeSub", ignoreCategoryIncludeSub, True)

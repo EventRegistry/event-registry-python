@@ -16,6 +16,54 @@ class TestQueryArticlesComplex(DataValidator):
         return res["uriList"]
 
 
+    def testKw1(self):
+        cq1 = ComplexArticleQuery(BaseQuery(keyword = "obama", keywordLoc = "title"))
+        artIter = QueryArticlesIter.initWithComplexQuery(cq1)
+        for art in artIter.execQuery(self.er):
+            self.assertTrue(art["title"].lower().find("obama") >= 0)
+
+
+    def testKw2(self):
+        qStr = """
+        {
+            "$query": {
+                "keyword": "obama", "keywordLoc": "title"
+            }
+        }
+        """
+        qiter = QueryArticlesIter.initWithComplexQuery(qStr)
+        for art in qiter.execQuery(self.er):
+            self.assertTrue(art["title"].lower().find("obama") >= 0)
+
+
+    def testKw3(self):
+        cq1 = ComplexArticleQuery(BaseQuery(keyword = "home", keywordLoc = "body"))
+        artIter = QueryArticlesIter.initWithComplexQuery(cq1)
+        for art in artIter.execQuery(self.er):
+            self.assertTrue(art["body"].lower().find("home") >= 0)
+
+
+    def testCompareSameResultsKw1(self):
+        cq1 = ComplexArticleQuery(
+            BaseQuery(keyword =  QueryItems.AND(["obama", "trump"]),
+                exclude = BaseQuery(lang = QueryItems.OR(["eng", "deu"]))))
+
+        cq2 = ComplexArticleQuery(
+            query = CombinedQuery.AND([
+                BaseQuery(keyword = "obama"),
+                BaseQuery(keyword = "trump") ],
+                exclude = BaseQuery(lang = QueryItems.OR(["eng", "deu"]))))
+
+        q = QueryArticles(keywords = QueryItems.AND(["obama", "trump"]), ignoreLang = ["eng", "deu"])
+
+        listRes1 = self.getQueryUriListForComplexQuery(cq1)
+        listRes2 = self.getQueryUriListForComplexQuery(cq2)
+        # compare with old approach
+        listRes3 = self.getQueryUriListForQueryArticles(q)
+        self.assertEqual(listRes1["totalResults"], listRes2["totalResults"])
+        self.assertEqual(listRes1["totalResults"], listRes3["totalResults"])
+
+
     def testCompareSameResults1(self):
         cq1 = ComplexArticleQuery(
             BaseQuery(conceptUri = QueryItems.AND([self.er.getConceptUri("obama"), self.er.getConceptUri("trump")]),

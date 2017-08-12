@@ -8,6 +8,7 @@ class TestQueryArticles(DataValidator):
         q = QueryArticles(conceptUri = self.er.getConceptUri("Obama"))
         return q
 
+
     def validateGeneralArticleList(self, res):
         self.assertIsNotNone(res.get("articles"), "Expected to get 'articles'")
 
@@ -15,6 +16,7 @@ class TestQueryArticles(DataValidator):
         self.assertEqual(len(articles), 30, "Expected to get 30 articles")
         for article in articles:
             self.ensureValidArticle(article, "articleList")
+
 
     def testArticleList(self):
         q = self.createQuery()
@@ -40,12 +42,42 @@ class TestQueryArticles(DataValidator):
         self.ensureSameResults(res, res2, '[articles][].totalResults')
 
 
+    def testArticleListWithKeywordTitleSearch(self):
+        """make sure search in title works"""
+        q = QueryArticlesIter(keywords = "iphone", keywordsLoc = "title")
+        for art in q.execQuery(self.er):
+            self.assertTrue(art["title"].lower().find("iphone") >= 0)
+
+
+    def testArticleListWithKeywordTitleSearch(self):
+        """make sure search in title works"""
+        q = QueryArticlesIter(keywords = "home", keywordsLoc = "title")
+        for art in q.execQuery(self.er):
+            self.assertTrue(art["title"].lower().find("home") >= 0)
+
+
+    def testArticleListWithKeywordBodySearch(self):
+        """make sure search in body works"""
+        q = QueryArticlesIter(keywords = "home", keywordsLoc = "body")
+        for art in q.execQuery(self.er):
+            self.assertTrue(art["body"].lower().find("home") >= 0)
+
+
+    def testArticleListWithKeywordBodySearch(self):
+        """make sure search in body works"""
+        q = QueryArticlesIter(keywords = "jack", keywordsLoc = "body")
+        for art in q.execQuery(self.er):
+            self.assertTrue(art["body"].lower().find("jack") >= 0)
+
+
     def testArticleListWithPublisherSearch(self):
         bbcUri = self.er.getNewsSourceUri("bbc")
         q = QueryArticles(sourceUri = bbcUri)
         q.setRequestedResult(RequestArticlesInfo(count = 30,  returnInfo = self.returnInfo))
         res = self.er.execQuery(q)
         self.validateGeneralArticleList(res)
+        for article in res.get("articles").get("results"):
+            self.assertTrue(article["source"]["uri"] == bbcUri, "article is not from bbc")
 
         q2 = QueryArticles(sourceUri = bbcUri)
         q2.setRequestedResult(RequestArticlesInfo(count = 30,  returnInfo = self.returnInfo))
@@ -75,6 +107,8 @@ class TestQueryArticles(DataValidator):
         q.setRequestedResult(RequestArticlesInfo(count = 30,  returnInfo = self.returnInfo))
         res = self.er.execQuery(q)
         self.validateGeneralArticleList(res)
+        for article in res.get("articles").get("results"):
+            self.assertTrue(article["lang"] == "deu", "article is not in deu")
 
 
     def testArticleListWithLocationSearch(self):

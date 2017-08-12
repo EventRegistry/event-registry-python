@@ -177,7 +177,7 @@ class RequestEventArticles(RequestEvent):
         @param page: page of the articles to return (1, 2, ...)
         @param count: number of articles to return per page (at most 200)
         @param lang: a single lanugage or a list of languages in which to return the articles
-        @param sortBy: order in which event articles are sorted. Options: id (internal id), date (published date), cosSim (closeness to event centroid), sourceSocialRank (importance of the news source, based on shares of articles from it), sourceAlexaGlobalRank (global rank of the news source), sourceAlexaCountryRank (country rank of the news source), socialScore (total shares in social media)
+        @param sortBy: order in which event articles are sorted. Options: id (internal id), date (published date), cosSim (closeness to event centroid), sourceImportanceRank (importance of the news source, custom set), sourceAlexaGlobalRank (global rank of the news source), sourceAlexaCountryRank (country rank of the news source), socialScore (total shares in social media)
         @param sortByAsc: should the articles be sorted in ascending order (True) or descending (False) based on sortBy value
         @param returnInfo: what details should be included in the returned information
         """
@@ -201,7 +201,7 @@ class RequestEventArticleUris(RequestEvent):
         """
         return just a list of article uris
         @param lang: a single lanugage or a list of languages in which to return the articles
-        @param sortBy: order in which event articles are sorted. Options: id (internal id), date (published date), cosSim (closeness to event centroid), sourceSocialRank (importance of the news source, based on shares of articles from it), sourceAlexaGlobalRank (global rank of the news source), sourceAlexaCountryRank (country rank of the news source), socialScore (total shares in social media)
+        @param sortBy: order in which event articles are sorted. Options: id (internal id), date (published date), cosSim (closeness to event centroid), sourceImportanceRank (importance of the news source, custom set), sourceAlexaGlobalRank (global rank of the news source), sourceAlexaCountryRank (country rank of the news source), socialScore (total shares in social media)
         @param sortByAsc: should the articles be sorted in ascending order (True) or descending (False) based on sortBy value
         """
         self.articleUrisLang = lang

@@ -1,5 +1,30 @@
 # Change Log
 
+## [v6.5.1]() (2017-08-21)
+
+**Added**
+- `QueryArticles` and `QueryArticlesIter` now support additional constructor argument `keywordsLoc` which allows users to specify where should the keywords provided using `keywords` occur. Default is `body` (the keywords should be mentioned in the body of the article), other valid options are `title` (should be mentioned in the article's title) or `title,body` (should be mentioned anywhere in the article).
+- `QueryArticles` and `QueryArticlesIter`: same as `keywordsLoc` determines keyword location for `keywords`, an `ignoreKeywordsLoc` parameter can also be specified for determining the location of the keywords to ignore, which are determined by `ignoreKeywords` parameter.
+- When using the advanced query language, you can now also specify `keywordLoc` parameter in the `BaseQuery`.
+- added `EventRegistry.suggestLocationsAtCoordinate()` method which returns geographic places near the given geo locations
+- added `EventRegistry.suggestSourcesAtCoordinate()` method which returns the list of news sources that are close to the given geographic location
+- added `EventRegistry.suggestSourcesAtPlace()` method that can return a list of news sources that we are crawling at the specified place or country. The input argument has to be a location URI obtained by calling `EventRegistry.getLocationUri()`.
+- added `EventRegistry.getUrl()` method which for a given query object returns the url that can be used to make a direct HTTP request.
+- added `videos` property to `Article` data model. When one or more videos were identified in an article you can retrieve them by setting `video=True` flag in `ArticleInfoFlags`.
+- added category weights to articles. Our models currently produce weights for each of the categories associated with an article. The weights are in range 1 to 100. The weights were present even before, but their value was always 100.
+
+**Changed**
+- When querying for articles, we now by default return full article body. Previously we returned 300 characters by default.
+- `ArticleMapper.getArticleUri()` now returns `None` or `string`, no longer a `list`. We no longer store multiple versions of the articles with the same url.
+- we've changed the order of parameters in `ArticleInfoFlags`. In case you didn't set parameter values by name, then check if it matches the desired properties. The change was done to reflect importance and usability of individual parameters.
+
+**Removed**
+- `EventRegistry.getArticleUris()` no longer accepts parameter `includeAllVersions`.
+
+**Fixed**
+- Use of `QueryArticlesIter` and `QueryEventsIter` now correctly assigns also the weights to the returned articles and events.
+
+
 ## [v6.5.0]() (2017-06-14)
 
 **Added**

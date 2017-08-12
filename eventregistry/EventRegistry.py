@@ -198,7 +198,7 @@ class EventRegistry(object):
                 self._dailyAvailableRequests = tryParseInt(respInfo.headers.get("x-ratelimit-limit", ""), val = -1)
                 self._remainingAvailableRequests = tryParseInt(respInfo.headers.get("x-ratelimit-remaining", ""), val = -1)
                 if self._verboseOutput:
-                    timeSec = int(respInfo.headers.get("x-response-time", "-1")) / 1000.
+                    timeSec = int(respInfo.headers.get("x-response-time", "0")) / 1000.
                     self.printConsole("request took %.3f sec. Response size: %.2fKB" % (timeSec, len(respInfo.text) / 1024.0))
                 try:
                     returnData = respInfo.json()
@@ -216,6 +216,8 @@ class EventRegistry(object):
         self._lock.release()
         return returnData
 
+    #
+    # suggestion methods - return type is a list of matching items
 
     def suggestConcepts(self, prefix, sources = ["concepts"], lang = "eng", conceptLang = "eng", page = 1, count = 20, returnInfo = ReturnInfo()):
         """
@@ -325,6 +327,17 @@ class EventRegistry(object):
         return self.jsonRequest("/json/suggestSources", params)
 
 
+    def suggestSourcesAtPlace(self, conceptUri, page = 1, count = 20):
+        """
+        return a list of news sources that are close to the provided (lat, long) values
+        @param conceptUri: concept that represents a geographic location for which we would like to obtain a list of sources located at the place
+        @param page: page of the results (1, 2, ...)
+        @param count: number of returned sources
+        """
+        params = { "action": "getSourcesAtPlace", "conceptUri": conceptUri, "page": page, "count": count }
+        return self.jsonRequest("/json/suggestSources", params)
+
+
     def suggestConceptClasses(self, prefix, lang = "eng", conceptLang = "eng", source = ["dbpedia", "custom"], page = 1, count = 20, returnInfo = ReturnInfo()):
         """
         return a list of concept classes that match the given prefix
@@ -357,6 +370,9 @@ class EventRegistry(object):
         params.update(returnInfo.getParams())
         return self.jsonRequest("/json/suggestCustomConcepts", params)
 
+
+    #
+    # get info methods - return type is a single item that is the best match to the given input
 
     def getConceptUri(self, conceptLabel, lang = "eng", sources = ["concepts"]):
         """
@@ -455,6 +471,9 @@ class EventRegistry(object):
         return None
 
 
+    #
+    # additional utility methods
+
     def getRecentStats(self):
         """get some stats about recently imported articles and events"""
         return self.jsonRequest("/json/overview", { "action": "getRecentStats"})
@@ -465,17 +484,14 @@ class EventRegistry(object):
         return self.jsonRequest("/json/overview", { "action": "getStats", "addDailyArticles": addDailyArticles, "addDailyAnnArticles": addDailyAnnArticles, "addDailyDuplArticles": addDailyDuplArticles, "addDailyEvents": addDailyEvents })
 
 
-    def getArticleUris(self, articleUrls, includeAllVersions = False):
+    def getArticleUris(self, articleUrls):
         """
         if you have article urls and you want to query them in ER you first have to obtain their uris in the ER.
         @param articleUrls a single article url or a list of article urls
-        @param includeAllVersions: return just one article uri (False) or all versions of the article (True)
-        @returns depends on includeAllVersions. If includeAllVersions == False it returns dict where key is article url and value is either None if no match found or a string with article URI.
-            if includeAllVersions == True, we return a dict where the articleUrls are keys and the value is a list with 0, 1 or more article uris. More articles uris can occur if the
-            article was updated several times
+        @returns returns dict where key is article url and value is either None if no match found or a string with article URI.
         """
         assert isinstance(articleUrls, (six.string_types, list)), "Expected a single article url or a list of urls"
-        return self.jsonRequest("/json/articleMapper", { "articleUrl": articleUrls, includeAllVersions: includeAllVersions })
+        return self.jsonRequest("/json/articleMapper", { "articleUrl": articleUrls })
 
 
     def getLatestArticle(self, returnInfo = ReturnInfo()):
@@ -491,8 +507,21 @@ class EventRegistry(object):
             return ret[list(ret.keys())[0]].get("info")
         return None
 
+
+    def getSourceGroups(self):
+        """return the list of URIs of all known source groups"""
+        ret = self.jsonRequest("/json/sourceGroup", { "action": "getSourceGroups" })
+        return ret
+
+
+    def getSourceGroup(self, sourceGroupUri):
+        """return info about the source group"""
+        ret = self.jsonRequest("/json/sourceGroup", { "action": "getSourceGroupInfo", "uri": sourceGroupUri })
+        return ret
+
+
     #
-    # utility methods
+    # internal methods
 
     def _sleepIfNecessary(self):
         """ensure that queries are not made too fast"""
@@ -515,26 +544,19 @@ class ArticleMapper:
         self._rememberMappings = rememberMappings
 
 
-    def getArticleUri(self, articleUrl, includeAllVersions = False):
+    def getArticleUri(self, articleUrl):
         """
         given the article url, return an array with 0, 1 or more article uris. Not all returned article uris are necessarily valid anymore. For news sources
         of lower importance we remove the duplicated articles and just keep the latest content
         @param articleUrl: string containing the article url
-        @returns list: list of strings representing article uris.
+        @returns string: list of strings representing article uris.
         """
         if articleUrl in self._articleUrlToUri:
             return self._articleUrlToUri[articleUrl]
-        res = self._er.getArticleUris(articleUrl, includeAllVersions)
+        res = self._er.getArticleUris(articleUrl)
         if res and articleUrl in res:
             val = res[articleUrl]
-            # if no match, change to empty array
-            if val == None:
-                val = []
-            # if we wanted just a single article uri change to array with a single item
-            elif not includeAllVersions:
-                val = [val]
-
             if self._rememberMappings:
                 self._articleUrlToUri[articleUrl] = val
             return val
-        return []
+        return None

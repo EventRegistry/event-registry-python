@@ -26,6 +26,8 @@ class QueryArticles(Query):
                  ignoreSourceGroupUri = None,
                  ignoreLocationUri = None,
                  ignoreLang = None,
+                 keywordsLoc = "body",
+                 ignoreKeywordsLoc = "body",
                  categoryIncludeSub = True,
                  ignoreCategoryIncludeSub = True,
                  isDuplicateFilter = "keepAll",
@@ -74,6 +76,8 @@ class QueryArticles(Query):
         @param ignoreSourceGroupUri: ignore articles that have been written by sources in *any* of the specified source groups
         @param ignoreLocationUri: ignore articles that occured in any of the provided locations. A location can be a city or a place
         @param ignoreLang: ignore articles that are written in *any* of the provided languages
+        @param keywordsLoc: where should we look when searching using the keywords provided by "keywords" parameter. "body" (default), "title", or "body,title"
+        @param ignoreKeywordsLoc: where should we look when data should be used when searching using the keywords provided by "ignoreKeywords" parameter. "body" (default), "title", or "body,title"
         @param categoryIncludeSub: when a category is specified using categoryUri, should also all subcategories be included?
         @param ignoreCategoryIncludeSub: when a category is specified using ignoreCategoryUri, should also all subcategories be included?
         @param isDuplicateFilter: some articles can be duplicates of other articles. What should be done with them. Possible values are:
@@ -104,8 +108,6 @@ class QueryArticles(Query):
 
         self._setQueryArrVal(lang, "lang", None, "or")                      # a single lang or list (possible: eng, deu, spa, zho, slv)
 
-        self._setValIfNotDefault("categoryIncludeSub", categoryIncludeSub, True)    # also include the subcategories for the given categories
-
         # starting date of the published articles (e.g. 2014-05-02)
         if dateStart != None:
             self._setDateVal("dateStart", dateStart)
@@ -121,7 +123,7 @@ class QueryArticles(Query):
             self._setDateVal("dateMentionEnd", dateMentionEnd)
 
         # for the negative conditions, only the OR is a valid operator type
-        self._setQueryArrVal(ignoreKeywords, "ignoreKeywords", None, "or")
+        self._setQueryArrVal(ignoreKeywords, "ignoreKeyword", None, "or")
         self._setQueryArrVal(ignoreConceptUri, "ignoreConceptUri", None, "or")
         self._setQueryArrVal(ignoreCategoryUri, "ignoreCategoryUri", None, "or")
         self._setQueryArrVal(ignoreSourceUri, "ignoreSourceUri", None, "or")
@@ -131,6 +133,10 @@ class QueryArticles(Query):
 
         self._setQueryArrVal(ignoreLang, "ignoreLang", None, "or")
 
+        self._setValIfNotDefault("keywordLoc", keywordsLoc, "body")
+        self._setValIfNotDefault("ignoreKeywordLoc", ignoreKeywordsLoc, "body")
+
+        self._setValIfNotDefault("categoryIncludeSub", categoryIncludeSub, True)    # also include the subcategories for the given categories
         self._setValIfNotDefault("ignoreCategoryIncludeSub", ignoreCategoryIncludeSub, True)
 
         self._setValIfNotDefault("isDuplicateFilter", isDuplicateFilter, "keepAll")
