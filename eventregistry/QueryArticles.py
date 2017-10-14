@@ -28,8 +28,6 @@ class QueryArticles(Query):
                  ignoreLang = None,
                  keywordsLoc = "body",
                  ignoreKeywordsLoc = "body",
-                 categoryIncludeSub = True,
-                 ignoreCategoryIncludeSub = True,
                  isDuplicateFilter = "keepAll",
                  hasDuplicateFilter = "keepAll",
                  eventFilter = "keepAll",
@@ -78,8 +76,6 @@ class QueryArticles(Query):
         @param ignoreLang: ignore articles that are written in *any* of the provided languages
         @param keywordsLoc: where should we look when searching using the keywords provided by "keywords" parameter. "body" (default), "title", or "body,title"
         @param ignoreKeywordsLoc: where should we look when data should be used when searching using the keywords provided by "ignoreKeywords" parameter. "body" (default), "title", or "body,title"
-        @param categoryIncludeSub: when a category is specified using categoryUri, should also all subcategories be included?
-        @param ignoreCategoryIncludeSub: when a category is specified using ignoreCategoryUri, should also all subcategories be included?
         @param isDuplicateFilter: some articles can be duplicates of other articles. What should be done with them. Possible values are:
                 "skipDuplicates" (skip the resulting articles that are duplicates of other articles)
                 "keepOnlyDuplicates" (return only the duplicate articles)
@@ -135,9 +131,6 @@ class QueryArticles(Query):
 
         self._setValIfNotDefault("keywordLoc", keywordsLoc, "body")
         self._setValIfNotDefault("ignoreKeywordLoc", ignoreKeywordsLoc, "body")
-
-        self._setValIfNotDefault("categoryIncludeSub", categoryIncludeSub, True)    # also include the subcategories for the given categories
-        self._setValIfNotDefault("ignoreCategoryIncludeSub", ignoreCategoryIncludeSub, True)
 
         self._setValIfNotDefault("isDuplicateFilter", isDuplicateFilter, "keepAll")
         self._setValIfNotDefault("hasDuplicateFilter", hasDuplicateFilter, "keepAll")
@@ -226,23 +219,23 @@ class QueryArticlesIter(QueryArticles, six.Iterator):
                   sortBy = "rel",
                   sortByAsc = False,
                   returnInfo = ReturnInfo(),
-                  articleBatchSize = 200,
-                  maxItems = -1):
+                  articleBatchSize = 100,
+                  maxItems = -1,
+                  **kwargs):
         """
         @param eventRegistry: instance of EventRegistry class. used to query new article list and uris
         @param sortBy: how are articles sorted. Options: id (internal id), date (publishing date), cosSim (closeness to the event centroid), rel (relevance to the query), sourceImportance (manually curated score of source importance - high value, high importance), sourceImportanceRank (reverse of sourceImportance), sourceAlexaGlobalRank (global rank of the news source), sourceAlexaCountryRank (country rank of the news source), socialScore (total shares on social media), facebookShares (shares on Facebook only)
         @param sortByAsc: should the results be sorted in ascending order (True) or descending (False)
         @param returnInfo: what details should be included in the returned information
-        @param articleBatchSize: number of articles to download at once (we are not downloading article by article) (at most 200)
         @param maxItems: maximum number of items to be returned. Used to stop iteration sooner than results run out
         """
-        assert articleBatchSize <= 200, "You can not have a batch size > 200 items"
         self._er = eventRegistry
         self._sortBy = sortBy
         self._sortByAsc = sortByAsc
         self._returnInfo = returnInfo
-        self._articleBatchSize = articleBatchSize
+        self._articleBatchSize = 100    # always download 100 - best for the user since it uses his token and we want to download as much as possible in a single search
         self._uriPage = 0
+        self._useArchive = None
         # if we want to return only a subset of items:
         self._maxItems = maxItems
         self._currItem = 0
@@ -282,6 +275,8 @@ class QueryArticlesIter(QueryArticles, six.Iterator):
             print("Downoading page %d of article uris" % (self._uriPage))
         self.setRequestedResult(RequestArticlesUriWgtList(page = self._uriPage, sortBy = self._sortBy, sortByAsc = self._sortByAsc))
         res = self._er.execQuery(self)
+        # remember if the archive needed to be used to process the query - use the info later when asking for the articles in batches
+        self._useArchive = self._er.getLastReqArchiveUse()
         if "error" in res:
             print(res["error"])
         self._uriWgtList = res.get("uriWgtList", {}).get("results", [])
@@ -308,7 +303,8 @@ class QueryArticlesIter(QueryArticles, six.Iterator):
 
         q = QueryArticles.initWithArticleUriList(uris)
         q.setRequestedResult(RequestArticlesInfo(page = 1, count = self._articleBatchSize, sortBy = "none", returnInfo = self._returnInfo))
-        res = self._er.execQuery(q)
+        # download articles and make sure that we set the same archive flag as it was returned when we were processing the uriList request
+        res = self._er.execQuery(q, allowUseOfArchive = self._useArchive)
         if "error" in res:
             print("Error while obtaining a list of articles: " + res["error"])
         else:
@@ -357,13 +353,13 @@ class RequestArticlesInfo(RequestArticles):
         """
         return article details for resulting articles
         @param page: page of the articles to return
-        @param count: number of articles to return for the given page (at most 200)
+        @param count: number of articles to return for the given page (at most 100)
         @param sortBy: how are articles sorted. Options: id (internal id), date (publishing date), cosSim (closeness to the event centroid), rel (relevance to the query), sourceImportance (manually curated score of source importance - high value, high importance), sourceImportanceRank (reverse of sourceImportance), sourceAlexaGlobalRank (global rank of the news source), sourceAlexaCountryRank (country rank of the news source), socialScore (total shares on social media), facebookShares (shares on Facebook only)
         @param sortByAsc: should the results be sorted in ascending order (True) or descending (False)
         @param returnInfo: what details should be included in the returned information
         """
         assert page >= 1, "page has to be >= 1"
-        assert count <= 200
+        assert count <= 100, "at most 100 articles can be returned per call"
         self.resultType = "articles"
         self.articlesPage = page
         self.articlesCount = count

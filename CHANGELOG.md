@@ -1,5 +1,25 @@
 # Change Log
 
+## [v6.6.0]() (2017-XX-XX)
+
+**Added**
+- Added a flag `allowUseOfArchive` to `EventRegistry` constructor. The flag determines if queries made by that EventRegistry instance can use the archive data (data since Jan 2014) or just the recent data (last 31 days of content). Queries made on the archive use more of your data plan tokens so if you just want to use the recent content, make sure that you set the flag to `False`. Note that archive data can be accessed only by paid subscribers.
+- Added `EventRegistry.printLastReqStats()` which prints to console some stats regarding the latest executed request. It prints whether the archive was used in the query, the number of tokens used by the request, etc.
+- Added a parameter `allowUseOfArchive` to the `EventRegistry.execQuery()` method. It can be used to override the flag about the use of archive that was set when constructing the `Event Registry` class.
+- Added version checking on the startup. If your version of the module is of lower value than the latest version, we print a warning.
+
+**Changed**
+- Changed the maximum number of articles and events that can be returned per search. The maximum number of returned articles can be 100 and the number of events can be 50.
+
+**Deprecated**
+
+**Removed**
+- Removed the query parameters `categoryIncludeSub` and `ignoreCategoryIncludeSub`. The flag is set to true and can not be changed.
+- Removed parameter `maxItems` from `QueryArticlesIter.execQuery()` and `QueryEventIter.execQuery()`. The iterator will always cache the maximum number of items that can be returned with a single query.
+
+**Fixed**
+- When using the article and event iterators, the iterators now automatically know if the archive should be used when downloading different pages matching the search results.
+
 ## [v6.5.1]() (2017-08-21)
 
 **Added**

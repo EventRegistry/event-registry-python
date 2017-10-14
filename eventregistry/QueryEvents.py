@@ -30,8 +30,6 @@ class QueryEvents(Query):
                  ignoreLang = None,
                  keywordsLoc = "body",
                  ignoreKeywordsLoc = "body",
-                 categoryIncludeSub = True,
-                 ignoreCategoryIncludeSub = True,
                  requestedResult = None):
         """
         Query class for searching for events in the Event Registry.
@@ -79,8 +77,6 @@ class QueryEvents(Query):
         @param ignoreLang: ignore events that are reported in any of the provided languages
         @param keywordsLoc: what data should be used when searching using the keywords provided by "keywords" parameter. "body" (default), "title", or "body,title"
         @param ignoreKeywordsLoc: what data should be used when searching using the keywords provided by "ignoreKeywords" parameter. "body" (default), "title", or "body,title"
-        @param categoryIncludeSub: when a category is specified using categoryUri, should also all subcategories be included?
-        @param ignoreCategoryIncludeSub: when a category is specified using ignoreCategoryUri, should also all subcategories be included?
         @param requestedResult: the information to return as the result of the query. By default return the list of matching events
         """
         super(QueryEvents, self).__init__()
@@ -121,9 +117,6 @@ class QueryEvents(Query):
 
         self._setValIfNotDefault("keywordLoc", keywordsLoc, "body")
         self._setValIfNotDefault("ignoreKeywordLoc", ignoreKeywordsLoc, "body")
-
-        self._setValIfNotDefault("categoryIncludeSub", categoryIncludeSub, True)
-        self._setValIfNotDefault("ignoreCategoryIncludeSub", ignoreCategoryIncludeSub, True)
 
         self.addRequestedResult(requestedResult or RequestEventsInfo())
 
@@ -208,23 +201,22 @@ class QueryEventsIter(QueryEvents, six.Iterator):
                   sortBy = "rel",
                   sortByAsc = False,
                   returnInfo = ReturnInfo(),
-                  eventBatchSize = 200,
-                  maxItems = -1):
+                  maxItems = -1,
+                  **kwargs):
         """
         @param eventRegistry: instance of EventRegistry class. used to query new event list and uris
         @param sortBy: how should the resulting events be sorted. Options: date (by event date), rel (relevance to the query), size (number of articles),
             socialScore (amount of shares in social media), none (no specific sorting)
         @param sortByAsc: should the results be sorted in ascending order (True) or descending (False)
-        @param eventBatchSize: number of events to download at once (we are not downloading event by event)
         @param maxItems: maximum number of items to be returned. Used to stop iteration sooner than results run out
         """
-        assert eventBatchSize <= 200, "You can not have a batch size > 200 items"
         self._er = eventRegistry
         self._sortBy = sortBy
         self._sortByAsc = sortByAsc
         self._returnInfo = returnInfo
-        self._eventBatchSize = eventBatchSize
+        self._eventBatchSize = 50      # always download max - best for the user since it uses his token and we want to download as much as possible in a single search
         self._uriPage = 0
+        self._useArchive = None
         # if we want to return only a subset of items:
         self._maxItems = maxItems
         self._currItem = 0
@@ -264,6 +256,8 @@ class QueryEventsIter(QueryEvents, six.Iterator):
             print("Downoading page %d of event uris" % (self._uriPage))
         self.setRequestedResult(RequestEventsUriWgtList(page = self._uriPage, sortBy = self._sortBy, sortByAsc = self._sortByAsc))
         res = self._er.execQuery(self)
+        # remember if the archive needed to be used to process the query - use the info later when asking for the events in batches
+        self._useArchive = self._er.getLastReqArchiveUse()
         if "error" in res:
             print(res["error"])
         self._uriWgtList = res.get("uriWgtList", {}).get("results", [])
@@ -290,7 +284,8 @@ class QueryEventsIter(QueryEvents, six.Iterator):
             print("Downoading %d events..." % (len(uris)))
         q = QueryEvents.initWithEventUriList(uris)
         q.setRequestedResult(RequestEventsInfo(page = 1, count = self._eventBatchSize, sortBy = "none", returnInfo = self._returnInfo))
-        res = self._er.execQuery(q)
+        # download articles and make sure that we set the same archive flag as it was returned when we were processing the uriList request
+        res = self._er.execQuery(q, allowUseOfArchive = self._useArchive)
         if "error" in res:
             print("Error while obtaining a list of events: " + res["error"])
         else:
@@ -338,14 +333,14 @@ class RequestEventsInfo(RequestEvents):
         """
         return event details for resulting events
         @param page: page of the results to return (1, 2, ...)
-        @param count: number of results to return per page (at most 200)
+        @param count: number of events to return per page (at most 50)
         @param sortBy: how should the resulting events be sorted. Options: date (by event date), rel (relevance to the query), size (number of articles),
             socialScore (amount of shares in social media), none (no specific sorting)
         @param sortByAsc: should the results be sorted in ascending order (True) or descending (False)
         @param returnInfo: what details should be included in the returned information
         """
         assert page >= 1, "page has to be >= 1"
-        assert count <= 200
+        assert count <= 50, "at most 50 events can be returned per call"
         self.resultType = "events"
         self.eventsPage = page
         self.eventsCount = count

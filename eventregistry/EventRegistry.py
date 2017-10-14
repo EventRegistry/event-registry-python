@@ -30,6 +30,7 @@ class EventRegistry(object):
                  logging = False,
                  minDelayBetweenRequests = 0.5,
                  repeatFailedRequestCount = -1,
+                 allowUseOfArchive = True,
                  verboseOutput = False,
                  settingsFName = None):
         """
@@ -38,6 +39,8 @@ class EventRegistry(object):
         @param logging: log all requests made to a 'requests_log.txt' file
         @param minDelayBetweenRequests: the minimum number of seconds between individual api calls
         @param repeatFailedRequestCount: if a request fails (for example, because ER is down), what is the max number of times the request should be repeated (-1 for indefinitely)
+        @param allowUseOfArchive: default is True. Determines if the queries made should potentially be executed on the archive data. If False, all queries (regardless how the date conditions are set) will be
+                executed on data from the last 31 days. Queries executed on the archive are more expensive so set it to False if you are just interested in recent data
         @param verboseOutput: if True, additional info about query times etc will be printed to console
         @param settingsFName: If provided it should be a full path to 'settings.json' file where apiKey an/or host can be loaded from. If None, we will look for the settings file in the eventregistry module folder
         """
@@ -46,8 +49,10 @@ class EventRegistry(object):
         self._logRequests = logging
         self._minDelayBetweenRequests = minDelayBetweenRequests
         self._repeatFailedRequestCount = repeatFailedRequestCount
+        self._allowUseOfArchive = allowUseOfArchive
         self._verboseOutput = verboseOutput
         self._lastQueryTime = time.time()
+        self._headers = {}
         self._dailyAvailableRequests = -1
         self._remainingAvailableRequests = -1
 
@@ -79,11 +84,43 @@ class EventRegistry(object):
         self._requestLogFName = os.path.join(currPath, "requests_log.txt")
 
         print("Event Registry host: %s" % (self._host))
+        # check what is the version of your module compared to the latest one
+        self.checkVersion()
+
+
+    def checkVersion(self):
+        """
+        check what is the latest version of the python sdk and report in case there is a newer version
+        """
+        try:
+            respInfo = self._reqSession.get(self._host + "/static/pythonSDKVersion.txt")
+            if respInfo.status_code != 200 or len(respInfo.text) > 20:
+                return
+            latestVersion = respInfo.text.strip()
+            import eventregistry._version as _version
+            currentVersion = _version.__version__
+            for (latest, current) in zip(latestVersion.split("."), currentVersion.split(".")):
+                if int(latest) > int(current):
+                    print("==============\nYour version of the module is outdated, please update to the latest version")
+                    print("Your version is %s while the latest is %s" % (currentVersion, latestVersion))
+                    print("Update by calling: pip install --upgrade eventregistry\n==============")
+                    return
+                # in case the server mistakenly has a lower version that the user has, don't report an error
+                elif int(latest) < int(current):
+                    return
+        except:
+            pass
 
 
     def setLogging(self, val):
         """should all requests be logged to a file or not?"""
         self._logRequests = val
+
+
+    def setExtraParams(self, params):
+        if params != None:
+            assert(isinstance(params, dict))
+        self._extraParams = params
 
 
     def getHost(self):
@@ -119,12 +156,6 @@ class EventRegistry(object):
         return self._dailyAvailableRequests
 
 
-    def setExtraParams(self, params):
-        if params != None:
-            assert(isinstance(params, dict))
-        self._extraParams = params
-
-
     def getUrl(self, query):
         """
         return the url that can be used to get the content that matches the query
@@ -139,24 +170,61 @@ class EventRegistry(object):
         return url
 
 
-    def execQuery(self, query):
+    def getLastHeaders(self):
+        """
+        return the headers returned in the response object of the last executed request
+        """
+        return self._headers
+
+
+    def getLastHeader(self, headerName, default = None):
+        """
+        get a value of the header headerName that was set in the headers in the last response object
+        """
+        return self._headers.get(headerName, default)
+
+
+    def printLastReqStats(self):
+        """
+        print some statistics about the last executed request
+        """
+        print("Tokens used by the request: " + self.getLastHeader("req-tokens"))
+        print("Performed action: " + self.getLastHeader("req-action"))
+        print("Was archive used for the query: " + (self.getLastHeader("req-archive") == "1" and "Yes" or "No"))
+
+
+    def getLastReqArchiveUse(self):
+        """
+        return True or False depending on whether the last request used the archive or not
+        """
+        return self.getLastHeader("req-archive", "0") == "1"
+
+
+    def execQuery(self, query, allowUseOfArchive = None):
         """
         main method for executing the search queries.
         @param query: instance of Query class
+        @param allowUseOfArchive: potentially override the value set when constructing EventRegistry class.
+            If not None set it to boolean to determine if the request can be executed on the archive data or not
+            If left to None then the value set in the EventRegistry constructor will be used
         """
         assert isinstance(query, QueryParamsBase), "query parameter should be an instance of a class that has Query as a base class, such as QueryArticles or QueryEvents"
         # don't modify original query params
         allParams = query._getQueryParams()
         # make the request
-        respInfo = self.jsonRequest(query._getPath(), allParams)
+        respInfo = self.jsonRequest(query._getPath(), allParams, allowUseOfArchive = allowUseOfArchive)
         return respInfo
 
 
-    def jsonRequest(self, methodUrl, paramDict, customLogFName = None):
+    def jsonRequest(self, methodUrl, paramDict, customLogFName = None, allowUseOfArchive = None):
         """
         make a request for json data. repeat it _repeatFailedRequestCount times, if they fail (indefinitely if _repeatFailedRequestCount = -1)
         @param methodUrl: url on er (e.g. "/json/article")
         @param paramDict: optional object containing the parameters to include in the request (e.g. { "articleUri": "123412342" }).
+        @param customLogFName: potentially a file name where the request information can be logged into
+        @param allowUseOfArchive: potentially override the value set when constructing EventRegistry class.
+            If not None set it to boolean to determine if the request can be executed on the archive data or not
+            If left to None then the value set in the EventRegistry constructor will be used
         """
         self._sleepIfNecessary()
         self._lastException = None
@@ -176,10 +244,19 @@ class EventRegistry(object):
         # if we have api key then add it to the paramDict
         if self._apiKey:
             paramDict["apiKey"] = self._apiKey
+        # if we want to ignore the archive, set the flag
+        if allowUseOfArchive != None:
+            if not allowUseOfArchive:
+                paramDict["forceMaxDataTimeWindow"] = 31
+        # if we didn't override the parameter then check what we've set when constructing the EventRegistry class
+        elif self._allowUseOfArchive == False:
+            paramDict["forceMaxDataTimeWindow"] = 31
+        # if we also have some extra parameters, then set those too
         if self._extraParams:
             paramDict.update(self._extraParams)
 
         tryCount = 0
+        self._headers = {}  # reset any past data
         returnData = None
         while self._repeatFailedRequestCount < 0 or tryCount < self._repeatFailedRequestCount:
             tryCount += 1
@@ -188,17 +265,19 @@ class EventRegistry(object):
 
                 # make the request
                 respInfo = self._reqSession.post(url, json = paramDict)
+                # remember the returned headers
+                self._headers = respInfo.headers
                 # if we got some error codes print the error and repeat the request after a short time period
                 if respInfo.status_code != 200:
                     raise Exception(respInfo.text)
                 # did we get a warning. if yes, print it
-                if respInfo.headers.get("warning", ""):
-                    print("=========== WARNING ===========\n%s\n===============================" % (respInfo.headers.get("warning", "")))
+                if self.getLastHeader("warning"):
+                    print("=========== WARNING ===========\n%s\n===============================" % (self.getLastHeader("warning")))
                 # remember the available requests
-                self._dailyAvailableRequests = tryParseInt(respInfo.headers.get("x-ratelimit-limit", ""), val = -1)
-                self._remainingAvailableRequests = tryParseInt(respInfo.headers.get("x-ratelimit-remaining", ""), val = -1)
+                self._dailyAvailableRequests = tryParseInt(self.getLastHeader("x-ratelimit-limit", ""), val = -1)
+                self._remainingAvailableRequests = tryParseInt(self.getLastHeader("x-ratelimit-remaining", ""), val = -1)
                 if self._verboseOutput:
-                    timeSec = int(respInfo.headers.get("x-response-time", "0")) / 1000.
+                    timeSec = int(self.getLastHeader("x-response-time", "0")) / 1000.
                     self.printConsole("request took %.3f sec. Response size: %.2fKB" % (timeSec, len(respInfo.text) / 1024.0))
                 try:
                     returnData = respInfo.json()
@@ -210,10 +289,10 @@ class EventRegistry(object):
                 self._lastException = ex
                 print("Event Registry exception while executing the request:")
                 self.printLastException()
-                time.sleep(10)   # sleep for 10 seconds on error
+                #time.sleep(3)   # sleep for X seconds on error
+        self._lock.release()
         if returnData == None:
             raise self._lastException
-        self._lock.release()
         return returnData
 
     #
