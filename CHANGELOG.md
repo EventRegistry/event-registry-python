@@ -1,6 +1,18 @@
 # Change Log
 
-## [v6.6.0]() (2017-XX-XX)
+## [v6.7.0]() (2017-11-30)
+
+**Added**
+- Added a class `Analytics` that can be used to semantically annotate a document, categorize the document into a predefined taxonomy of categories or to detect a language of a text. In future, more analytics methods will be added to this class. NOTE: the functionality is currently in BETA. The API calls or the provided outputs may change in the future.
+- Added property `links` into the output of the article format. It contains the list of URLs extracted from the article body (not from the whole HTML but just the part containing the body).
+- Added sentiment to the news articles. The `sentiment` property will be by default added to the output format for the article. It can be `null` if the property is not set.
+
+**Removed**
+- Removed the flag `details` from all the `*InfoFlags` that had it (`ArticleInfoFlag`, `SourceInfoFlag`, etc.). All the properties provided previously by this property are provided anyway using the other flags.
+- Removed the flag `flags` from all the `*InfoFlags`. The flag represents some internal properties that are not publicly useful.
+
+
+## [v6.6.0]() (2017-10-17)
 
 **Added**
 - Added a flag `allowUseOfArchive` to `EventRegistry` constructor. The flag determines if queries made by that EventRegistry instance can use the archive data (data since Jan 2014) or just the recent data (last 31 days of content). Queries made on the archive use more of your data plan tokens so if you just want to use the recent content, make sure that you set the flag to `False`. Note that archive data can be accessed only by paid subscribers.
@@ -19,6 +31,7 @@
 
 **Fixed**
 - When using the article and event iterators, the iterators now automatically know if the archive should be used when downloading different pages matching the search results.
+
 
 ## [v6.5.1]() (2017-08-21)
 
