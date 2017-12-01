@@ -97,9 +97,9 @@ class QueryArticles(Query):
         self._setQueryArrVal(keywords, "keyword", "keywordOper", "and")
         self._setQueryArrVal(conceptUri, "conceptUri", "conceptOper", "and")
         self._setQueryArrVal(categoryUri, "categoryUri", "categoryOper", "or")
-        self._setQueryArrVal(sourceUri, "sourceUri", None, "or")
+        self._setQueryArrVal(sourceUri, "sourceUri", "sourceOper", "or")
         self._setQueryArrVal(sourceLocationUri, "sourceLocationUri", None, "or")
-        self._setQueryArrVal(sourceGroupUri, "sourceGroupUri", None, "or")
+        self._setQueryArrVal(sourceGroupUri, "sourceGroupUri", "sourceGroupOper", "or")
         self._setQueryArrVal(locationUri, "locationUri", None, "or")        # location such as "http://en.wikipedia.org/wiki/Ljubljana"
 
         self._setQueryArrVal(lang, "lang", None, "or")                      # a single lang or list (possible: eng, deu, spa, zho, slv)
@@ -624,12 +624,12 @@ class RequestArticlesRecentActivity(RequestArticles):
         """
         assert maxArticleCount <= 1000
         assert updatesAfterTm == None or updatesAfterMinsAgo == None, "You should specify either updatesAfterTm or updatesAfterMinsAgo parameter, but not both"
-        self.resultType = "recentActivity"
+        self.resultType = "recentActivityArticles"
         self.recentActivityArticlesMaxArticleCount  = maxArticleCount
         if updatesAfterTm != None:
             self.recentActivityArticlesUpdatesAfterTm = QueryParamsBase.encodeDateTime(updatesAfterTm)
         if updatesAfterMinsAgo != None:
-            self.recentActivityEventsUpdatesAfterMinsAgo = updatesAfterMinsAgo
+            self.recentActivityArticlesUpdatesAfterMinsAgo = updatesAfterMinsAgo
         if lang != None:
             self.recentActivityArticlesLang = lang
         self.recentActivityArticlesMandatorySourceLocation = mandatorySourceLocation

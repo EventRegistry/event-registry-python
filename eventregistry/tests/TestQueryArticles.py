@@ -45,28 +45,28 @@ class TestQueryArticles(DataValidator):
     def testArticleListWithKeywordTitleSearch(self):
         """make sure search in title works"""
         q = QueryArticlesIter(keywords = "iphone", keywordsLoc = "title")
-        for art in q.execQuery(self.er):
+        for art in q.execQuery(self.er, maxItems = 1000):
             self.assertTrue(art["title"].lower().find("iphone") >= 0)
 
 
-    def testArticleListWithKeywordTitleSearch(self):
+    def testArticleListWithKeywordTitleSearch2(self):
         """make sure search in title works"""
         q = QueryArticlesIter(keywords = "home", keywordsLoc = "title")
-        for art in q.execQuery(self.er):
+        for art in q.execQuery(self.er, maxItems = 1000):
             self.assertTrue(art["title"].lower().find("home") >= 0)
 
 
     def testArticleListWithKeywordBodySearch(self):
         """make sure search in body works"""
         q = QueryArticlesIter(keywords = "home", keywordsLoc = "body")
-        for art in q.execQuery(self.er):
+        for art in q.execQuery(self.er, maxItems = 1000):
             self.assertTrue(art["body"].lower().find("home") >= 0)
 
 
-    def testArticleListWithKeywordBodySearch(self):
+    def testArticleListWithKeywordBodySearch2(self):
         """make sure search in body works"""
         q = QueryArticlesIter(keywords = "jack", keywordsLoc = "body")
-        for art in q.execQuery(self.er):
+        for art in q.execQuery(self.er, maxItems = 1000):
             self.assertTrue(art["body"].lower().find("jack") >= 0)
 
 
@@ -85,6 +85,66 @@ class TestQueryArticles(DataValidator):
         self.validateGeneralArticleList(res2)
 
         self.ensureSameResults(res, res2, '[articles][].totalResults')
+
+
+    def testArticleListWithSourceGroupSearch(self):
+        top10Uri = self.er.getSourceGroupUri("general 10")
+        bbcUri = self.er.getNewsSourceUri("bbc")
+        bloombergUri = self.er.getNewsSourceUri("bloomberg")
+        groupSourceInfo = self.er.getSourceGroup(top10Uri)
+        groupSourceUris = [src.get("uri") for src in groupSourceInfo.get(top10Uri).get("sources")]
+        groupSourceUriSet = set(groupSourceUris)
+        groupSourceUriSet.add(bloombergUri)
+
+        q = QueryArticlesIter(sourceUri = bbcUri, sourceGroupUri = top10Uri)
+        for art in q.execQuery(self.er, returnInfo = self.returnInfo, maxItems = 1000):
+            self.ensureValidArticle(art, "sourceGroupSearch")
+            self.assertTrue(art.get("source").get("uri") == bbcUri)
+
+        seenSourceUris = set()
+        cq = ComplexArticleQuery(CombinedQuery.OR([
+                BaseQuery(sourceUri = bloombergUri),
+                BaseQuery(sourceGroupUri = top10Uri)
+            ]))
+        q = QueryArticlesIter.initWithComplexQuery(cq)
+        for art in q.execQuery(self.er, returnInfo = self.returnInfo, maxItems = 1000):
+            self.ensureValidArticle(art, "sourceGroupSearch")
+            self.assertTrue(art.get("source").get("uri") in groupSourceUriSet)
+            seenSourceUris.add(art.get("source").get("uri"))
+        # we should have results from multiple sources
+        self.assertTrue(len(seenSourceUris) > 1)
+
+
+    def testArticleListWithSourceGroupAndLocationSearch(self):
+        top10Uri = self.er.getSourceGroupUri("general 10")
+        usUri = self.er.getLocationUri("United states")
+        groupSourceInfo = self.er.getSourceGroup(top10Uri)
+        groupSourceUris = [src.get("uri") for src in groupSourceInfo.get(top10Uri).get("sources")]
+        groupSourceUriSet = set(groupSourceUris)
+
+        q = QueryArticlesIter(sourceLocationUri = usUri, sourceGroupUri = top10Uri)
+        for art in q.execQuery(self.er, returnInfo = self.returnInfo, maxItems = 1000):
+            self.ensureValidArticle(art, "sourceGroupLocationSearch")
+            self.assertTrue(art.get("source").get("uri") in groupSourceUriSet)
+            loc = art.get("source").get("location")
+            if loc.get("type") == "country":
+                self.assertTrue(loc.get("wikiUri") == usUri)
+            else:
+                self.assertTrue(loc.get("country").get("wikiUri") == usUri)
+
+        cq = ComplexArticleQuery(CombinedQuery.AND([
+                BaseQuery(sourceLocationUri = usUri),
+                BaseQuery(sourceGroupUri = top10Uri)
+            ]))
+        q = QueryArticlesIter.initWithComplexQuery(cq)
+        for art in q.execQuery(self.er, returnInfo = self.returnInfo, maxItems = 1000):
+            self.ensureValidArticle(art, "sourceGroupLocationSearch")
+            self.assertTrue(art.get("source").get("uri") in groupSourceUriSet)
+            if loc.get("type") == "country":
+                self.assertTrue(loc.get("wikiUri") == usUri)
+            else:
+                self.assertTrue(loc.get("country").get("wikiUri") == usUri)
+
 
 
     def testArticleListWithCategorySearch(self):

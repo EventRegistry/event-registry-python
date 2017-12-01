@@ -12,8 +12,8 @@ class TestInfo(DataValidator):
                                          location = True,
                                          ranking = True,
                                          articleCount = True,
-                                         sourceGroups = True,
-                                         details = True)))
+                                         socialMedia = True,
+                                         sourceGroups = True)))
         res = self.er.execQuery(q)
         self.assertEqual(len(res), len(sourceUriList), "Expected different number of sources")
         for item in list(res.values()):
@@ -24,7 +24,7 @@ class TestInfo(DataValidator):
             self.assertIsNotNone(item.get("ranking"), "Source ranking is missing")
             self.assertIsNotNone(item.get("articleCount"), "Source articleCount is missing")
             self.assertIsNotNone(item.get("sourceGroups"), "Source sourceGroups is missing")
-            self.assertIsNotNone(item.get("details"), "Source details is missing")
+            self.assertIsNotNone(item.get("socialMedia"), "Source socialMedia is missing")
 
 
     def test_conceptsByUri(self):
@@ -37,7 +37,6 @@ class TestInfo(DataValidator):
                                            synonyms = True,
                                            image = True,
                                            description = True,
-                                           details = True,
                                            conceptClassMembership = True,
                                            conceptClassMembershipFull = True,
                                            trendingScore = True,
@@ -58,7 +57,6 @@ class TestInfo(DataValidator):
             self.assertIsNotNone(item.get("description"), "Concept should have a description")
             self.assertTrue("image" in item, "Concept should have an image")
             self.assertTrue("synonyms" in item, "Concept should have synonyms")
-            self.assertTrue("details" in item, "Concept should have details")
             self.assertIsNotNone(item.get("conceptClassMembership"), "Concept should have conceptClassMembership")
             self.assertIsNotNone(item.get("conceptClassMembershipFull"), "Concept should have conceptClassMembershipFull")
             self.assertIsNotNone(item.get("trendingScore"), "Concept should have trendingScore")

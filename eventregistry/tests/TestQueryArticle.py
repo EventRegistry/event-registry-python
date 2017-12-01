@@ -29,7 +29,11 @@ class TestQueryArticle(DataValidator):
         mappedUris = []
         for url in uniqueUrls:
             # getArticleUri returns a list, so we extend the list of items
-            mappedUris.extend(mapper.getArticleUri(url))
+            urls = mapper.getArticleUri(url)
+            if urls:
+                mappedUris.extend(urls)
+        if mappedUris == []:
+            return
         q = QueryArticle.queryByUri(mappedUris)
         q.setRequestedResult(RequestArticleInfo(returnInfo = self.returnInfo))
         res = self.er.execQuery(q)

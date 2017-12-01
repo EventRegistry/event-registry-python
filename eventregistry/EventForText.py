@@ -36,7 +36,7 @@ class GetEventForText(QueryParamsBase):
                  nrOfEventsToReturn = 5):   # number of events to return for the given text
         QueryParamsBase.__init__(self)
         self._er = eventRegistry
-        self._nrOfEventsToReturn = nrOfEventsToReturn;
+        self._nrOfEventsToReturn = nrOfEventsToReturn
 
 
     def compute(self,

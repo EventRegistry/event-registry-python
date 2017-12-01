@@ -9,7 +9,7 @@ import time, datetime
 
 er = EventRegistry(logging = True)
 
-recentQ = GetRecentArticles(er, returnInfo = ReturnInfo(ArticleInfoFlags(bodyLen = -1, concepts = True, categories = True)))
+recentQ = GetRecentArticles(er, returnInfo = ReturnInfo(ArticleInfoFlags(bodyLen = -1, concepts = True, categories = True)), recentActivityArticlesMaxArticleCount = 300)
 
 starttime = time.time()
 

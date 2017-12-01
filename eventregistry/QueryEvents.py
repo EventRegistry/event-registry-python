@@ -86,9 +86,9 @@ class QueryEvents(Query):
         self._setQueryArrVal(keywords, "keyword", "keywordOper", "and")
         self._setQueryArrVal(conceptUri, "conceptUri", "conceptOper", "and")
         self._setQueryArrVal(categoryUri, "categoryUri", "categoryOper", "or")
-        self._setQueryArrVal(sourceUri, "sourceUri", None, "or")
+        self._setQueryArrVal(sourceUri, "sourceUri", "sourceOper", "or")
         self._setQueryArrVal(sourceLocationUri, "sourceLocationUri", None, "or")
-        self._setQueryArrVal(sourceGroupUri, "sourceGroupUri", None, "or")
+        self._setQueryArrVal(sourceGroupUri, "sourceGroupUri", "sourceGroupOper", "or")
         self._setQueryArrVal(locationUri, "locationUri", None, "or")        # location such as "http://en.wikipedia.org/wiki/Ljubljana"
 
         self._setQueryArrVal(lang, "lang", None, "or")                      # a single lang or list (possible: eng, deu, spa, zho, slv)
@@ -111,6 +111,8 @@ class QueryEvents(Query):
         self._setQueryArrVal(ignoreConceptUri, "ignoreConceptUri", None, "or")
         self._setQueryArrVal(ignoreCategoryUri, "ignoreCategoryUri", None, "or")
         self._setQueryArrVal(ignoreSourceUri, "ignoreSourceUri", None, "or")
+        self._setQueryArrVal(ignoreSourceLocationUri, "ignoreSourceLocationUri", None, "or")
+        self._setQueryArrVal(ignoreSourceGroupUri, "ignoreSourceGroupUri", None, "or")
         self._setQueryArrVal(ignoreLocationUri, "ignoreLocationUri", None, "or")
 
         self._setQueryArrVal(ignoreLang, "ignoreLang", None, "or")
@@ -643,7 +645,7 @@ class RequestEventsRecentActivity(RequestEvents):
         """
         assert maxEventCount <= 2000
         assert updatesAfterTm == None or updatesAfterMinsAgo == None, "You should specify either updatesAfterTm or updatesAfterMinsAgo parameter, but not both"
-        self.resultType = "recentActivity"
+        self.resultType = "recentActivityEvents"
         self.recentActivityEventsMaxEventCount = maxEventCount
         self.recentActivityEventsMandatoryLocation = mandatoryLocation
         if updatesAfterTm != None:

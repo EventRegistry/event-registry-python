@@ -14,23 +14,23 @@ class DataValidator(unittest.TestCase):
         super(DataValidator, self).__init__(*args, **kwargs)
 
         self.articleInfo = ArticleInfoFlags(bodyLen = -1, concepts = True, storyUri = True, duplicateList = True, originalArticle = True, categories = True,
-                videos = True, image = True, location = True, extractedDates = True, socialScore = True, details = True)
-        self.sourceInfo = SourceInfoFlags(description = True, location = True, ranking = True, articleCount = True, sourceGroups = True, details = True)
-        self.conceptInfo = ConceptInfoFlags(type=["entities"], lang = ["eng", "spa"], synonyms = True, image = True, description = True, details = True,
+                links = True, videos = True, image = True, location = True, extractedDates = True, socialScore = True, sentiment = True)
+        self.sourceInfo = SourceInfoFlags(title = True, description = True, location = True, ranking = True, image = True, articleCount = True, socialMedia = True, sourceGroups = True)
+        self.conceptInfo = ConceptInfoFlags(type=["entities"], lang = ["eng", "spa"], synonyms = True, image = True, description = True,
                 conceptClassMembership = True, trendingScore = True, trendingHistory = True, maxConceptsPerType = 50)
         self.locationInfo = LocationInfoFlags(wikiUri = True, label = True, geoNamesId = True, geoLocation = True, population = True,
                 countryArea = True, countryDetails = True, countryContinent = True,
                 placeFeatureCode = True, placeCountry = True)
         self.categoryInfo = CategoryInfoFlags(parentUri = True, childrenUris = True, trendingScore = True, trendingHistory = True)
-        self.eventInfo = EventInfoFlags(commonDates = True, stories = True, socialScore = True, details = True, imageCount = 2)
+        self.eventInfo = EventInfoFlags(commonDates = True, stories = True, socialScore = True, imageCount = 2)
         self.storyInfo = StoryInfoFlags(categories = True, date = True, concepts = True, title = True, summary = True,
-                                        medoidArticle = True, commonDates = True, socialScore = True, imageCount = 2, details = True)
+                                        medoidArticle = True, commonDates = True, socialScore = True, imageCount = 2)
         self.returnInfo = ReturnInfo(articleInfo = self.articleInfo, conceptInfo = self.conceptInfo, eventInfo = self.eventInfo, storyInfo = self.storyInfo,
             sourceInfo = self.sourceInfo, locationInfo = self.locationInfo, categoryInfo = self.categoryInfo)
 
 
     def ensureValidConcept(self, concept, testName):
-        for prop in ["id", "uri", "label", "synonyms", "image", "details", "trendingScore"]:
+        for prop in ["id", "uri", "label", "synonyms", "image", "trendingScore"]:
             self.assertTrue(prop in concept, "Property '%s' was expected in concept for test %s" % (prop, testName))
         self.assertTrue(concept.get("type") in ["person", "loc", "org"], "Expected concept to be an entity type, but got %s" % (concept.get("type")))
         if concept.get("location"):
@@ -38,7 +38,7 @@ class DataValidator(unittest.TestCase):
 
 
     def ensureValidArticle(self, article, testName):
-        for prop in ["id", "url", "uri", "title", "body", "source", "details", "location", "duplicateList", "originalArticle", "time", "date", "categories", "lang", "extractedDates", "concepts", "details"]:
+        for prop in ["id", "url", "uri", "title", "body", "source", "time", "date", "lang", "image", "links", "videos", "categories", "location", "duplicateList", "originalArticle", "extractedDates", "concepts", "shares", "sentiment"]:
             self.assertTrue(prop in article, "Property '%s' was expected in article for test %s" % (prop, testName))
         for concept in article.get("concepts"):
             self.ensureValidConcept(concept, testName)
@@ -46,7 +46,7 @@ class DataValidator(unittest.TestCase):
 
 
     def ensureValidSource(self, source, testName):
-        for prop in ["id", "uri", "location", "ranking", "articleCount", "sourceGroups", "details"]:
+        for prop in ["id", "uri", "title", "description", "image", "thumbImage", "favicon", "location", "ranking", "articleCount", "sourceGroups", "socialMedia"]:
             self.assertTrue(prop in source, "Property '%s' was expected in source for test %s" % (prop, testName))
 
 
@@ -67,7 +67,7 @@ class DataValidator(unittest.TestCase):
 
 
     def ensureValidEvent(self, event, testName):
-        for prop in ["uri", "title", "summary", "articleCounts", "concepts", "categories", "location", "eventDate", "commonDates", "stories", "socialScore", "details", "images"]:
+        for prop in ["uri", "title", "summary", "articleCounts", "concepts", "categories", "location", "eventDate", "commonDates", "stories", "socialScore", "images"]:
             self.assertTrue(prop in event, "Property '%s' was expected in event for test %s" % (prop, testName))
         for concept in event.get("concepts"):
             self.ensureValidConcept(concept, testName)
@@ -81,7 +81,7 @@ class DataValidator(unittest.TestCase):
 
     def ensureValidStory(self, story, testName):
         for prop in ["uri", "title", "summary", "concepts", "categories", "location",
-                     "storyDate", "averageDate", "commonDates", "socialScore", "details", "images"]:
+                     "storyDate", "averageDate", "commonDates", "socialScore", "images"]:
             self.assertTrue(prop in story, "Property '%s' was expected in story for test %s" % (prop, testName))
         if story.get("location"):
             self.ensureValidLocation(story.get("location"), testName)

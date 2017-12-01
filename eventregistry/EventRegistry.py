@@ -18,6 +18,7 @@ from eventregistry.DailyShares import *
 from eventregistry.Info import *
 from eventregistry.Recent import *
 from eventregistry.Trends import *
+from eventregistry.Analytics import *
 
 class EventRegistry(object):
     """
@@ -27,6 +28,7 @@ class EventRegistry(object):
     def __init__(self,
                  apiKey = None,
                  host = None,
+                 hostAnalytics = None,
                  logging = False,
                  minDelayBetweenRequests = 0.5,
                  repeatFailedRequestCount = -1,
@@ -36,6 +38,7 @@ class EventRegistry(object):
         """
         @param apiKey: API key that should be used to make the requests to the Event Registry. API key is assigned to each user account and can be obtained on this page: http://eventregistry.org/me?tab=settings
         @param host: host to use to access the Event Registry backend. Use None to use the default host.
+        @param hostAnalytics: the host address to use to perform the analytics api calls
         @param logging: log all requests made to a 'requests_log.txt' file
         @param minDelayBetweenRequests: the minimum number of seconds between individual api calls
         @param repeatFailedRequestCount: if a request fails (for example, because ER is down), what is the max number of times the request should be repeated (-1 for indefinitely)
@@ -45,6 +48,7 @@ class EventRegistry(object):
         @param settingsFName: If provided it should be a full path to 'settings.json' file where apiKey an/or host can be loaded from. If None, we will look for the settings file in the eventregistry module folder
         """
         self._host = host
+        self._hostAnalytics = hostAnalytics
         self._lastException = None
         self._logRequests = logging
         self._minDelayBetweenRequests = minDelayBetweenRequests
@@ -72,12 +76,14 @@ class EventRegistry(object):
         if os.path.exists(settFName):
             settings = json.load(open(settFName))
             self._host = host or settings.get("host", "http://eventregistry.org")
+            self._hostAnalytics = hostAnalytics or settings.get("hostAnalytics", "http://analytics.eventregistry.org")
             # if api key is set, then use it when making the requests
             if "apiKey" in settings and not apiKey:
                 print("found apiKey in settings file which will be used for making requests")
                 self._apiKey = settings["apiKey"]
         else:
             self._host = host or "http://eventregistry.org"
+            self._hostAnalytics = hostAnalytics or "http://analytics.eventregistry.org"
 
         if self._apiKey == None:
             print("No API key was provided. You will be allowed to perform only a very limited number of requests per day.")
@@ -291,6 +297,38 @@ class EventRegistry(object):
                 self.printLastException()
                 #time.sleep(3)   # sleep for X seconds on error
         self._lock.release()
+        if returnData == None:
+            raise self._lastException
+        return returnData
+
+
+    def jsonRequestAnalytics(self, methodUrl, paramDict):
+        """
+        call the analytics service to execute a method like annotation, categorization, etc.
+        @param methodUrl: api endpoint url to call
+        @param paramDict: a dictionary with values to send to the api endpoint
+        """
+        if self._apiKey:
+            paramDict["apiKey"] = self._apiKey
+        self._headers = {}  # reset any past data
+        returnData = None
+        self._lock.acquire()
+
+        try:
+            # make the request
+            respInfo = requests.post(self._hostAnalytics + methodUrl, json = paramDict)
+            # remember the returned headers
+            self._headers = respInfo.headers
+            # if we got some error codes print the error and repeat the request after a short time period
+            if respInfo.status_code != 200:
+                raise Exception(respInfo.text)
+            returnData = respInfo.json()
+        except Exception as ex:
+            self._lastException = ex
+            print("Event Registry exception while executing the request:")
+            self.printLastException()
+        finally:
+            self._lock.release()
         if returnData == None:
             raise self._lastException
         return returnData
