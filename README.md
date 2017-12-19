@@ -73,7 +73,7 @@ print er.execQuery(q)
 
 Depending on your interest and existing knowledge of the `eventregistry` package you can check different things:
 
-**[../../wiki/Terminology](Terminology)**. There are numerous terms in the Event Registry that you will constantly see. If you don't know what we mean by an *event*, *story*, *concept* or *category*, you should definitely check this page first.
+**[Terminology](../../wiki/Terminology)**. There are numerous terms in the Event Registry that you will constantly see. If you don't know what we mean by an *event*, *story*, *concept* or *category*, you should definitely check this page first.
 
 **[Learn about `EventRegistry` class](Eventregistry-class)**. You will need to use the `EventRegistry` class whenever you will want to interact with Event Registry so you should learn about it.
 
