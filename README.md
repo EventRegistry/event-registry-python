@@ -12,7 +12,7 @@ Event Registry package can be installed using Python's pip installer. In the com
 
     pip install eventregistry
 
-and the package should be installed. Alternatively, you can also clone the package from the GitHub repository at https://github.com/gregorleban/EventRegistry. After cloning it, open the command line and run:
+and the package should be installed. Alternatively, you can also clone the package from the GitHub repository at https://github.com/EventRegistry/event-registry-python. After cloning it, open the command line and run:
 
     python setup.py install
 
@@ -34,7 +34,7 @@ As features are added to the package you will need at some point to update it. I
 
 ### Authentication and API key
 
-When making queries to Event Registry you will have to use an API key that you can obtain for free. The details how to obtain and use the key are described in the [Authorization](EventRegistry-class#authorization) section.
+When making queries to Event Registry you will have to use an API key that you can obtain for free. The details how to obtain and use the key are described in the [Authorization](../../wiki/EventRegistry-class#authorization) section.
 
 ## Three simple examples to make you interested
 
