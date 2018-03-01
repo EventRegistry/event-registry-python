@@ -202,7 +202,6 @@ class QueryArticlesIter(QueryArticles, six.Iterator):
     class that simplifies and combines functionality from QueryArticles and RequestArticlesInfo. It provides an iterator
     over the list of articles that match the specified conditions
     """
-
     def count(self, eventRegistry):
         """
         return the number of articles that match the criteria
@@ -241,9 +240,9 @@ class QueryArticlesIter(QueryArticles, six.Iterator):
         self._currItem = 0
         # list of cached articles that are yet to be returned by the iterator
         self._articleList = []
-        self._uriWgtList = []
-        # how many pages do we have for URIs. set once we call _getNextUriPage first
-        self._allUriPages = None
+        # self._uriWgtList = []
+        # # how many pages do we have for URIs. set once we call _getNextUriPage first
+        # self._allUriPages = None
         return self
 
 
@@ -265,11 +264,23 @@ class QueryArticlesIter(QueryArticles, six.Iterator):
         return q
 
 
+    @staticmethod
+    def initWithArticleUriList(uriList):
+        """
+        instead of making a query, provide a list of article URIs manually, and then produce the desired results on top of them
+        """
+        q = QueryArticlesIter()
+        assert isinstance(uriList, list), "uriList has to be a list of strings that represent article uris"
+        q._uriWgtList = [uri + ":1" for uri in uriList]
+        q._allUriPages = 1
+        return q
+
+
     def _getNextUriPage(self):
         """download a simple list of article uris"""
         self._uriPage += 1
         self._uriWgtList = []
-        if self._allUriPages != None and self._uriPage > self._allUriPages:
+        if "_allUriPages" in self.__dict__ and self._allUriPages != None and self._uriPage > self._allUriPages:
             return
         if self._er._verboseOutput:
             print("Downoading page %d of article uris" % (self._uriPage))
@@ -286,7 +297,7 @@ class QueryArticlesIter(QueryArticles, six.Iterator):
     def _getNextArticleBatch(self):
         """download next batch of articles based on the article uris in the uri list"""
         # try to get more uris, if none
-        if len(self._uriWgtList) == 0:
+        if "_uriWgtList" not in self.__dict__ or len(self._uriWgtList) == 0:
             self._getNextUriPage()
         # if still no uris, then we have nothing to download
         if len(self._uriWgtList) == 0:
@@ -347,7 +358,7 @@ class RequestArticles:
 class RequestArticlesInfo(RequestArticles):
     def __init__(self,
                  page = 1,
-                 count = 20,
+                 count = 100,
                  sortBy = "date", sortByAsc = False,
                  returnInfo = ReturnInfo()):
         """
@@ -607,7 +618,7 @@ class RequestArticlesDateMentionAggr(RequestArticles):
 
 class RequestArticlesRecentActivity(RequestArticles):
     def __init__(self,
-                 maxArticleCount = 60,
+                 maxArticleCount = 100,
                  updatesAfterTm = None,
                  updatesAfterMinsAgo = None,
                  lang = None,

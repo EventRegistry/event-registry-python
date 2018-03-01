@@ -90,6 +90,7 @@ class EventRegistry(object):
         self._requestLogFName = os.path.join(currPath, "requests_log.txt")
 
         print("Event Registry host: %s" % (self._host))
+        print("Text analytics host: %s" % (self._hostAnalytics))
         # check what is the version of your module compared to the latest one
         self.checkVersion()
 
@@ -295,10 +296,10 @@ class EventRegistry(object):
                 self._lastException = ex
                 print("Event Registry exception while executing the request:")
                 self.printLastException()
-                #time.sleep(3)   # sleep for X seconds on error
+                time.sleep(3)   # sleep for X seconds on error
         self._lock.release()
         if returnData == None:
-            raise self._lastException
+            raise self._lastException or Exception("No valid return data provided")
         return returnData
 
 
@@ -310,27 +311,33 @@ class EventRegistry(object):
         """
         if self._apiKey:
             paramDict["apiKey"] = self._apiKey
-        self._headers = {}  # reset any past data
-        returnData = None
         self._lock.acquire()
-
-        try:
-            # make the request
-            respInfo = requests.post(self._hostAnalytics + methodUrl, json = paramDict)
-            # remember the returned headers
-            self._headers = respInfo.headers
-            # if we got some error codes print the error and repeat the request after a short time period
-            if respInfo.status_code != 200:
-                raise Exception(respInfo.text)
-            returnData = respInfo.json()
-        except Exception as ex:
-            self._lastException = ex
-            print("Event Registry exception while executing the request:")
-            self.printLastException()
-        finally:
-            self._lock.release()
+        returnData = None
+        respInfo = None
+        self._lastException = None
+        self._headers = {}  # reset any past data
+        tryCount = 0
+        while self._repeatFailedRequestCount < 0 or tryCount < self._repeatFailedRequestCount:
+            tryCount += 1
+            try:
+                # make the request
+                respInfo = self._reqSession.post(self._hostAnalytics + methodUrl, json = paramDict)
+                # remember the returned headers
+                self._headers = respInfo.headers
+                # if we got some error codes print the error and repeat the request after a short time period
+                if respInfo.status_code != 200:
+                    raise Exception(respInfo.text)
+                returnData = respInfo.json()
+                break
+            except Exception as ex:
+                self._lastException = ex
+                print("Event Registry exception while executing the request:")
+                self.printLastException()
+                break
+                time.sleep(3)   # sleep for X seconds on error
+        self._lock.release()
         if returnData == None:
-            raise self._lastException
+            raise self._lastException or Exception("No valid return data provided")
         return returnData
 
     #

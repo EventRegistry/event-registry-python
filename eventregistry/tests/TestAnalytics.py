@@ -1,6 +1,6 @@
 ﻿import unittest
 import eventregistry as ER
-from DataValidator import DataValidator
+from .DataValidator import DataValidator
 
 class TestAnalytics(DataValidator):
 
@@ -43,7 +43,7 @@ class TestAnalytics(DataValidator):
     def testLanguage(self):
         analytics = ER.Analytics(self.er)
         langInfo = analytics.detectLanguage("Microsoft released a new version of Windows OS.")
-        print langInfo
+        print(langInfo)
 
 
 if __name__ == "__main__":

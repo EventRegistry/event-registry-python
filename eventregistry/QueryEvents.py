@@ -120,7 +120,7 @@ class QueryEvents(Query):
         self._setValIfNotDefault("keywordLoc", keywordsLoc, "body")
         self._setValIfNotDefault("ignoreKeywordLoc", ignoreKeywordsLoc, "body")
 
-        self.addRequestedResult(requestedResult or RequestEventsInfo())
+        self.setRequestedResult(requestedResult or RequestEventsInfo())
 
 
     def _getPath(self):
@@ -329,7 +329,7 @@ class RequestEvents:
 
 class RequestEventsInfo(RequestEvents):
     def __init__(self, page = 1,
-                 count = 20,
+                 count = 50,
                  sortBy = "rel", sortByAsc = False,
                  returnInfo = ReturnInfo()):
         """
@@ -626,7 +626,7 @@ class RequestEventsCategoryAggr(RequestEvents):
 
 class RequestEventsRecentActivity(RequestEvents):
     def __init__(self,
-                 maxEventCount = 60,
+                 maxEventCount = 50,
                  updatesAfterTm = None,
                  updatesAfterMinsAgo = None,
                  mandatoryLocation = True,
@@ -635,7 +635,7 @@ class RequestEventsRecentActivity(RequestEvents):
                  returnInfo = ReturnInfo()):
         """
         return a list of recently changed events that match search conditions
-        @param maxEventCount: max events to return (at most 500)
+        @param maxEventCount: max events to return (at most 200)
         @param updatesAfterTm: the time after which the events were added/updated (returned by previous call to the same method)
         @param updatesAfterMinsAgo: how many minutes into the past should we check (set either this or updatesAfterTm property, but not both)
         @param mandatoryLocation: return only events that have a geographic location assigned to them
@@ -643,7 +643,7 @@ class RequestEventsRecentActivity(RequestEvents):
         @param minAvgCosSim: the minimum avg cos sim of the events to be returned (events with lower quality should not be included)
         @param returnInfo: what details should be included in the returned information
         """
-        assert maxEventCount <= 2000
+        assert maxEventCount <= 200
         assert updatesAfterTm == None or updatesAfterMinsAgo == None, "You should specify either updatesAfterTm or updatesAfterMinsAgo parameter, but not both"
         self.resultType = "recentActivityEvents"
         self.recentActivityEventsMaxEventCount = maxEventCount

@@ -134,6 +134,7 @@ class StoryInfoFlags(ReturnInfoFlagsBase):
     @param concepts: set of concepts associated with the story
     @param categories: categories associated with the story
     @param medoidArticle: the article that is closest to the center of the cluster of articles assigned to the story
+    @param infoArticle: the article from which we have extracted the title and summary for the story
     @param commonDates: dates that were frequently identified in the articles belonging to the story
     @param socialScore: score computed based on how frequently the articles in the story were shared on social media
     @param imageCount: number of images to be returned for a story
@@ -147,6 +148,7 @@ class StoryInfoFlags(ReturnInfoFlagsBase):
                 concepts = False,
                 categories = False,
                 medoidArticle = False,
+                infoArticle = False,
                 commonDates = False,
                 socialScore = False,
                 imageCount = 0):
@@ -158,6 +160,7 @@ class StoryInfoFlags(ReturnInfoFlagsBase):
         self._setFlag("IncludeStoryConcepts", concepts, False)
         self._setFlag("IncludeStoryCategories", categories, False)
         self._setFlag("IncludeStoryMedoidArticle", medoidArticle, False)
+        self._setFlag("IncludeStoryInfoArticle", infoArticle, False)
         self._setFlag("IncludeStoryCommonDates", commonDates, False)
         self._setFlag("IncludeStorySocialScore", socialScore, False)
         self._setVal("StoryImageCount", imageCount, 0)
@@ -176,6 +179,7 @@ class EventInfoFlags(ReturnInfoFlagsBase):
     @param location: return the location where the event occured
     @param date: return information about the date of the event
     @param commonDates: return the dates that were commonly found in the articles about the event
+    @param infoArticle: return for each language the article from which we have extracted the summary and title for event for that language
     @param stories: return the list of stories (clusters) that are about the event
     @param socialScore: score computed based on how frequently the articles in the event were shared on social media
     @param imageCount: number of images to be returned for an event
@@ -189,6 +193,7 @@ class EventInfoFlags(ReturnInfoFlagsBase):
                 location = True,
                 date = True,
                 commonDates = False,
+                infoArticle = False,
                 stories = False,
                 socialScore = False,
                 imageCount = 0):
@@ -201,6 +206,7 @@ class EventInfoFlags(ReturnInfoFlagsBase):
         self._setFlag("IncludeEventDate", date, True)
 
         self._setFlag("IncludeEventCommonDates", commonDates, False)
+        self._setFlag("IncludeEventInfoArticle", infoArticle, False)
         self._setFlag("IncludeEventStories", stories, False)
         self._setFlag("IncludeEventSocialScore", socialScore, False)
         self._setVal("EventImageCount", imageCount, 0)

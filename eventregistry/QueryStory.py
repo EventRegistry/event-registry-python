@@ -72,19 +72,19 @@ class RequestStoryArticles(RequestStory):
     """
     def __init__(self,
                  page = 1,
-                 count = 20,
+                 count = 100,
                  sortBy = "cosSim", sortByAsc = False,
                  returnInfo = ReturnInfo(articleInfo = ArticleInfoFlags(bodyLen = 200))):
         """
         return articles in the story (cluster)
         @param page: page of the articles to return (1, 2, ...)
-        @param count: number of articles to return per page (at most 200)
+        @param count: number of articles to return per page (at most 100)
         @param sortBy: order in which articles are sorted. Options: id (internal id), date (published date), cosSim (closeness to event centroid), sourceImportanceRank (importance of the news source, custom set), sourceAlexaGlobalRank (global rank of the news source), sourceAlexaCountryRank (country rank of the news source), socialScore (total shares in social media)
         @param sortByAsc: should the articles be sorted in ascending order (True) or descending (False) based on sortBy value
         @param returnInfo: what details should be included in the returned information
         """
         assert page >= 1, "page has to be >= 1"
-        assert count <= 200
+        assert count <= 100
         self.resultType = "articles"
         self.articlesPage = page
         self.articlesCount = count
@@ -132,15 +132,14 @@ class RequestStorySimilarStories(RequestStory):
     return a list of similar stories
     """
     def __init__(self,
-                 count = 20,                    # number of similar stories to return
+                 count = 50,                    # number of similar stories to return
                  source = "concept",            # how to compute similarity. Options: concept cca
                  maxDayDiff = sys.maxsize,       # what is the maximum time difference between the similar stories and this one
                  returnInfo = ReturnInfo()):
-        assert count <= 200
+        assert count <= 50
         self.resultType = "similarStories"
-        self.similarEventsCount = count
-        self.similarEventsSource = source
+        self.similarStoriesCount = count
+        self.similarStoriesSource = source
         if maxDayDiff != sys.maxsize:
-            self.similarEventsMaxDayDiff = maxDayDiff
-        self.similarEventsAddArticleTrendInfo = addArticleTrendInfo
-        self.__dict__.update(returnInfo.getParams("similarEvents"))
+            self.similarStoriesMaxDayDiff = maxDayDiff
+        self.__dict__.update(returnInfo.getParams("similarStories"))

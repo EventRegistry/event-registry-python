@@ -45,13 +45,8 @@ class GetConceptInfo(QueryParamsBase):
         QueryParamsBase.__init__(self)
         self._setVal("action", "getInfo")
         if uriOrUriList != None:
-            self.queryByUri(uriOrUriList)
+            self._setVal("uri", uriOrUriList)
         self._update(returnInfo.getParams())
-
-
-    def queryByUri(self, uriOrUriList):
-        """search concepts by uri(s)"""
-        self._setVal("uri", uriOrUriList)
 
 
     def _getPath(self):

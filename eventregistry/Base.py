@@ -78,7 +78,7 @@ class QueryItems:
 
     def __init__(self, oper, items):
         self._oper = oper
-        self._items = items;
+        self._items = items
 
     @staticmethod
     def AND(items):

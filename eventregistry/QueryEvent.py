@@ -73,8 +73,8 @@ class QueryEventArticlesIter(QueryEvent, six.Iterator):
     def execQuery(self, eventRegistry,
             lang = mainLangs,
             sortBy = "cosSim", sortByAsc = False,
-            returnInfo = ReturnInfo(articleInfo = ArticleInfoFlags(bodyLen = 200)),
-            articleBatchSize = 200,
+            returnInfo = ReturnInfo(articleInfo = ArticleInfoFlags(bodyLen = -1)),
+            articleBatchSize = 100,
             maxItems = -1):
         """
         @param eventRegistry: instance of EventRegistry class. used to obtain the necessary data
@@ -82,10 +82,10 @@ class QueryEventArticlesIter(QueryEvent, six.Iterator):
         @param sortBy: order in which event articles are sorted. Options: none (no specific sorting), id (internal id), date (published date), cosSim (closeness to event centroid), sourceImportance (manually curated score of source importance - high value, high importance), sourceImportanceRank (reverse of sourceImportance), sourceAlexaGlobalRank (global rank of the news source), sourceAlexaCountryRank (country rank of the news source), socialScore (total shares on social media), facebookShares (shares on Facebook only)
         @param sortByAsc: should the results be sorted in ascending order (True) or descending (False)
         @param returnInfo: what details should be included in the returned information
-        @param articleBatchSize: number of articles to download at once (we are not downloading article by article) (at most 200)
+        @param articleBatchSize: number of articles to download at once (we are not downloading article by article) (at most 100)
         @param maxItems: maximum number of items to be returned. Used to stop iteration sooner than results run out
         """
-        assert articleBatchSize <= 200, "You can not have a batch size > 200 items"
+        assert articleBatchSize <= 100, "You can not have a batch size > 100 items"
         self._er = eventRegistry
         self._lang = lang
         self._sortBy = sortBy
@@ -168,21 +168,21 @@ class RequestEventInfo(RequestEvent):
 class RequestEventArticles(RequestEvent):
     def __init__(self,
                  page = 1,
-                 count = 20,
+                 count = 100,
                  lang = mainLangs,
                  sortBy = "cosSim", sortByAsc = False,
-                 returnInfo = ReturnInfo(articleInfo = ArticleInfoFlags(bodyLen = 200))):
+                 returnInfo = ReturnInfo(articleInfo = ArticleInfoFlags(bodyLen = -1))):
         """
         return articles about the event
         @param page: page of the articles to return (1, 2, ...)
-        @param count: number of articles to return per page (at most 200)
+        @param count: number of articles to return per page (at most 100)
         @param lang: a single lanugage or a list of languages in which to return the articles
         @param sortBy: order in which event articles are sorted. Options: id (internal id), date (published date), cosSim (closeness to event centroid), sourceImportanceRank (importance of the news source, custom set), sourceAlexaGlobalRank (global rank of the news source), sourceAlexaCountryRank (country rank of the news source), socialScore (total shares in social media)
         @param sortByAsc: should the articles be sorted in ascending order (True) or descending (False) based on sortBy value
         @param returnInfo: what details should be included in the returned information
         """
         assert page >= 1, "page has to be >= 1"
-        assert count <= 200, "at most 200 articles can be returned per call"
+        assert count <= 100, "at most 100 articles can be returned per call"
         self.resultType = "articles"
         self.articlesPage = page
         self.articlesCount = count
@@ -243,19 +243,19 @@ class RequestEventDateMentionAggr(RequestEvent):
 class RequestEventArticleTrend(RequestEvent):
     def __init__(self,
                  lang = mainLangs,
-                 page = 1, count = 200,
+                 page = 1, count = 100,
                  minArticleCosSim = -1,
                  returnInfo = ReturnInfo(articleInfo = ArticleInfoFlags(bodyLen = 0))):
         """
         return trending information for the articles about the event
         @param lang: languages for which to compute the trends
         @param page: page of the articles for which to return information (1, 2, ...)
-        @param count: number of articles returned per page (at most 200)
+        @param count: number of articles returned per page (at most 100)
         @param minArticleCosSim: ignore articles that have cos similarity to centroid lower than the specified value (-1 for no limit)
         @param returnInfo: what details should be included in the returned information
         """
         assert page >= 1, "page has to be >= 1"
-        assert count <= 200, "at most 200 articles can be returned per call"
+        assert count <= 100, "at most 100 articles can be returned per call"
         self.resultType = "articleTrend"
         self.articleTrendLang = lang
         self.articleTrendPage = page
@@ -267,22 +267,22 @@ class RequestEventArticleTrend(RequestEvent):
 
 class RequestEventSimilarEvents(RequestEvent):
     def __init__(self,
-                 count = 20,                    #
-                 maxDayDiff = sys.maxsize,       # what is the maximum time difference between the similar events and this one
+                 count = 50,                    # number of similar events to return
+                 maxDayDiff = sys.maxsize,      # what is the maximum time difference between the similar events and this one
                  addArticleTrendInfo = False,   # add info how the articles in the similar events are distributed over time
                  aggrHours = 6,                 # if similarEventsAddArticleTrendInfo == True then this is the aggregating window
                  includeSelf = False,           # should the info about the event itself be included among the results
                  returnInfo = ReturnInfo()):
         """
         compute and return a list of similar events
-        @param count: number of similar events to return (at most 200)
+        @param count: number of similar events to return (at most 50)
         @param maxDayDiff: find only those events that are at most maxDayDiff days apart from the tested event
         @param addArticleTrendInfo: for the returned events compute how they were trending (intensity of reporting) in different time periods
         @param aggrHours: time span that is used as a unit when computing the trending info
         @param includeSel: include also the tested event in the results (True or False)
         @param returnInfo: what details should be included in the returned information
         """
-        assert count <= 200
+        assert count <= 50
         self.resultType = "similarEvents"
         self.similarEventsCount = count
         if maxDayDiff != sys.maxsize:
@@ -296,20 +296,20 @@ class RequestEventSimilarEvents(RequestEvent):
 
 class RequestEventSimilarStories(RequestEvent):
     def __init__(self,
-                 count = 20,                # number of similar stories to return
+                 count = 50,                # number of similar stories to return
                  source = "concept",        # how to compute similarity. Options: concept, cca
                  lang = ["eng"],            # in which language should be the similar stories
                  maxDayDiff = sys.maxsize,   # what is the maximum time difference between the similar stories and this one
                  returnInfo = ReturnInfo()):
         """
         return a list of similar stories (clusters)
-        @param count: number of similar stories to return (at most 200)
+        @param count: number of similar stories to return (at most 50)
         @param source: show is the similarity with other stories computed. Using concepts ('concepts') or CCA ('cca').
         @param lang: in what language(s) should be the returned stories
         @param maxDayDiff: maximum difference in days between the returned stories and the tested event
         @param returnInfo: what details should be included in the returned information
         """
-        assert count <= 200
+        assert count <= 50
         self.resultType = "similarStories"
         self.similarStoriesCount = count
         self.similarStoriesSource = source
