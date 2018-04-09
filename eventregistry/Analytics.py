@@ -49,6 +49,17 @@ class Analytics:
         return resData
 
 
+    def semanticSimilarity(self, text1, text2, distanceMeasure = "cosine"):
+        """
+        determine the semantic similarity of the two provided documents
+        @param text1: first document to analyze
+        @param text2: second document to analyze
+        @param distanceMeasure: distance measure to use for comparing two documents. Possible values are "cosine" (default) or "jaccard"
+        """
+        resData = self._er.jsonRequestAnalytics("/api/v1/semanticSimilarity", { "text1": text1, "text2": text2, "distanceMeasure": distanceMeasure })
+        return resData
+
+
     def detectLanguage(self, text):
         """
         determine the language of the given text

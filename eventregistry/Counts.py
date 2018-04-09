@@ -18,8 +18,8 @@ class GetCounts(CountsBase):
                  uriOrUriList,
                  source = "news",
                  type = "concept",
-                 startDate = None,
-                 endDate = None,
+                 dateStart = None,
+                 dateEnd = None,
                  returnInfo = ReturnInfo()):
         """
         obtain information about how frequently a concept or category is mentioned in the articles on particular dates
@@ -53,8 +53,8 @@ class GetCounts(CountsBase):
         @param uriOrUriList: concept/category uri or a list of uris
         @param source: input source information from which to compute top trends. Options: "news", "social", "custom", "geo" or "sentiment"
         @param type: what do the uris represent? "concept" or "category"
-        @param startDate: starting date from which to provide counts onwards (either None, datetime.date or "YYYY-MM-DD")
-        @param endDate: ending date until which to provide counts (either None, datetime.date or "YYYY-MM-DD")
+        @param dateStart: starting date from which to provide counts onwards (either None, datetime.date or "YYYY-MM-DD")
+        @param dateEnd: ending date until which to provide counts (either None, datetime.date or "YYYY-MM-DD")
         @param returnInfo: what details should be included in the returned information
         """
         CountsBase.__init__(self)
@@ -63,10 +63,10 @@ class GetCounts(CountsBase):
         self._setVal("type", type)
         self._update(returnInfo.getParams())
         self._setVal("uri", uriOrUriList)
-        if startDate != None:
-            self._setDateVal("startDate", startDate)
-        if endDate != None:
-            self._setDateVal("endDate", endDate)
+        if dateStart != None:
+            self._setDateVal("dateStart", dateStart)
+        if dateEnd != None:
+            self._setDateVal("dateEnd", dateEnd)
 
 
 
@@ -75,8 +75,8 @@ class GetCountsEx(CountsBase):
                  uriOrUriList,
                  source = "news",
                  type = "concept",
-                 startDate = None,
-                 endDate = None,
+                 dateStart = None,
+                 dateEnd = None,
                  returnInfo = ReturnInfo()):
         """
         obtain information about how frequently a concept or category is mentioned in the articles on particular dates
@@ -112,8 +112,8 @@ class GetCountsEx(CountsBase):
         @param uriOrUriList: concept/category uri or a list of uris
         @param source: input source information from which to compute top trends. Options: "news", "social"
         @param type: what do the uris represent? "concept" or "category"
-        @param startDate: starting date from which to provide counts onwards (either None, datetime.date or "YYYY-MM-DD")
-        @param endDate: ending date until which to provide counts (either None, datetime.date or "YYYY-MM-DD")
+        @param dateStart: starting date from which to provide counts onwards (either None, datetime.date or "YYYY-MM-DD")
+        @param dateEnd: ending date until which to provide counts (either None, datetime.date or "YYYY-MM-DD")
         @param returnInfo: what details should be included in the returned information
         """
         CountsBase.__init__(self)
@@ -122,7 +122,7 @@ class GetCountsEx(CountsBase):
         self._setVal("type", type)
         self._update(returnInfo.getParams())
         self._setVal("uri", uriOrUriList)
-        if startDate != None:
-            self._setDateVal("startDate", startDate)
-        if endDate != None:
-            self._setDateVal("endDate", endDate)
+        if dateStart != None:
+            self._setDateVal("dateStart", dateStart)
+        if dateEnd != None:
+            self._setDateVal("dateEnd", dateEnd)

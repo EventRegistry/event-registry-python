@@ -8,16 +8,18 @@ from eventregistry import *
 
 er = EventRegistry()
 
-obamaUri = er.getConceptUri("Obama")
+obamaUri = er.getConceptUri("Trump")
 ebolaUri = er.getConceptUri("ebola")
 
 q = GetCounts([obamaUri, ebolaUri],
-              startDate = "2015-05-15",
-              endDate = "2015-05-20")
+            dateStart = "2015-05-15",
+            dateEnd = "2018-05-20")
 ret = er.execQuery(q)
 print(er.format(ret))
 
-q = GetCountsEx([er.getCategoryUri("business")], type = "category")
+q = GetCountsEx([er.getCategoryUri("business")], type="category",
+            dateStart = "2015-05-15",
+            dateEnd = "2018-05-20")
 ret = er.execQuery(q)
 print(er.format(ret))
 

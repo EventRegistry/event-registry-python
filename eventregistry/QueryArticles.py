@@ -176,6 +176,17 @@ class QueryArticles(Query):
 
 
     @staticmethod
+    def initWithArticleUriWgtList(uriWgtList):
+        """
+        instead of making a query, provide a list of article URIs manually, and then produce the desired results on top of them
+        """
+        q = QueryArticles()
+        assert isinstance(uriWgtList, list), "uriList has to be a list of strings that represent article uris"
+        q.queryParams = { "action": "getArticles", "articleUriWgtList": uriWgtList }
+        return q
+
+
+    @staticmethod
     def initWithComplexQuery(query):
         """
         create a query using a complex article query
@@ -206,7 +217,7 @@ class QueryArticlesIter(QueryArticles, six.Iterator):
         """
         return the number of articles that match the criteria
         """
-        self.setRequestedResult(RequestArticlesUriList())
+        self.setRequestedResult(RequestArticlesUriWgtList())
         res = eventRegistry.execQuery(self)
         if "error" in res:
             print(res["error"])
@@ -304,15 +315,12 @@ class QueryArticlesIter(QueryArticles, six.Iterator):
             return
         # get uris to download
         uriWgts = self._uriWgtList[:self._articleBatchSize]
-        # create a list of uris, without the weights
-        uriToWgts = dict([val.split(":") for val in uriWgts])
-        uris = [val.split(":")[0] for val in uriWgts]
         # remove used uris
         self._uriWgtList = self._uriWgtList[self._articleBatchSize:]
         if self._er._verboseOutput:
-            print("Downoading %d articles..." % (len(uris)))
+            print("Downoading %d articles..." % (len(uriWgts)))
 
-        q = QueryArticles.initWithArticleUriList(uris)
+        q = QueryArticles.initWithArticleUriWgtList(uriWgts)
         q.setRequestedResult(RequestArticlesInfo(page = 1, count = self._articleBatchSize, sortBy = "none", returnInfo = self._returnInfo))
         # download articles and make sure that we set the same archive flag as it was returned when we were processing the uriList request
         res = self._er.execQuery(q, allowUseOfArchive = self._useArchive)
@@ -321,9 +329,6 @@ class QueryArticlesIter(QueryArticles, six.Iterator):
         else:
             assert res.get("articles", {}).get("pages", 0) == 1
         results = res.get("articles", {}).get("results", [])
-        for result in results:
-            if "uri" in result:
-                result["wgt"] = int(uriToWgts.get(result["uri"], "1"))
         self._articleList.extend(results)
 
 
@@ -388,33 +393,6 @@ class RequestArticlesInfo(RequestArticles):
 
 
 
-class RequestArticlesUriList(RequestArticles):
-    def __init__(self,
-                 page = 1,
-                 count = 10000,
-                 sortBy = "fq", sortByAsc = False):
-        """
-        return a list of article uris
-        @param page: page of the results (1, 2, ...)
-        @param count: number of items to return in a single query (at most 50000)
-        @param sortBy: how are articles sorted. Options: id (internal id), date (publishing date), cosSim (closeness to the event centroid), rel (relevance to the query), sourceImportance (manually curated score of source importance - high value, high importance), sourceImportanceRank (reverse of sourceImportance), sourceAlexaGlobalRank (global rank of the news source), sourceAlexaCountryRank (country rank of the news source), socialScore (total shares on social media), facebookShares (shares on Facebook only)
-        @param sortByAsc: should the results be sorted in ascending order (True) or descending (False) according to the sortBy criteria
-        """
-        assert page >= 1, "page has to be >= 1"
-        assert count <= 50000
-        self.resultType = "uriList"
-        self.uriListPage = page
-        self.uriListCount = count
-        self.uriListSortBy = sortBy
-        self.uriListSortByAsc = sortByAsc
-
-
-    def setPage(self, page):
-        assert page >= 1, "page has to be >= 1"
-        self.uriListPage = page
-
-
-
 class RequestArticlesUriWgtList(RequestArticles):
     def __init__(self,
                  page = 1,
@@ -439,28 +417,6 @@ class RequestArticlesUriWgtList(RequestArticles):
     def setPage(self, page):
         assert page >= 1, "page has to be >= 1"
         self.uriWgtListPage = page
-
-
-
-class RequestArticlesUrlList(RequestArticles):
-    def __init__(self,
-                 page = 1,
-                 count = 10000,
-                 sortBy = "fq", sortByAsc = False):
-        """
-        return a list of article urls
-        @param page: page of the results (1, 2, ...)
-        @param count: number of items to return in a single query (at most 50000)
-        @param sortBy: how are articles sorted. Options: id (internal id), date (publishing date), cosSim (closeness to the event centroid), rel (relevance to the query), sourceImportance (manually curated score of source importance - high value, high importance), sourceImportanceRank (reverse of sourceImportance), sourceAlexaGlobalRank (global rank of the news source), sourceAlexaCountryRank (country rank of the news source), socialScore (total shares on social media), facebookShares (shares on Facebook only)
-        @param sortByAsc: should the results be sorted in ascending order (True) or descending (False) according to the sortBy criteria
-        """
-        assert page >= 1, "page has to be >= 1"
-        assert count <= 50000
-        self.resultType = "urlList"
-        self.urlListPage = page
-        self.urlListCount = count
-        self.urlListSortBy = sortBy
-        self.urlListSortByAsc = sortByAsc
 
 
 

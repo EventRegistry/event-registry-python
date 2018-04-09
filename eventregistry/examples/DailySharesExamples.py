@@ -8,12 +8,14 @@ from eventregistry import *
 er = EventRegistry()
 
 # get top shared articles for a date
-q = GetTopSharedArticles(date = "2015-05-23", count = 30)
+q = GetTopSharedArticles(date="2018-03-01", count=30,
+    returnInfo = ReturnInfo(articleInfo = ArticleInfoFlags(socialScore=True)))
 ret = er.execQuery(q)
 print(er.format(ret))
 
 # get top shared events for a date
-q = GetTopSharedEvents(date = "2015-05-23", count = 30)
+q = GetTopSharedEvents(date = "2018-03-01", count = 30,
+    returnInfo = ReturnInfo(eventInfo = EventInfoFlags(socialScore=True)))
 ret = er.execQuery(q)
 print(er.format(ret))
 

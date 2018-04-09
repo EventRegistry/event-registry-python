@@ -62,7 +62,7 @@ class QueryEventArticlesIter(QueryEvent, six.Iterator):
         @param eventRegistry: instance of EventRegistry class. used to obtain the necessary data
         @param lang: array or a single language in which to return the list of matching articles
         """
-        self.setRequestedResult(RequestEventArticleUris(lang = lang))
+        self.setRequestedResult(RequestEventArticleUriWgts(lang = lang))
         res = eventRegistry.execQuery(self)
         if "error" in res:
             print(res["error"])
@@ -97,11 +97,11 @@ class QueryEventArticlesIter(QueryEvent, six.Iterator):
         self._currItem = 0
         # download the list of article uris
         self._articleList = []
-        self.setRequestedResult(RequestEventArticleUris(lang = self._lang, sortBy = self._sortBy, sortByAsc = self._sortByAsc))
+        self.setRequestedResult(RequestEventArticleUriWgts(lang = self._lang, sortBy = self._sortBy, sortByAsc = self._sortByAsc))
         res = self._er.execQuery(self)
         if "error" in res:
             print(res["error"])
-        self._uriList = res.get(self.queryParams["eventUri"], {}).get("articleUris", {}).get("results", [])
+        self._uriWgtList = res.get(self.queryParams["eventUri"], {}).get("uriWgtList", {}).get("results", [])
         return self
 
 
@@ -109,20 +109,20 @@ class QueryEventArticlesIter(QueryEvent, six.Iterator):
         """download next batch of events based on the event uris in the uri list"""
         self.clearRequestedResults()
         # if no uris, then we have nothing to download
-        if len(self._uriList) == 0:
+        if len(self._uriWgtList) == 0:
             return
         # get uris to download
-        uris = self._uriList[:self._articleBatchSize]
+        uriWgts = self._uriWgtList[:self._articleBatchSize]
         if self._er._verboseOutput:
-            print("Downoading %d articles from event %s" % (len(uris), self.queryParams["eventUri"]))
+            print("Downoading %d articles from event %s" % (len(uriWgts), self.queryParams["eventUri"]))
         # remove used uris
-        self._uriList = self._uriList[self._articleBatchSize:]
-        q = QueryArticle(uris)
-        q.setRequestedResult(RequestArticleInfo(self._returnInfo))
+        self._uriWgtList = self._uriWgtList[self._articleBatchSize:]
+        q = QueryArticles.initWithArticleUriWgtList(uriWgts)
+        q.setRequestedResult(RequestArticlesInfo(page = 1, count = self._articleBatchSize, returnInfo = self._returnInfo))
         res = self._er.execQuery(q)
         if "error" in res:
             print(res["error"])
-        arts = [ res[key]["info"] for key in uris if key in res and "info" in res[key]]
+        arts = res.get("articles", {}).get("results", [])
         self._articleList.extend(arts)
 
 
@@ -193,21 +193,20 @@ class RequestEventArticles(RequestEvent):
 
 
 
-class RequestEventArticleUris(RequestEvent):
+class RequestEventArticleUriWgts(RequestEvent):
     def __init__(self,
                  lang = mainLangs,
-                 sortBy = "cosSim", sortByAsc = False  # order in which event articles are sorted. Options: id (internal id), date (published date), cosSim (closeness to event centroid), socialScore (total shares in social media)
-                 ):
+                 sortBy = "cosSim", sortByAsc = False):  # order in which event articles are sorted. Options: id (internal id), date (published date), cosSim (closeness to event centroid), socialScore (total shares in social media)
         """
-        return just a list of article uris
-        @param lang: a single lanugage or a list of languages in which to return the articles
+        return just a list of article uris and their associated weights
+        @param lang: a single language or a list of languages in which to return the articles
         @param sortBy: order in which event articles are sorted. Options: id (internal id), date (published date), cosSim (closeness to event centroid), sourceImportanceRank (importance of the news source, custom set), sourceAlexaGlobalRank (global rank of the news source), sourceAlexaCountryRank (country rank of the news source), socialScore (total shares in social media)
         @param sortByAsc: should the articles be sorted in ascending order (True) or descending (False) based on sortBy value
         """
-        self.articleUrisLang = lang
-        self.articleUrisSortBy = sortBy
-        self.articleUrisSortByAsc = sortByAsc
-        self.resultType = "articleUris"
+        self.uriWgtListLang = lang
+        self.uriWgtListSortBy = sortBy
+        self.uriWgtListSortByAsc = sortByAsc
+        self.resultType = "uriWgtList"
 
 
 

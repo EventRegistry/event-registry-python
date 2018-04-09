@@ -9,37 +9,48 @@ Social score for an event is computed by checking 30 top shared articles in the 
 from eventregistry.Base import *
 from eventregistry.ReturnInfo import *
 
-class DailySharesBase(QueryParamsBase):
-    def _getPath(self):
-        return "/json/topDailyShares"
 
 # get top shared articles for today or any other day
-class GetTopSharedArticles(DailySharesBase):
+class GetTopSharedArticles(QueryParamsBase):
     def __init__(self,
                  date = None,     # specify the date (either in YYYY-MM-DD or datetime.date format) for which to return top shared articles. If None then today is used
                  count = 20,      # number of top shared articles to return
                  returnInfo = ReturnInfo()):
         QueryParamsBase.__init__(self)
         self._setVal("action", "getArticles")
-        self._setVal("count", count)
-        self._update(returnInfo.getParams())
+        self._setVal("resultType", "articles")
+        self._setVal("articlesCount", count)
+        self._setVal("articlesSortBy", "socialScore")
+        self._update(returnInfo.getParams("articles"))
 
         if date == None:
             date = datetime.date.today()
-        self._setDateVal("date", date)
+        self._setDateVal("dateStart", date)
+        self._setDateVal("dateEnd", date)
+
+
+    def _getPath(self):
+        return "/json/article"
 
 
 # get top shared events for today or any other day
-class GetTopSharedEvents(DailySharesBase):
+class GetTopSharedEvents(QueryParamsBase):
     def __init__(self,
                  date = None,     # specify the date (either in YYYY-MM-DD or datetime.date format) for which to return top shared articles. If None then today is used
                  count = 20,      # number of top shared articles to return
                  returnInfo = ReturnInfo()):
         QueryParamsBase.__init__(self)
         self._setVal("action", "getEvents")
-        self._setVal("count", count)
-        self._update(returnInfo.getParams())
+        self._setVal("resultType", "events")
+        self._setVal("eventsCount", count)
+        self._setVal("eventsSortBy", "socialScore")
+        self._update(returnInfo.getParams("events"))
 
         if date == None:
             date = datetime.date.today()
-        self._setDateVal("date", date)
+        self._setDateVal("dateStart", date)
+        self._setDateVal("dateEnd", date)
+
+
+    def _getPath(self):
+        return "/json/event"

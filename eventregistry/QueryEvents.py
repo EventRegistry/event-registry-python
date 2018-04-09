@@ -159,6 +159,17 @@ class QueryEvents(Query):
 
 
     @staticmethod
+    def initWithEventUriWgtList(uriWgtList):
+        """
+        Set a custom list of event uris. The results will be then computed on this list - no query will be done (all conditions will be ignored).
+        """
+        q = QueryEvents()
+        assert isinstance(uriWgtList, list), "uriWgtList has to be a list of strings that represent event uris with their weights"
+        q.queryParams = { "action": "getEvents", "eventUriWgtList": ",".join(uriWgtList) }
+        return q
+
+
+    @staticmethod
     def initWithComplexQuery(query):
         """
         create a query using a complex event query
@@ -279,12 +290,11 @@ class QueryEventsIter(QueryEvents, six.Iterator):
         uriWgts = self._uriWgtList[:self._eventBatchSize]
         # create a list of uris, without the weights
         uriToWgts = dict([val.split(":") for val in uriWgts])
-        uris = [val.split(":")[0] for val in uriWgts]
         # remove used uris
         self._uriWgtList = self._uriWgtList[self._eventBatchSize:]
         if self._er._verboseOutput:
-            print("Downoading %d events..." % (len(uris)))
-        q = QueryEvents.initWithEventUriList(uris)
+            print("Downoading %d events..." % (len(uriWgts)))
+        q = QueryEvents.initWithEventUriWgtList(uriWgts)
         q.setRequestedResult(RequestEventsInfo(page = 1, count = self._eventBatchSize, sortBy = "none", returnInfo = self._returnInfo))
         # download articles and make sure that we set the same archive flag as it was returned when we were processing the uriList request
         res = self._er.execQuery(q, allowUseOfArchive = self._useArchive)
@@ -293,9 +303,6 @@ class QueryEventsIter(QueryEvents, six.Iterator):
         else:
             assert res.get("events", {}).get("pages", 0) == 1
         results = res.get("events", {}).get("results", [])
-        for result in results:
-            if "uri" in result:
-                result["wgt"] = int(uriToWgts.get(result["uri"], "1"))
         self._eventList.extend(results)
 
 
@@ -361,48 +368,21 @@ class RequestEventsInfo(RequestEvents):
 
 
 
-class RequestEventsUriList(RequestEvents):
-    def __init__(self,
-                 page = 1,
-                 count = 100000,
-                 sortBy = "rel", sortByAsc = False):
-        """
-        return a simple list of event uris for resulting events
-        @param page: page of the results (1, 2, ...)
-        @param count: number of results to include per page (at most 300000)
-        @param sortBy: how should the resulting events be sorted. Options: date (by event date), rel (relevance to the query), size (number of articles),
-            socialScore (amount of shares in social media), none (no specific sorting)
-        @param sortByAsc: should the events be sorted in ascending order (True) or descending (False)
-        """
-        assert page >= 1, "page has to be >= 1"
-        assert count <= 300000
-        self.resultType = "uriList"
-        self.uriListPage = page
-        self.uriListCount = count
-        self.uriListSortBy = sortBy
-        self.uriListSortByAsc = sortByAsc
-
-    def setPage(self, page):
-        assert page >= 1, "page has to be >= 1"
-        self.uriListPage = page
-
-
-
 class RequestEventsUriWgtList(RequestEvents):
     def __init__(self,
                  page = 1,
-                 count = 100000,
+                 count = 50000,
                  sortBy = "rel", sortByAsc = False):
         """
         return a simple list of event uris together with the scores for resulting events
         @param page: page of the results (1, 2, ...)
-        @param count: number of results to include per page (at most 300000)
+        @param count: number of results to include per page (at most 100000)
         @param sortBy: how should the resulting events be sorted. Options: date (by event date), rel (relevance to the query), size (number of articles),
             socialScore (amount of shares in social media), none (no specific sorting)
         @param sortByAsc: should the events be sorted in ascending order (True) or descending (False)
         """
         assert page >= 1, "page has to be >= 1"
-        assert count <= 300000
+        assert count <= 100000
         self.resultType = "uriWgtList"
         self.uriWgtListPage = page
         self.uriWgtListCount = count
@@ -441,10 +421,10 @@ class RequestEventsLocAggr(RequestEvents):
                  returnInfo = ReturnInfo()):
         """
         return aggreate of locations of resulting events
-        @param eventsSampleSize: sample of events to use to compute the location aggregate (at most 300000)
+        @param eventsSampleSize: sample of events to use to compute the location aggregate (at most 100000)
         @param returnInfo: what details (about locations) should be included in the returned information
         """
-        assert eventsSampleSize <= 300000
+        assert eventsSampleSize <= 100000
         self.resultType = "locAggr"
         self.locAggrSampleSize = eventsSampleSize
         self.__dict__.update(returnInfo.getParams("locAggr"))
@@ -458,10 +438,10 @@ class RequestEventsLocTimeAggr(RequestEvents):
                  returnInfo = ReturnInfo()):
         """
         return aggreate of locations and times of resulting events
-        @param eventsSampleSize: sample of events to use to compute the location aggregate (at most 300000)
+        @param eventsSampleSize: sample of events to use to compute the location aggregate (at most 100000)
         @param returnInfo: what details (about locations) should be included in the returned information
         """
-        assert eventsSampleSize <= 300000
+        assert eventsSampleSize <= 100000
         self.resultType = "locTimeAggr"
         self.locTimeAggrSampleSize = eventsSampleSize
         self.__dict__.update(returnInfo.getParams("locTimeAggr"))
@@ -476,11 +456,11 @@ class RequestEventsConceptAggr(RequestEvents):
         """
         compute which concept are the most frequently occuring in the list of resulting events
         @param conceptCount: number of top concepts to return (at most 200)
-        @param eventsSampleSize: on what sample of results should the aggregate be computed (at most 3000000)
+        @param eventsSampleSize: on what sample of results should the aggregate be computed (at most 1000000)
         @param returnInfo: what details about the concepts should be included in the returned information
         """
         assert conceptCount <= 200
-        assert eventsSampleSize <= 3000000
+        assert eventsSampleSize <= 1000000
         self.resultType = "conceptAggr"
         self.conceptAggrConceptCount = conceptCount
         self.conceptAggrSampleSize = eventsSampleSize
