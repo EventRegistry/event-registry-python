@@ -1,5 +1,18 @@
 # Change Log
 
+## [v8.0]() (2018-04-10)
+
+**Added**
+- Text analytics: added `Analytics.semanticSimilarity` API call. It can be used to determine how semantically related two documents are. The documents can be in the same or different languages.
+
+**Changed**
+- changed params in the GetCounts and GetCountsEx classes.
+
+**Removed**
+- Removed the RequestEventArticleUris, RequestArticlesUriList, RequestEventsUriList due to backend changes. Use the equivalent \*UriWgt\* version of the classes.
+- Removed RequestArticlesUrlList class since it is not supported anymore.
+
+
 ## [v6.7.0]() (2017-11-30)
 
 **Added**

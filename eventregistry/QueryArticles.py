@@ -182,7 +182,7 @@ class QueryArticles(Query):
         """
         q = QueryArticles()
         assert isinstance(uriWgtList, list), "uriList has to be a list of strings that represent article uris"
-        q.queryParams = { "action": "getArticles", "articleUriWgtList": uriWgtList }
+        q.queryParams = { "action": "getArticles", "articleUriWgtList": ",".join(uriWgtList) }
         return q
 
 
