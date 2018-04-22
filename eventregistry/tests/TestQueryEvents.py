@@ -1,6 +1,6 @@
 ﻿import unittest
 from eventregistry import *
-from .DataValidator import DataValidator
+from DataValidator import DataValidator
 
 class TestQueryEvents(DataValidator):
     def validateGeneralEventList(self, res):
@@ -83,23 +83,15 @@ class TestQueryEvents(DataValidator):
 
     def testSearchByKeyword(self):
         q = QueryEvents(keywords = "car")  # get events containing word car
-        q.addRequestedResult(RequestEventsInfo(page = 1, count = 10, sortBy = "date", sortByAsc = False,
+        q.setRequestedResult(RequestEventsInfo(page = 1, count = 50, sortBy = "date", sortByAsc = False,
             returnInfo = ReturnInfo(
                 conceptInfo = ConceptInfoFlags(type = "org"),
                 eventInfo = EventInfoFlags(concepts = False, articleCounts = False, title = False, summary = False, categories = False, location = False, stories = False, imageCount = 0)
                 )))
-        q.addRequestedResult(RequestEventsConceptTrends(conceptCount = 5,
-            returnInfo = ReturnInfo(
-                conceptInfo = ConceptInfoFlags(type = ["org", "loc"], lang = "spa"))))
         res = self.er.execQuery(q)
         obj = createStructFromDict(res)
 
         self.assertTrue(hasattr(obj, "events"), "Results should contain events")
-        self.assertTrue(hasattr(obj, "conceptTrends"), "Results should contain conceptAggr")
-
-        for concept in obj.conceptTrends.conceptInfo:
-            self.assertTrue(concept.type == "loc" or concept.type == "org", "Got concept of invalid type")
-            self.assertTrue(hasattr(concept.label, "spa"), "Concept did not contain label in expected langage")
 
         lastEventDate = obj.events.results[0].eventDate if len(obj.events.results) > 0 else ""
         for event in obj.events.results:
@@ -115,13 +107,58 @@ class TestQueryEvents(DataValidator):
             self.assertFalse(hasattr(event, "summary"), "Event should not contain summary")
 
 
-    def testSearchByLocation(self):
-        q = QueryEvents(locationUri = self.er.getLocationUri("Washington"))
-        q.addRequestedResult(RequestEventsConceptTrends(conceptCount = 40, returnInfo = ReturnInfo(
-                conceptInfo = ConceptInfoFlags(type = "person"))))
-        q.addRequestedResult(RequestEventsCategoryAggr())
-        q.addRequestedResult(RequestEventsInfo())
+
+    def testSearchByKeywordRev(self):
+        q = QueryEvents(keywords = "car")  # get events containing word car
+        q.setRequestedResult(RequestEventsInfo(page = 1, count = 50, sortBy = "date", sortByAsc = True,
+            returnInfo = ReturnInfo(
+                conceptInfo = ConceptInfoFlags(type = "org"),
+                eventInfo = EventInfoFlags(concepts = False, articleCounts = False, title = False, summary = False, categories = False, location = False, stories = False, imageCount = 0)
+                )))
         res = self.er.execQuery(q)
+        obj = createStructFromDict(res)
+
+        self.assertTrue(hasattr(obj, "events"), "Results should contain events")
+
+        lastEventDate = obj.events.results[0].eventDate if len(obj.events.results) > 0 else ""
+        for event in obj.events.results:
+            self.assertTrue(event.eventDate >= lastEventDate, "Events are not sorted by date")
+            lastEventDate = event.eventDate
+            self.assertFalse(hasattr(event, "articleCounts"), "Event should not contain articleCounts")
+            self.assertFalse(hasattr(event, "categories"), "Event should not contain categories")
+            self.assertFalse(hasattr(event, "concepts"), "Event should not contain concepts")
+            self.assertFalse(hasattr(event, "location"), "Event should not contain location")
+            self.assertFalse(hasattr(event, "stories"), "Event should not contain stories")
+            self.assertFalse(hasattr(event, "images"), "Event should not contain images")
+            self.assertFalse(hasattr(event, "title"), "Event should not contain title")
+            self.assertFalse(hasattr(event, "summary"), "Event should not contain summary")
+
+
+    def testSearchByKeyword2(self):
+        q = QueryEvents(keywords = "car")  # get events containing word car
+        q.setRequestedResult(RequestEventsConceptTrends(conceptCount = 5,
+            returnInfo = ReturnInfo(
+                conceptInfo = ConceptInfoFlags(type = ["org", "loc"], lang = "spa"))))
+        res = self.er.execQuery(q)
+        obj = createStructFromDict(res)
+
+        self.assertTrue(hasattr(obj, "conceptTrends"), "Results should contain conceptAggr")
+
+        for concept in obj.conceptTrends.conceptInfo:
+            self.assertTrue(concept.type == "loc" or concept.type == "org", "Got concept of invalid type")
+            self.assertTrue(hasattr(concept.label, "spa"), "Concept did not contain label in expected langage")
+
+
+    def testSearchByLocation(self):
+        q = QueryEvents(locationUri = self.er.getLocationUri("Germany"))
+        q.setRequestedResult(RequestEventsInfo(sortBy="size", sortByAsc=False))
+        res = self.er.execQuery(q)
+        obj = createStructFromDict(res)
+
+        lastSize = obj.events.results[0].totalArticleCount if len(obj.events.results) > 0 else 0
+        for event in obj.events.results:
+            self.assertTrue(event.totalArticleCount <= lastSize)
+            lastSize = event.totalArticleCount
 
 
     def testEventListWithCombinedSearch1(self):
@@ -168,13 +205,12 @@ class TestQueryEvents(DataValidator):
 
     def testConceptAggr(self):
         q = self.createQuery()
-        q.setRequestedResult(RequestEventsConceptAggr(conceptCount = 50, returnInfo = self.returnInfo))
+        q.setRequestedResult(RequestEventsConceptAggr(conceptCount = 100, returnInfo = self.returnInfo))
         res = self.er.execQuery(q)
 
         self.assertIsNotNone(res.get("conceptAggr"), "Expected to get 'conceptAggr'")
         concepts = res.get("conceptAggr", {}).get("results", [])
-        # concept count is per type so we expect 3*50
-        self.assertEqual(len(concepts), 3*50, "Expected a different number of concept in conceptAggr")
+        self.assertEqual(len(concepts), 100, "Expected a different number of concept in conceptAggr")
         for concept in concepts:
             self.ensureValidConcept(concept, "conceptAggr")
 
@@ -211,7 +247,7 @@ class TestQueryEvents(DataValidator):
 
         self.assertIsNotNone(res.get("conceptMatrix"), "Expected to get 'conceptMatrix'")
         matrix = res.get("conceptMatrix")
-        self.assertTrue("sampleSize" in matrix, "Expecting 'sampleSize' property in conceptMatrix")
+        self.assertTrue("scoreMatrix" in matrix, "Expecting 'scoreMatrix' property in conceptMatrix")
         self.assertTrue("freqMatrix" in matrix, "Expecting 'freqMatrix' property in conceptMatrix")
         self.assertTrue("concepts" in matrix, "Expecting 'concepts' property in conceptMatrix")
         self.assertEqual(len(matrix.get("concepts")), 20, "Expected 20 concepts")
@@ -236,25 +272,23 @@ class TestQueryEvents(DataValidator):
 
     def testSearchBySource(self):
         q = QueryEvents(sourceUri = self.er.getNewsSourceUri("bbc"))             # and have been reported by BBC
-        q.addRequestedResult(RequestEventsUriList())            # return uris of all events
-        q.addRequestedResult(RequestEventsInfo(page = 1, count = 50, sortBy = "size", sortByAsc = True,
+        q.setRequestedResult(RequestEventsUriWgtList())            # return uris of all events
+        res = self.er.execQuery(q)
+        obj = createStructFromDict(res)
+        self.assertTrue(hasattr(obj, "uriWgtList"), "Results should contain uriWgtList")
+
+
+    def testSearchBySource2(self):
+        q = QueryEvents(sourceUri = self.er.getNewsSourceUri("bbc"))             # and have been reported by BBC
+        q.setRequestedResult(RequestEventsInfo(page = 1, count = 50, sortBy = "size", sortByAsc = True,
             returnInfo = ReturnInfo(
                 conceptInfo = ConceptInfoFlags(lang = "deu", type = "wiki"),
                 eventInfo = EventInfoFlags(concepts = True, articleCounts = True, title = True, summary = True, categories = True, location = True, stories = True, imageCount = 1)
                 )))   # return event details for first 100 events
-        q.addRequestedResult(RequestEventsConceptAggr(conceptCount = 5,
-            returnInfo = ReturnInfo(conceptInfo = ConceptInfoFlags(type = ["org", "loc"]))))        # compute concept aggregate on the events
         res = self.er.execQuery(q)
         obj = createStructFromDict(res)
 
-        self.assertTrue(hasattr(obj, "conceptAggr"), "Results should contain conceptAggr")
         self.assertTrue(hasattr(obj, "events"), "Results should contain events")
-        self.assertTrue(hasattr(obj, "uriList"), "Results should contain uriList")
-
-        concepts = obj.conceptAggr.results
-        self.assertTrue(len(concepts) <= 10, "Received a list of concepts that is too long")
-        for concept in concepts:
-            self.assertTrue(concept.type == "loc" or concept.type == "org", "Got concept of invalid type")
 
         lastArtCount = 0
         self.assertTrue(len(obj.events.results) <= 100, "Returned list of events was too long")
@@ -269,11 +303,26 @@ class TestQueryEvents(DataValidator):
             self.assertTrue(hasattr(event, "images"), "Event should contain images")
             self.assertTrue(hasattr(event, "location"), "Event should contain location")
 
-            #self.assertTrue(event.totalArticleCount >= lastArtCount, "Events were not sorted by increasing size")
+            self.assertTrue(event.totalArticleCount >= lastArtCount, "Events were not sorted by increasing size")
             lastArtCount = event.totalArticleCount
             for concept in event.concepts:
                 self.assertTrue(hasattr(concept.label, "deu"), "Concept should contain label in german language")
                 self.assertTrue(concept.type == "wiki", "Got concept of invalid type")
+
+
+    def testSearchBySource3(self):
+        q = QueryEvents(sourceUri = self.er.getNewsSourceUri("bbc"))             # and have been reported by BBC
+        q.setRequestedResult(RequestEventsConceptAggr(conceptCount = 5,
+            returnInfo = ReturnInfo(conceptInfo = ConceptInfoFlags(type = ["org", "loc"]))))        # compute concept aggregate on the events
+        res = self.er.execQuery(q)
+        obj = createStructFromDict(res)
+
+        self.assertTrue(hasattr(obj, "conceptAggr"), "Results should contain conceptAggr")
+
+        concepts = obj.conceptAggr.results
+        self.assertTrue(len(concepts) <= 10, "Received a list of concepts that is too long")
+        for concept in concepts:
+            self.assertTrue(concept.type == "loc" or concept.type == "org", "Got concept of invalid type")
 
     #
     # tests for iterators
@@ -312,7 +361,7 @@ class TestQueryEvents(DataValidator):
             self.ensureEventHasCategory(event, businessCat)
 
             articleIter = QueryEventArticlesIter(event["uri"])
-            articles = list(articleIter.execQuery(self.er, lang = allLangs, returnInfo = self.returnInfo, maxItems = 300))
+            articles = list(articleIter.execQuery(self.er, lang = allLangs, returnInfo = self.returnInfo))
             self.ensureArticlesContainText(articles, "obama")
             self.ensureArticlesContainText(articles, "trump")
 
@@ -339,7 +388,8 @@ class TestQueryEvents(DataValidator):
                                ignoreConceptUri = [politicsUri, chinaUri, unitedStatesUri],
                                ignoreKeywords=["trump", "politics", "michelle"],
                                ignoreSourceUri = [srcDailyCallerUri, srcAawsatUri, srcSvodkaUri],
-                               ignoreCategoryUri = [catBusinessUri, catPoliticsUri])
+                               ignoreCategoryUri = [catBusinessUri, catPoliticsUri],
+                               ignoreLang = "zho")
         for event in iter.execQuery(self.er, returnInfo = self.returnInfo, maxItems = 20):
             self.ensureEventHasConcept(event, obamaUri)
             self.ensureEventHasNotConcept(event, politicsUri)

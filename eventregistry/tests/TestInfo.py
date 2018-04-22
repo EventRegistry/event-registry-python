@@ -1,6 +1,7 @@
 ﻿import unittest
 from eventregistry import *
-from .DataValidator import DataValidator
+
+from DataValidator import DataValidator
 
 class TestInfo(DataValidator):
     def test_sourcesByUri(self):
@@ -17,7 +18,6 @@ class TestInfo(DataValidator):
         res = self.er.execQuery(q)
         self.assertEqual(len(res), len(sourceUriList), "Expected different number of sources")
         for item in list(res.values()):
-            self.assertIsNotNone(item.get("id"), "Source id is missing")
             self.assertIsNotNone(item.get("uri"), "Source uri is missing")
             self.assertIsNotNone(item.get("title"), "Source title is missing")
             self.assertIsNotNone(item.get("description"), "Source description is missing")
@@ -46,7 +46,6 @@ class TestInfo(DataValidator):
         res = self.er.execQuery(q)
         self.assertEqual(len(res), len(uriList), "Expected 10 concepts")
         for item in list(res.values()):
-            self.assertIsNotNone(item.get("id"), "Concept id is missing")
             self.assertIsNotNone(item.get("uri"), "Concept uri is missing")
             self.assertIsNotNone(item.get("type"), "Concept type is missing")
             # since we've asked for specific concepts then types could be anything
@@ -80,7 +79,6 @@ class TestInfo(DataValidator):
         res = self.er.execQuery(q)
         self.assertEqual(len(res), len(catUriList), "Expected 10 categories")
         for item in list(res.values()):
-            self.assertIsNotNone(item.get("id"), "Category id is missing")
             self.assertIsNotNone(item.get("uri"), "Category uri is missing")
             self.assertTrue("parentUri" in item, "Category parent uri is missing")
             self.assertIsNotNone(item.get("childrenUris"), "Category children uris are missing")

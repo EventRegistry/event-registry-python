@@ -1,6 +1,6 @@
 ﻿import unittest
 from eventregistry import *
-from .DataValidator import DataValidator
+from DataValidator import DataValidator
 
 class TestQueryArticles(DataValidator):
 
@@ -24,6 +24,28 @@ class TestQueryArticles(DataValidator):
         res = self.er.execQuery(q)
         self.validateGeneralArticleList(res)
 
+
+    def testArticleUriWgtList(self):
+        iter = QueryArticlesIter(conceptUri=self.er.getConceptUri("germany"), dateStart="2017-10-01", dateEnd="2018-03-01")
+        expectedCount = iter.count(self.er)
+
+        q = QueryArticles(conceptUri=self.er.getConceptUri("germany"), dateStart="2017-10-01", dateEnd="2018-03-01")
+        items = []
+        for page in range(1, 100):
+            q.setRequestedResult(RequestArticlesUriWgtList(page = page, count = 20000))
+            res = self.er.execQuery(q)
+            items.extend(res.get("uriWgtList", {}).get("results", []))
+        if expectedCount != len(items):
+            self.fail("We did not retrieve all item uris. We were expecting %d, but got %d uris" %(expectedCount, len(items)))
+
+        lastWgt = None
+        for item in items:
+            wgt = item.split(":")[1]
+            if lastWgt == None: lastWgt = wgt
+            else:
+                assert lastWgt >= wgt
+                lastWgt = wgt
+
     #
     # test different search query params
     #
@@ -46,28 +68,38 @@ class TestQueryArticles(DataValidator):
         """make sure search in title works"""
         q = QueryArticlesIter(keywords = "iphone", keywordsLoc = "title")
         for art in q.execQuery(self.er, maxItems = 1000):
-            self.assertTrue(art["title"].lower().find("iphone") >= 0)
+            title = self.removeAccents(art["title"]).lower()
+            if title.find("iphone") < 0:
+                print(art["body"])
+            self.assertTrue(title.find("iphone") >= 0)
 
 
     def testArticleListWithKeywordTitleSearch2(self):
         """make sure search in title works"""
         q = QueryArticlesIter(keywords = "home", keywordsLoc = "title")
         for art in q.execQuery(self.er, maxItems = 1000):
-            self.assertTrue(art["title"].lower().find("home") >= 0)
+            title = self.removeAccents(art["title"]).lower()
+            self.assertTrue(title.find("home") >= 0)
 
 
     def testArticleListWithKeywordBodySearch(self):
         """make sure search in body works"""
         q = QueryArticlesIter(keywords = "home", keywordsLoc = "body")
         for art in q.execQuery(self.er, maxItems = 1000):
-            self.assertTrue(art["body"].lower().find("home") >= 0)
+            body = self.removeAccents(art["body"]).lower()
+            if body.find("home") < 0:
+                print(art["body"])
+            self.assertTrue(body.find("home") >= 0)
 
 
     def testArticleListWithKeywordBodySearch2(self):
         """make sure search in body works"""
         q = QueryArticlesIter(keywords = "jack", keywordsLoc = "body")
         for art in q.execQuery(self.er, maxItems = 1000):
-            self.assertTrue(art["body"].lower().find("jack") >= 0)
+            body = self.removeAccents(art["body"]).lower()
+            if body.find("jack") < 0:
+                print(art["body"])
+            self.assertTrue(body.find("jack") >= 0)
 
 
     def testArticleListWithPublisherSearch(self):
@@ -211,13 +243,15 @@ class TestQueryArticles(DataValidator):
 
     def testConceptTrends(self):
         q = self.createQuery()
-        q.setRequestedResult(RequestArticlesConceptTrends(count = 5, returnInfo = self.returnInfo))
+        q.setRequestedResult(RequestArticlesConceptTrends(
+            conceptUris = [self.er.getConceptUri("Obama"), self.er.getConceptUri("Trump")],
+            returnInfo = self.returnInfo))
         res = self.er.execQuery(q)
 
         self.assertIsNotNone(res.get("conceptTrends"), "Expected to get 'conceptTrends'")
         self.assertIsNotNone(res.get("conceptTrends").get("trends"), "Expected to get 'trends' property in conceptTrends")
         self.assertIsNotNone(res.get("conceptTrends").get("conceptInfo"), "Expected to get 'conceptInfo' property in conceptTrends")
-        self.assertTrue(len(res["conceptTrends"]["conceptInfo"]) == 5, "Expected to get 5 concepts in concept trends")
+        self.assertTrue(len(res["conceptTrends"]["conceptInfo"]) == 2, "Expected to get 2 concepts in concept trends but got %d" % (len(res["conceptTrends"]["conceptInfo"])))
         trends = res["conceptTrends"]["trends"]
         self.assertTrue(len(trends) > 0, "Expected to get trends for some days")
         for trend in trends:
@@ -303,7 +337,19 @@ class TestQueryArticles(DataValidator):
         iter = QueryArticlesIter(keywords = "trump", conceptUri = self.er.getConceptUri("Obama"), sourceUri = self.er.getNewsSourceUri("los angeles times"))
         articleCount = iter.count(self.er)
         articles = list(iter.execQuery(self.er, returnInfo = self.returnInfo))
-        self.assertTrue(articleCount == len(articles), "Article iterator did not generate the full list of aticles")
+        if articleCount != len(articles):
+            self.fail("Article iterator did not generate the full list of articles. Expected %d, but got %d items" % (articleCount, len(articles) ))
+
+
+    def testQueryArticlesIterator2(self):
+        """
+        test if we can get non-first page of results
+        """
+        q = QueryArticles(keywords="Trump")
+        q.setRequestedResult(RequestArticlesUriWgtList(page=2, count=100))
+        res = self.er.execQuery(q)
+        if len(res.get("uriWgtList", {}).get("results", [])) == 0:
+            self.fail("No results were obtained for second page of uris")
 
 
     def testQuery1(self):
@@ -343,6 +389,7 @@ class TestQueryArticles(DataValidator):
         iter = QueryArticlesIter(conceptUri = obamaUri,
                                  ignoreConceptUri = [politicsUri, chinaUri, unitedStatesUri],
                                  ignoreKeywords=["trump", "politics", "michelle"],
+                                 ignoreLang = "zho",
                                  ignoreSourceUri = [srcDailyCallerUri, srcAawsatUri, srcSvodkaUri],
                                  ignoreCategoryUri = [catBusinessUri, catPoliticsUri])
         for article in iter.execQuery(self.er, returnInfo = self.returnInfo, maxItems = 500):

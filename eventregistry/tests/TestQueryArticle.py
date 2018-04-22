@@ -1,14 +1,14 @@
 ﻿import unittest
 from eventregistry import *
-from .DataValidator import DataValidator
+from DataValidator import DataValidator
 
 class TestQueryArticle(DataValidator):
 
     def createQuery(self):
         q = QueryArticles(conceptUri = self.er.getConceptUri("Obama"))
-        q.setRequestedResult(RequestArticlesUriList(count = 10))
+        q.setRequestedResult(RequestArticlesUriWgtList(count = 10))
         res = self.er.execQuery(q)
-        q = QueryArticle(res["uriList"]["results"])
+        q = QueryArticle(EventRegistry.getUriFromUriWgt(res["uriWgtList"]["results"]))
         return q
 
 
@@ -31,7 +31,7 @@ class TestQueryArticle(DataValidator):
             # getArticleUri returns a list, so we extend the list of items
             urls = mapper.getArticleUri(url)
             if urls:
-                mappedUris.extend(urls)
+                mappedUris.append(urls)
         if mappedUris == []:
             return
         q = QueryArticle.queryByUri(mappedUris)

@@ -1,7 +1,7 @@
-﻿import six
+﻿import six, json
 from eventregistry.Base import *
 from eventregistry.ReturnInfo import *
-from eventregistry.QueryArticle import QueryArticle, RequestArticleInfo
+from eventregistry.QueryArticles import QueryArticles, RequestArticlesInfo
 
 
 class QueryEvent(Query):
@@ -66,7 +66,7 @@ class QueryEventArticlesIter(QueryEvent, six.Iterator):
         res = eventRegistry.execQuery(self)
         if "error" in res:
             print(res["error"])
-        count = len(res.get(self.queryParams["eventUri"], {}).get("articleUris", {}).get("results", []))
+        count = len(res.get(self.queryParams["eventUri"], {}).get("uriWgtList", {}).get("results", []))
         return count
 
 
@@ -107,14 +107,13 @@ class QueryEventArticlesIter(QueryEvent, six.Iterator):
 
     def _getNextArticleBatch(self):
         """download next batch of events based on the event uris in the uri list"""
-        self.clearRequestedResults()
         # if no uris, then we have nothing to download
         if len(self._uriWgtList) == 0:
             return
         # get uris to download
         uriWgts = self._uriWgtList[:self._articleBatchSize]
         if self._er._verboseOutput:
-            print("Downoading %d articles from event %s" % (len(uriWgts), self.queryParams["eventUri"]))
+            print("Downloading %d articles from event %s" % (len(uriWgts), self.queryParams["eventUri"]))
         # remove used uris
         self._uriWgtList = self._uriWgtList[self._articleBatchSize:]
         q = QueryArticles.initWithArticleUriWgtList(uriWgts)
@@ -266,14 +265,16 @@ class RequestEventArticleTrend(RequestEvent):
 
 class RequestEventSimilarEvents(RequestEvent):
     def __init__(self,
-                 count = 50,                    # number of similar events to return
-                 maxDayDiff = sys.maxsize,      # what is the maximum time difference between the similar events and this one
-                 addArticleTrendInfo = False,   # add info how the articles in the similar events are distributed over time
-                 aggrHours = 6,                 # if similarEventsAddArticleTrendInfo == True then this is the aggregating window
-                 includeSelf = False,           # should the info about the event itself be included among the results
-                 returnInfo = ReturnInfo()):
+                conceptInfoList,
+                count = 50,                    # number of similar events to return
+                maxDayDiff = sys.maxsize,      # what is the maximum time difference between the similar events and this one
+                addArticleTrendInfo = False,   # add info how the articles in the similar events are distributed over time
+                aggrHours = 6,                 # if similarEventsAddArticleTrendInfo == True then this is the aggregating window
+                includeSelf = False,           # should the info about the event itself be included among the results
+                returnInfo = ReturnInfo()):
         """
         compute and return a list of similar events
+        @param conceptInfoList: array of concepts and their importance, e.g. [{ "uri": "http://en.wikipedia.org/wiki/Barack_Obama", "wgt": 100 }, ...]
         @param count: number of similar events to return (at most 50)
         @param maxDayDiff: find only those events that are at most maxDayDiff days apart from the tested event
         @param addArticleTrendInfo: for the returned events compute how they were trending (intensity of reporting) in different time periods
@@ -282,7 +283,9 @@ class RequestEventSimilarEvents(RequestEvent):
         @param returnInfo: what details should be included in the returned information
         """
         assert count <= 50
+        assert isinstance(conceptInfoList, list)
         self.resultType = "similarEvents"
+        self.similarEventsConcepts = json.dumps(conceptInfoList)
         self.similarEventsCount = count
         if maxDayDiff != sys.maxsize:
             self.similarEventsMaxDayDiff = maxDayDiff
@@ -295,23 +298,24 @@ class RequestEventSimilarEvents(RequestEvent):
 
 class RequestEventSimilarStories(RequestEvent):
     def __init__(self,
-                 count = 50,                # number of similar stories to return
-                 source = "concept",        # how to compute similarity. Options: concept, cca
-                 lang = ["eng"],            # in which language should be the similar stories
-                 maxDayDiff = sys.maxsize,   # what is the maximum time difference between the similar stories and this one
-                 returnInfo = ReturnInfo()):
+                conceptInfoList,
+                count = 50,                # number of similar stories to return
+                lang = ["eng"],            # in which language should be the similar stories
+                maxDayDiff = sys.maxsize,   # what is the maximum time difference between the similar stories and this one
+                returnInfo = ReturnInfo()):
         """
         return a list of similar stories (clusters)
+        @param conceptInfoList: array of concepts and their importance, e.g. [{ "uri": "http://en.wikipedia.org/wiki/Barack_Obama", "wgt": 100 }, ...]
         @param count: number of similar stories to return (at most 50)
-        @param source: show is the similarity with other stories computed. Using concepts ('concepts') or CCA ('cca').
         @param lang: in what language(s) should be the returned stories
         @param maxDayDiff: maximum difference in days between the returned stories and the tested event
         @param returnInfo: what details should be included in the returned information
         """
         assert count <= 50
+        assert isinstance(conceptInfoList, list)
         self.resultType = "similarStories"
+        self.similarStoriesConcepts = json.dumps(conceptInfoList)
         self.similarStoriesCount = count
-        self.similarStoriesSource = source
         self.similarStoriesLang = lang
         if maxDayDiff != sys.maxsize:
             self.similarStoriesMaxDayDiff = maxDayDiff

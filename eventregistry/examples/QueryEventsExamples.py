@@ -20,14 +20,15 @@ print("Concept uri for 'Obama' is " + obamaConceptUri)
 # we specify maxItems to limit the results to maximum 300 results
 q = QueryEventsIter(conceptUri = obamaConceptUri)
 for event in q.execQuery(er, sortBy = "date", maxItems = 300):
-    print(json.dumps(event, indent=2))
+    # print(json.dumps(event, indent=2))
+    print(event["uri"])
 
 
 # make a query for events - specify each condition independently
 # get events related to obama
 q = QueryEvents(conceptUri = obamaConceptUri)
 # return a list of event URIs (i.e. ["eng-234", "deu-234", ...])
-q.setRequestedResult(RequestEventsUriList())
+q.setRequestedResult(RequestEventsUriWgtList())
 res = er.execQuery(q)
 
 
@@ -71,8 +72,8 @@ res = er.execQuery(q)
 # - info about the categories of these events
 # - general information about the 20 most recent events in that time span
 q = QueryEvents(
-    locationUri = er.getLocationUri("Berlin"),
-    dateStart = datetime.date(2015, 4, 16), dateEnd = datetime.date(2015, 4, 28))
+    locationUri = er.getLocationUri("Germany"),
+    dateStart = datetime.date(2017, 12, 16), dateEnd = datetime.date(2018, 1, 28))
 q.setRequestedResult(RequestEventsConceptTrends(conceptCount = 40,
     returnInfo = ReturnInfo(conceptInfo = ConceptInfoFlags(type = ["person"]))))
 res = er.execQuery(q)

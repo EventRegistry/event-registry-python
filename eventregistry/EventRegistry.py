@@ -265,6 +265,7 @@ class EventRegistry(object):
         tryCount = 0
         self._headers = {}  # reset any past data
         returnData = None
+        respInfo = None
         while self._repeatFailedRequestCount < 0 or tryCount < self._repeatFailedRequestCount:
             tryCount += 1
             try:
@@ -296,6 +297,9 @@ class EventRegistry(object):
                 self._lastException = ex
                 print("Event Registry exception while executing the request:")
                 self.printLastException()
+                # in case of invalid input parameters, don't try to repeat the search
+                if respInfo != None and respInfo.status_code == 530:
+                    break
                 time.sleep(3)   # sleep for X seconds on error
         self._lock.release()
         if returnData == None:
@@ -374,15 +378,16 @@ class EventRegistry(object):
         return self.jsonRequest("/json/suggestCategories", params)
 
 
-    def suggestNewsSources(self, prefix, page = 1, count = 20):
+    def suggestNewsSources(self, prefix, dataType = ["news", "pr"], page = 1, count = 20):
         """
         return a list of news sources that match the prefix
         @param prefix: input text that should be contained in the source name or uri
-        @param page:  page of the results (1, 2, ...)
+        @param dataType: suggest sources that provide content in these data types
+        @param page: page of results
         @param count: number of returned suggestions
         """
         assert page > 0, "page parameter should be above 0"
-        params = { "prefix": prefix, "page": page, "count": count }
+        params = { "prefix": prefix, "dataType": dataType, "count": count }
         return self.jsonRequest("/json/suggestSources", params)
 
 
@@ -536,12 +541,13 @@ class EventRegistry(object):
         return None
 
 
-    def getNewsSourceUri(self, sourceName):
+    def getNewsSourceUri(self, sourceName, dataType = ["news", "pr"]):
         """
         return the news source that best matches the source name
         @param sourceName: partial or full name of the source or source uri for which to return source uri
+        @param dataType: return the source uri that provides content of these data types
         """
-        matches = self.suggestNewsSources(sourceName)
+        matches = self.suggestNewsSources(sourceName, dataType = dataType)
         if matches != None and isinstance(matches, list) and len(matches) > 0 and "uri" in matches[0]:
             return matches[0]["uri"]
         return None
@@ -595,18 +601,18 @@ class EventRegistry(object):
         return None
 
 
+    @staticmethod
+    def getUriFromUriWgt(uriWgtList):
+        """
+        convert an array of items that contain uri:wgt to a list of items with uri only. Used for QueryArticle and QueryEvent classes
+        """
+        assert isinstance(uriWgtList, list), "uriWgtList has to be a list of strings that represent article uris"
+        uriList = [uriWgt.split(":")[0] for uriWgt in uriWgtList]
+        return uriList
+
+
     #
     # additional utility methods
-
-    def getRecentStats(self):
-        """get some stats about recently imported articles and events"""
-        return self.jsonRequest("/json/overview", { "action": "getRecentStats"})
-
-
-    def getStats(self, addDailyArticles = False, addDailyAnnArticles = False, addDailyDuplArticles = False, addDailyEvents = False):
-        """get total statistics about all imported articles, concepts, events as well as daily counts for these"""
-        return self.jsonRequest("/json/overview", { "action": "getStats", "addDailyArticles": addDailyArticles, "addDailyAnnArticles": addDailyAnnArticles, "addDailyDuplArticles": addDailyDuplArticles, "addDailyEvents": addDailyEvents })
-
 
     def getArticleUris(self, articleUrls):
         """
@@ -616,20 +622,6 @@ class EventRegistry(object):
         """
         assert isinstance(articleUrls, (six.string_types, list)), "Expected a single article url or a list of urls"
         return self.jsonRequest("/json/articleMapper", { "articleUrl": articleUrls })
-
-
-    def getLatestArticle(self, returnInfo = ReturnInfo()):
-        """
-        return information about the latest imported article
-        """
-        stats = self.getRecentStats()
-        latestId = stats["totalArticleCount"]-1
-        q = QueryArticle.queryById(latestId)
-        q.setRequestedResult(RequestArticleInfo(returnInfo))
-        ret = self.execQuery(q)
-        if ret and len(list(ret.keys())) > 0:
-            return ret[list(ret.keys())[0]].get("info")
-        return None
 
 
     def getSourceGroups(self):

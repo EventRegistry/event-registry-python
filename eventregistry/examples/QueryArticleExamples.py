@@ -30,13 +30,13 @@ res = er.execQuery(q)
 
 # first search for articles related to Apple
 q = QueryArticles(conceptUri = er.getConceptUri("Apple"))
-q.setRequestedResult(RequestArticlesUriList())
+q.setRequestedResult(RequestArticlesUriWgtList())
 res = er.execQuery(q)
 # take the list of article URIs that match the search criteria (i.e. ['641565713', '641559021', '641551446', '641025492', '641548675', ...])
-articleUriList = res.get("uriList", {}).get("results", [])
+articleUriWgtList = res.get("uriWgtList", {}).get("results", [])
 
 # take first 5 article URIs and ask for all details about these articles
-queryUris = articleUriList[:5]
+queryUris = EventRegistry.getUriFromUriWgt(articleUriWgtList[:5])
 q = QueryArticle(queryUris)
 q.setRequestedResult(RequestArticleInfo(returnInfo = ReturnInfo(
     articleInfo = ArticleInfoFlags(concepts = True, categories = True, location = True))))

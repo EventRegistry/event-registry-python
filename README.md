@@ -55,7 +55,7 @@ from eventregistry import *
 er = EventRegistry(apiKey = YOUR_API_KEY)
 q = QueryEvents()
 q.addConcept(er.getConceptUri("Star Wars"))
-q.addRequestedResult(RequestEventsInfo(sortBy = "date", count=10))   # return event details for last 10 events
+q.setRequestedResult(RequestEventsInfo(sortBy = "date", count=10))   # return event details for last 10 events
 print er.execQuery(q)
 ```
 

@@ -127,17 +127,6 @@ class QueryEvents(Query):
         return "/json/event"
 
 
-    def addRequestedResult(self, requestEvents):
-        """
-        Add a result type that you would like to be returned.
-        In case you are a subscribed customer you can ask for multiple result types in a single query (for free users, only a single result type can be required per call).
-        Result types can be the classes that extend RequestEvents base class (see classes below).
-        """
-        assert isinstance(requestEvents, RequestEvents), "QueryEvents class can only accept result requests that are of type RequestEvents"
-        self.resultTypeList = [item for item in self.resultTypeList if item.getResultType() != requestEvents.getResultType()]
-        self.resultTypeList.append(requestEvents)
-
-
     def setRequestedResult(self, requestEvents):
         """
         Set the single result type that you would like to be returned. Any previously set result types will be overwritten.
@@ -202,11 +191,11 @@ class QueryEventsIter(QueryEvents, six.Iterator):
         """
         return the number of events that match the criteria
         """
-        self.setRequestedResult(RequestEventsUriList())
+        self.setRequestedResult(RequestEventsUriWgtList())
         res = eventRegistry.execQuery(self)
         if "error" in res:
             print(res["error"])
-        count = res.get("uriList", {}).get("totalResults", 0)
+        count = res.get("uriWgtList", {}).get("totalResults", 0)
         return count
 
 
@@ -229,7 +218,6 @@ class QueryEventsIter(QueryEvents, six.Iterator):
         self._returnInfo = returnInfo
         self._eventBatchSize = 50      # always download max - best for the user since it uses his token and we want to download as much as possible in a single search
         self._uriPage = 0
-        self._useArchive = None
         # if we want to return only a subset of items:
         self._maxItems = maxItems
         self._currItem = 0
@@ -266,11 +254,9 @@ class QueryEventsIter(QueryEvents, six.Iterator):
         if self._allUriPages != None and self._uriPage > self._allUriPages:
             return
         if self._er._verboseOutput:
-            print("Downoading page %d of event uris" % (self._uriPage))
+            print("Downloading page %d of event uris" % (self._uriPage))
         self.setRequestedResult(RequestEventsUriWgtList(page = self._uriPage, sortBy = self._sortBy, sortByAsc = self._sortByAsc))
         res = self._er.execQuery(self)
-        # remember if the archive needed to be used to process the query - use the info later when asking for the events in batches
-        self._useArchive = self._er.getLastReqArchiveUse()
         if "error" in res:
             print(res["error"])
         self._uriWgtList = res.get("uriWgtList", {}).get("results", [])
@@ -279,7 +265,6 @@ class QueryEventsIter(QueryEvents, six.Iterator):
 
     def _getNextEventBatch(self):
         """download next batch of events based on the event uris in the uri list"""
-        self.clearRequestedResults()
         # try to get more uris, if none
         if len(self._uriWgtList) == 0:
             self._getNextUriPage()
@@ -293,11 +278,11 @@ class QueryEventsIter(QueryEvents, six.Iterator):
         # remove used uris
         self._uriWgtList = self._uriWgtList[self._eventBatchSize:]
         if self._er._verboseOutput:
-            print("Downoading %d events..." % (len(uriWgts)))
+            print("Downloading %d events..." % (len(uriWgts)))
         q = QueryEvents.initWithEventUriWgtList(uriWgts)
         q.setRequestedResult(RequestEventsInfo(page = 1, count = self._eventBatchSize, sortBy = "none", returnInfo = self._returnInfo))
         # download articles and make sure that we set the same archive flag as it was returned when we were processing the uriList request
-        res = self._er.execQuery(q, allowUseOfArchive = self._useArchive)
+        res = self._er.execQuery(q)
         if "error" in res:
             print("Error while obtaining a list of events: " + res["error"])
         else:

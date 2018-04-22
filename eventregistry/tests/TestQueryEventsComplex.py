@@ -10,10 +10,10 @@ class TestQueryEventsComplex(DataValidator):
 
 
     def getQueryUriListForQueryEvents(self, q):
-        q.setRequestedResult(RequestEventsUriList(count = 50000))
+        q.setRequestedResult(RequestEventsUriWgtList(count = 50000))
         res = self.er.execQuery(q)
         assert "error" not in res, "Results included error: " + res.get("error", "")
-        return res["uriList"]
+        return res["uriWgtList"]
 
 
     def testCompareSameResults1(self):
@@ -160,10 +160,12 @@ class TestQueryEventsComplex(DataValidator):
                     BaseQuery(conceptUri = obamaUri)]
                 )))
 
-        retInfo = ReturnInfo(eventInfo = EventInfoFlags(concepts = True, categories = True, stories = True))
+        retInfo = ReturnInfo(
+            eventInfo = EventInfoFlags(concepts=True, categories=True, stories=True),
+            conceptInfo = ConceptInfoFlags(maxConceptsPerType = 100))
 
         iter = QueryEventsIter.initWithComplexQuery(cq)
-        for event in iter.execQuery(self.er, returnInfo =  retInfo):
+        for event in iter.execQuery(self.er, returnInfo =  retInfo, maxItems = 2000):
             foundTrump = False
             validDate = False
             foundCategory =  False

@@ -50,7 +50,7 @@ q = QueryArticlesIter(
     conceptUri = er.getConceptUri("George Clooney"),
     sourceLocationUri = QueryItems.OR([er.getLocationUri("Germany"), er.getLocationUri("Los Angeles")]))
 for art in q.execQuery(er, sortBy = "date", maxItems = 500):
-    print art
+    print(art["uri"])
 
 
 # query articles using the QueryArticles class
@@ -61,7 +61,7 @@ while True:
     q.setRequestedResult(RequestArticlesInfo(page = page))
     res = er.execQuery(q)
     for article in res["articles"]["results"]:
-        print article    # here use the info about the article
+        print(article["uri"])
     if page >= res["articles"]["pages"]:
         break
     page += 1

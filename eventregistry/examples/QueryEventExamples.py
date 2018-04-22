@@ -9,7 +9,7 @@ er = EventRegistry()
 # limit to only articles in English language
 iter = QueryEventArticlesIter("eng-2940883")
 for art in iter.execQuery(er, lang = "eng"):
-    print art
+    print(art)
 
 # get event info about event with a particular uri
 q = QueryEvent("eng-88")

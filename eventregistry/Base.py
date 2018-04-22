@@ -203,10 +203,6 @@ class Query(QueryParamsBase):
         self.resultTypeList = []
 
 
-    def clearRequestedResults(self):
-        self.resultTypeList = []
-
-
     def _getQueryParams(self):
         """encode the request."""
         allParams = {}

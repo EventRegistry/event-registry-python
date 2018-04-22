@@ -159,12 +159,15 @@ class CombinedQuery(_QueryCore):
 class ComplexArticleQuery(_QueryCore):
     def __init__(self,
                  query,
+                 dataType = "news",
                  isDuplicateFilter = "keepAll",
                  hasDuplicateFilter = "keepAll",
                  eventFilter = "keepAll"):
         """
         create an article query using a complex query
         @param query: an instance of CombinedQuery or BaseQuery to use to find articles that match the conditions
+        @param dataType: data type to search for. Possible values are "news" (news content), "pr" (PR content) or "blogs".
+                If you want to use multiple data types, put them in an array (e.g. ["news", "pr"])
         @param isDuplicateFilter: some articles can be duplicates of other articles. What should be done with them. Possible values are:
                 "skipDuplicates" (skip the resulting articles that are duplicates of other articles)
                 "keepOnlyDuplicates" (return only the duplicate articles)
@@ -184,11 +187,13 @@ class ComplexArticleQuery(_QueryCore):
         assert isinstance(query, (CombinedQuery, BaseQuery)), "query parameter was not a CombinedQuery or BaseQuery instance"
         self._queryObj["$query"] = query.getQuery()
         filter = {}
-        if (isDuplicateFilter != "keepAll"):
+        if dataType != "news":
+            filter["dataType"] = dataType
+        if isDuplicateFilter != "keepAll":
             filter["isDuplicate"] = isDuplicateFilter
-        if (hasDuplicateFilter != "keepAll"):
+        if hasDuplicateFilter != "keepAll":
             filter["hasDuplicate"] = hasDuplicateFilter
-        if (eventFilter != "keepAll"):
+        if eventFilter != "keepAll":
             filter["hasEvent"] = eventFilter
         if len(filter) > 0:
             self._queryObj["$filter"] = filter

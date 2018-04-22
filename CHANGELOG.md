@@ -4,13 +4,18 @@
 
 **Added**
 - Text analytics: added `Analytics.semanticSimilarity` API call. It can be used to determine how semantically related two documents are. The documents can be in the same or different languages.
+- Text analytics: added `Analytics.extractArticleInfo` API call. It provides functionality to extract article title, body, date, author and other information from the given URL.
+- `dataType` parameter when searching for articles. Event Registry is now separating collected content by data type. The possible values for data type are "news", "pr" (for PR content) and "blogs" (we will start indexing and providing blog content shortly). The dataType parameter can be set in the QueryArticles and QueryArticlesIter classes as well as in the `EventRegistry.getNewsSourceUri` and `EventRegistry.suggestNewsSources`.
 
 **Changed**
 - changed params in the GetCounts and GetCountsEx classes.
+- `EventRegistry.suggestNewsSources()` and `EventRegistry.getNewsSourceUri()` now also accepts `dataType` parameter, which is by default ["news", "pr"]. It determines what kind of data sources to include in the generated suggestions.
+- `QueryArticles` and `QueryArticlesIter` classes now supports additional parameter `dataType` that determines what type of data should be returned. By default, the value is `news`. For now it can also be `pr` or an array with both values.
 
 **Removed**
 - Removed the RequestEventArticleUris, RequestArticlesUriList, RequestEventsUriList due to backend changes. Use the equivalent \*UriWgt\* version of the classes.
 - Removed RequestArticlesUrlList class since it is not supported anymore.
+- Removed `QueryArticles.addRequestedResult()`, `QueryEvents.addRequestedResult()`, `QueryArticle.addRequestedResult()`, `QueryEvent.addRequestedResult()`, and `Query.clearRequestedResults()`. As before, a single result type can be requested per call so the methods are not usable. Use `setRequestedResult()` methods.
 
 
 ## [v6.7.0]() (2017-11-30)

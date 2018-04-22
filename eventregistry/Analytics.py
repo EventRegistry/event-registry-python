@@ -27,8 +27,7 @@ class Analytics:
         @param text: input text to annotate
         @param lang: language of the provided document (can be an ISO2 or ISO3 code). If None is provided, the language will be automatically detected
         """
-        resData = self._er.jsonRequestAnalytics("/api/v1/annotate", { "lang": lang, "text": text })
-        return resData
+        return self._er.jsonRequestAnalytics("/api/v1/annotate", { "lang": lang, "text": text })
 
 
     def categorize(self, text):
@@ -36,8 +35,7 @@ class Analytics:
         determine the set of up to 5 categories the text is about. Currently, only English text can be categorized!
         @param text: input text to categorize
         """
-        resData = self._er.jsonRequestAnalytics("/api/v1/categorize", { "text": text })
-        return resData
+        return self._er.jsonRequestAnalytics("/api/v1/categorize", { "text": text })
 
 
     def sentiment(self, text):
@@ -45,8 +43,7 @@ class Analytics:
         determine the sentiment of the provided text
         @param text: input text to categorize
         """
-        resData = self._er.jsonRequestAnalytics("/api/v1/sentiment", { "text": text })
-        return resData
+        return self._er.jsonRequestAnalytics("/api/v1/sentiment", { "text": text })
 
 
     def semanticSimilarity(self, text1, text2, distanceMeasure = "cosine"):
@@ -56,8 +53,7 @@ class Analytics:
         @param text2: second document to analyze
         @param distanceMeasure: distance measure to use for comparing two documents. Possible values are "cosine" (default) or "jaccard"
         """
-        resData = self._er.jsonRequestAnalytics("/api/v1/semanticSimilarity", { "text1": text1, "text2": text2, "distanceMeasure": distanceMeasure })
-        return resData
+        return self._er.jsonRequestAnalytics("/api/v1/semanticSimilarity", { "text1": text1, "text2": text2, "distanceMeasure": distanceMeasure })
 
 
     def detectLanguage(self, text):
@@ -65,5 +61,12 @@ class Analytics:
         determine the language of the given text
         @param text: input text to analyze
         """
-        resData = self._er.jsonRequestAnalytics("/api/v1/detectLanguage", { "text": text })
-        return resData
+        return self._er.jsonRequestAnalytics("/api/v1/detectLanguage", { "text": text })
+
+
+    def extractArticleInfo(self, url):
+        """
+        extract all available information about an article available at url `url`. Returned information will include
+        article title, body, authors, links in the articles, ...
+        """
+        return self._er.jsonRequestAnalytics("/api/v1/extractArticleInfo", { "url": url })

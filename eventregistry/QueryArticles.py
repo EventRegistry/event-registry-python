@@ -6,32 +6,35 @@ from eventregistry.Query import *
 
 class QueryArticles(Query):
     def __init__(self,
-                 keywords = None,
-                 conceptUri = None,
-                 categoryUri = None,
-                 sourceUri = None,
-                 sourceLocationUri = None,
-                 sourceGroupUri = None,
-                 locationUri = None,
-                 lang = None,
-                 dateStart = None,
-                 dateEnd = None,
-                 dateMentionStart = None,
-                 dateMentionEnd = None,
-                 ignoreKeywords = None,
-                 ignoreConceptUri = None,
-                 ignoreCategoryUri = None,
-                 ignoreSourceUri = None,
-                 ignoreSourceLocationUri = None,
-                 ignoreSourceGroupUri = None,
-                 ignoreLocationUri = None,
-                 ignoreLang = None,
-                 keywordsLoc = "body",
-                 ignoreKeywordsLoc = "body",
-                 isDuplicateFilter = "keepAll",
-                 hasDuplicateFilter = "keepAll",
-                 eventFilter = "keepAll",
-                 requestedResult = None):
+                keywords = None,
+                conceptUri = None,
+                categoryUri = None,
+                sourceUri = None,
+                sourceLocationUri = None,
+                sourceGroupUri = None,
+                locationUri = None,
+                lang = None,
+                dateStart = None,
+                dateEnd = None,
+                dateMentionStart = None,
+                dateMentionEnd=None,
+                keywordsLoc="body",
+
+                ignoreKeywords = None,
+                ignoreConceptUri = None,
+                ignoreCategoryUri = None,
+                ignoreSourceUri = None,
+                ignoreSourceLocationUri = None,
+                ignoreSourceGroupUri = None,
+                ignoreLocationUri = None,
+                ignoreLang = None,
+
+                ignoreKeywordsLoc = "body",
+                isDuplicateFilter = "keepAll",
+                hasDuplicateFilter = "keepAll",
+                eventFilter="keepAll",
+                dataType = "news",
+                requestedResult = None):
         """
         Query class for searching for individual articles in the Event Registry.
         The resulting articles have to match all specified conditions. If a parameter value equals "" or [], then it is ignored.
@@ -66,6 +69,8 @@ class QueryArticles(Query):
         @param dateEnd: find articles that occured before or on dateEnd. Date should be provided in YYYY-MM-DD format, datetime.time or datetime.datetime.
         @param dateMentionStart: find articles that explicitly mention a date that is equal or greater than dateMentionStart.
         @param dateMentionEnd: find articles that explicitly mention a date that is lower or equal to dateMentionEnd.
+        @param keywordsLoc: where should we look when searching using the keywords provided by "keywords" parameter. "body" (default), "title", or "body,title"
+
         @param ignoreKeywords: ignore articles that mention all provided keywords
         @param ignoreConceptUri: ignore articles that mention all provided concepts
         @param ignoreCategoryUri: ignore articles that are assigned to a particular category
@@ -74,7 +79,6 @@ class QueryArticles(Query):
         @param ignoreSourceGroupUri: ignore articles that have been written by sources in *any* of the specified source groups
         @param ignoreLocationUri: ignore articles that occured in any of the provided locations. A location can be a city or a place
         @param ignoreLang: ignore articles that are written in *any* of the provided languages
-        @param keywordsLoc: where should we look when searching using the keywords provided by "keywords" parameter. "body" (default), "title", or "body,title"
         @param ignoreKeywordsLoc: where should we look when data should be used when searching using the keywords provided by "ignoreKeywords" parameter. "body" (default), "title", or "body,title"
         @param isDuplicateFilter: some articles can be duplicates of other articles. What should be done with them. Possible values are:
                 "skipDuplicates" (skip the resulting articles that are duplicates of other articles)
@@ -89,6 +93,8 @@ class QueryArticles(Query):
                 "skipArticlesWithoutEvent" (skip articles that are not describing any known event in ER)
                 "keepOnlyArticlesWithoutEvent" (return only the articles that are not describing any known event in ER)
                 "keepAll" (no filtering, default)
+        @param dataType: what data types should we search? "news" (news content, default), "pr" (press releases), or "blogs".
+                If you want to use multiple data types, put them in an array (e.g. ["news", "pr"])
         @param requestedResult: the information to return as the result of the query. By default return the list of matching articles
         """
         super(QueryArticles, self).__init__()
@@ -135,6 +141,7 @@ class QueryArticles(Query):
         self._setValIfNotDefault("isDuplicateFilter", isDuplicateFilter, "keepAll")
         self._setValIfNotDefault("hasDuplicateFilter", hasDuplicateFilter, "keepAll")
         self._setValIfNotDefault("eventFilter", eventFilter, "keepAll")
+        self._setValIfNotDefault("dataType", dataType, "news")
 
         # set the information that should be returned
         self.setRequestedResult(requestedResult or RequestArticlesInfo())
@@ -142,17 +149,6 @@ class QueryArticles(Query):
 
     def _getPath(self):
         return "/json/article"
-
-
-    def addRequestedResult(self, requestArticles):
-        """
-        Add a result type that you would like to be returned.
-        In case you are a subscribed customer you can ask for multiple result types in a single query (for free users, only a single result type can be required per call).
-        Result types can be the classes that extend RequestArticles base class (see classes below).
-        """
-        assert isinstance(requestArticles, RequestArticles), "QueryArticles class can only accept result requests that are of type RequestArticles"
-        self.resultTypeList = [item for item in self.resultTypeList if item.getResultType() != requestArticles.getResultType()]
-        self.resultTypeList.append(requestArticles)
 
 
     def setRequestedResult(self, requestArticles):
@@ -221,7 +217,7 @@ class QueryArticlesIter(QueryArticles, six.Iterator):
         res = eventRegistry.execQuery(self)
         if "error" in res:
             print(res["error"])
-        count = res.get("uriList", {}).get("totalResults", 0)
+        count = res.get("uriWgtList", {}).get("totalResults", 0)
         return count
 
 
@@ -245,7 +241,6 @@ class QueryArticlesIter(QueryArticles, six.Iterator):
         self._returnInfo = returnInfo
         self._articleBatchSize = 100    # always download 100 - best for the user since it uses his token and we want to download as much as possible in a single search
         self._uriPage = 0
-        self._useArchive = None
         # if we want to return only a subset of items:
         self._maxItems = maxItems
         self._currItem = 0
@@ -294,11 +289,9 @@ class QueryArticlesIter(QueryArticles, six.Iterator):
         if "_allUriPages" in self.__dict__ and self._allUriPages != None and self._uriPage > self._allUriPages:
             return
         if self._er._verboseOutput:
-            print("Downoading page %d of article uris" % (self._uriPage))
+            print("Downloading page %d of article uris" % (self._uriPage))
         self.setRequestedResult(RequestArticlesUriWgtList(page = self._uriPage, sortBy = self._sortBy, sortByAsc = self._sortByAsc))
         res = self._er.execQuery(self)
-        # remember if the archive needed to be used to process the query - use the info later when asking for the articles in batches
-        self._useArchive = self._er.getLastReqArchiveUse()
         if "error" in res:
             print(res["error"])
         self._uriWgtList = res.get("uriWgtList", {}).get("results", [])
@@ -318,12 +311,12 @@ class QueryArticlesIter(QueryArticles, six.Iterator):
         # remove used uris
         self._uriWgtList = self._uriWgtList[self._articleBatchSize:]
         if self._er._verboseOutput:
-            print("Downoading %d articles..." % (len(uriWgts)))
+            print("Downloading %d articles..." % (len(uriWgts)))
 
         q = QueryArticles.initWithArticleUriWgtList(uriWgts)
         q.setRequestedResult(RequestArticlesInfo(page = 1, count = self._articleBatchSize, sortBy = "none", returnInfo = self._returnInfo))
         # download articles and make sure that we set the same archive flag as it was returned when we were processing the uriList request
-        res = self._er.execQuery(q, allowUseOfArchive = self._useArchive)
+        res = self._er.execQuery(q)
         if "error" in res:
             print("Error while obtaining a list of articles: " + res["error"])
         else:
@@ -545,18 +538,22 @@ class RequestArticlesConceptMatrix(RequestArticles):
 
 class RequestArticlesConceptTrends(RequestArticles):
     def __init__(self,
+                 conceptUris = None,
                  count = 25,
-                 articlesSampleSize = 10000,
+                 articlesSampleSize=10000,
                  returnInfo = ReturnInfo()):
         """
         get trending of concepts in the resulting articles
-        @param count: number of concepts to return (at most 50)
+        @param conceptUris: list of concept URIs for which to return trending information. If None, then top concepts will be automatically computed
+        @param count: if the concepts are not provided, what should be the number of automatically determined concepts to return (at most 50)
         @param articlesSampleSize: on what sample of results should the aggregate be computed (at most 50000)
         @param returnInfo: what details should be included in the returned information
         """
         assert count <= 50
         assert articlesSampleSize <= 50000
         self.resultType = "conceptTrends"
+        if conceptUris != None:
+            self.conceptTrendsConceptUri = conceptUris
         self.conceptTrendsConceptCount = count
         self.conceptTrendsSampleSize = articlesSampleSize
         self.__dict__.update(returnInfo.getParams("conceptTrends"))

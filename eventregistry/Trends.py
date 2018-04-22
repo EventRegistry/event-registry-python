@@ -21,7 +21,7 @@ class GetTrendingConcepts(TrendsBase):
                  returnInfo = ReturnInfo()):
         """
         get currently top trending concepts
-        @param source: source information from which to compute top trends. Options: "news", "social"
+        @param source: source information from which to compute top trends. Options: "news", "social", "pr", "blogs"
         @param count: number of top trends to return
         @param conceptType: which types of concepts are we interested in
         @param returnInfo: what details should be included in the returned information
@@ -29,6 +29,8 @@ class GetTrendingConcepts(TrendsBase):
         QueryParamsBase.__init__(self)
         self._setVal("action", "getTrendingConcepts")
         self._setVal("source", source)
+        if source != "social":
+            self._setVal("dataType", source)
         self._setVal("conceptCount", count)
         self._setVal("conceptType", conceptType)
         self._update(returnInfo.getParams())
@@ -42,13 +44,15 @@ class GetTrendingCategories(TrendsBase):
                  returnInfo = ReturnInfo()):
         """
         get currently top trending categories
-        @param source: source information from which to compute top trends. Options: "news", "social"
+        @param source: source information from which to compute top trends. Options: "news", "social", "pr", "blogs"
         @param count: number of top trends to return
         @param returnInfo: what details should be included in the returned information
         """
         QueryParamsBase.__init__(self)
         self._setVal("action", "getTrendingCategories")
         self._setVal("source", source)
+        if source != "social":
+            self._setVal("dataType", source)
         self._setVal("categoryCount", count)
         self._update(returnInfo.getParams())
 

@@ -1,6 +1,6 @@
 ﻿import unittest
 from eventregistry import *
-from .DataValidator import DataValidator
+from DataValidator import DataValidator
 
 class TestQueryArticlesComplex(DataValidator):
 
@@ -10,16 +10,16 @@ class TestQueryArticlesComplex(DataValidator):
 
 
     def getQueryUriListForQueryArticles(self, q):
-        q.setRequestedResult(RequestArticlesUriList(count = 50000))
+        q.setRequestedResult(RequestArticlesUriWgtList(count = 50000))
         res = self.er.execQuery(q)
         assert "error" not in res, "Results included error: " + res.get("error", "")
-        return res["uriList"]
+        return res["uriWgtList"]
 
 
     def testKw1(self):
         cq1 = ComplexArticleQuery(BaseQuery(keyword = "obama", keywordLoc = "title"))
         artIter = QueryArticlesIter.initWithComplexQuery(cq1)
-        for art in artIter.execQuery(self.er):
+        for art in artIter.execQuery(self.er, maxItems = 2000):
             self.assertTrue(art["title"].lower().find("obama") >= 0)
 
 
@@ -32,14 +32,14 @@ class TestQueryArticlesComplex(DataValidator):
         }
         """
         qiter = QueryArticlesIter.initWithComplexQuery(qStr)
-        for art in qiter.execQuery(self.er):
+        for art in qiter.execQuery(self.er, maxItems = 2000):
             self.assertTrue(art["title"].lower().find("obama") >= 0)
 
 
     def testKw3(self):
         cq1 = ComplexArticleQuery(BaseQuery(keyword = "home", keywordLoc = "body"))
         artIter = QueryArticlesIter.initWithComplexQuery(cq1)
-        for art in artIter.execQuery(self.er):
+        for art in artIter.execQuery(self.er, maxItems = 2000):
             self.assertTrue(art["body"].lower().find("home") >= 0)
 
 
@@ -108,16 +108,16 @@ class TestQueryArticlesComplex(DataValidator):
 
     def testCompareSameResults3(self):
         cq1 = ComplexArticleQuery(
-            query = BaseQuery(dateStart = "2017-02-05", dateEnd = "2017-02-06",
+            query = BaseQuery(dateStart = "2017-03-05", dateEnd = "2017-03-06",
                 exclude = BaseQuery(categoryUri = self.er.getCategoryUri("Business"))))
 
         cq2 = ComplexArticleQuery(
             query = CombinedQuery.AND([
-                BaseQuery(dateStart = "2017-02-05"),
-                BaseQuery(dateEnd = "2017-02-06")],
+                BaseQuery(dateStart = "2017-03-05"),
+                BaseQuery(dateEnd = "2017-03-06")],
                 exclude = BaseQuery(categoryUri = self.er.getCategoryUri("Business"))))
 
-        q = QueryArticles(dateStart = "2017-02-05", dateEnd = "2017-02-06", ignoreCategoryUri = self.er.getCategoryUri("business"))
+        q = QueryArticles(dateStart = "2017-03-05", dateEnd = "2017-03-06", ignoreCategoryUri = self.er.getCategoryUri("business"))
 
         listRes1 = self.getQueryUriListForComplexQuery(cq1)
         listRes2 = self.getQueryUriListForComplexQuery(cq2)
@@ -238,6 +238,31 @@ class TestQueryArticlesComplex(DataValidator):
         listRes1 = self.getQueryUriListForQueryArticles(q1)
         listRes2 = self.getQueryUriListForComplexQuery(cq2)
         self.assertEqual(listRes1["totalResults"], listRes2["totalResults"])
+
+
+    def testCompareSameResults7(self):
+        cq1 = ComplexArticleQuery(
+            query = BaseQuery(dateStart = "2017-03-05", dateEnd = "2017-03-06",
+                exclude = BaseQuery(categoryUri = self.er.getCategoryUri("Business"))))
+
+        cq2 = ComplexArticleQuery(
+            query = CombinedQuery.AND([
+                BaseQuery(dateStart="2016-03-05", dateEnd="2017-05-05"),
+                BaseQuery(dateStart="2017-03-05"),
+                BaseQuery(dateStart="2016-10-05"),
+                BaseQuery(dateEnd = "2017-04-05"),
+                BaseQuery(dateEnd = "2017-03-06")],
+                exclude = BaseQuery(categoryUri = self.er.getCategoryUri("Business"))))
+
+        q = QueryArticles(dateStart = "2017-03-05", dateEnd = "2017-03-06", ignoreCategoryUri = self.er.getCategoryUri("business"))
+
+        listRes1 = self.getQueryUriListForComplexQuery(cq1)
+        listRes2 = self.getQueryUriListForComplexQuery(cq2)
+        # compare with old approach
+        listRes3 = self.getQueryUriListForQueryArticles(q)
+        self.assertEqual(listRes1["totalResults"], listRes2["totalResults"])
+        self.assertEqual(listRes1["totalResults"], listRes3["totalResults"])
+
 
 
     def _testGetValidContent(self):

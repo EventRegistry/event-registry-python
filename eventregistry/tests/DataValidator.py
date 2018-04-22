@@ -1,4 +1,4 @@
-import unittest, jmespath
+import unittest, jmespath, unicodedata
 from eventregistry import *
 
 class DataValidator(unittest.TestCase):
@@ -8,6 +8,11 @@ class DataValidator(unittest.TestCase):
         currPath = os.path.split(__file__)[0]
         settPath = os.path.join(currPath, "settings.json")
         self.er = EventRegistry(verboseOutput = True, settingsFName = settPath)
+
+
+    def removeAccents(self, inputStr):
+        nfkdForm = unicodedata.normalize('NFKD', inputStr)
+        return "".join([c for c in nfkdForm if not unicodedata.combining(c)])
 
 
     def __init__(self, *args, **kwargs):
@@ -30,7 +35,7 @@ class DataValidator(unittest.TestCase):
 
 
     def ensureValidConcept(self, concept, testName):
-        for prop in ["id", "uri", "label", "synonyms", "image", "trendingScore"]:
+        for prop in [ "uri", "label", "synonyms", "image", "trendingScore"]:
             self.assertTrue(prop in concept, "Property '%s' was expected in concept for test %s" % (prop, testName))
         self.assertTrue(concept.get("type") in ["person", "loc", "org"], "Expected concept to be an entity type, but got %s" % (concept.get("type")))
         if concept.get("location"):
@@ -38,7 +43,7 @@ class DataValidator(unittest.TestCase):
 
 
     def ensureValidArticle(self, article, testName):
-        for prop in ["id", "url", "uri", "title", "body", "source", "time", "date", "lang", "image", "links", "videos", "categories", "location", "duplicateList", "originalArticle", "extractedDates", "concepts", "shares", "sentiment"]:
+        for prop in ["url", "uri", "title", "body", "source", "time", "date", "lang", "image", "links", "videos", "categories", "location", "duplicateList", "originalArticle", "extractedDates", "concepts", "shares", "sentiment"]:
             self.assertTrue(prop in article, "Property '%s' was expected in article for test %s" % (prop, testName))
         for concept in article.get("concepts"):
             self.ensureValidConcept(concept, testName)
@@ -46,12 +51,12 @@ class DataValidator(unittest.TestCase):
 
 
     def ensureValidSource(self, source, testName):
-        for prop in ["id", "uri", "title", "description", "image", "thumbImage", "favicon", "location", "ranking", "articleCount", "sourceGroups", "socialMedia"]:
+        for prop in ["uri", "title", "description", "image", "thumbImage", "favicon", "location", "ranking", "articleCount", "sourceGroups", "socialMedia"]:
             self.assertTrue(prop in source, "Property '%s' was expected in source for test %s" % (prop, testName))
 
 
     def ensureValidCategory(self, category, testName):
-        for prop in ["id", "uri", "parentUri", "trendingScore"]:
+        for prop in ["uri", "parentUri", "trendingScore"]:
             self.assertTrue(prop in category, "Property '%s' was expected in source for test %s" % (prop, testName))
 
 
@@ -89,12 +94,13 @@ class DataValidator(unittest.TestCase):
 
     def ensureArticleBodyContainsText(self, article, text):
         self.assertTrue("body" in article, "Article did not contain body")
-        self.assertTrue(re.search("(^|\s)" + text + "($|'|\s)", article["body"], re.IGNORECASE) != None, "Article body did not contain text '%s'" % (text))
+        if re.search("(^|\s|\W)" + text + "($|'|\s|\W)", article["body"], re.IGNORECASE) == None:
+            self.fail("Article body did not contain text '%s'" % (text))
 
 
     def ensureArticleBodyDoesNotContainText(self, article, text):
         if "body" in article:
-            if re.search("(^|\s)" + text + "($|'|\s)", article["body"], re.IGNORECASE) != None:
+            if re.search("(^|\s|\W)" + text + "($|'|\s|\W)", article["body"], re.IGNORECASE) != None:
                 self.fail("Article body contained text '%s' and it shouldn't" % (text))
 
 
@@ -143,8 +149,10 @@ class DataValidator(unittest.TestCase):
 
     def ensureArticlesContainText(self, articles, keyword):
         """assure that at least one article contains the given keyword"""
-        hasKw = [True for art in articles if keyword.lower() in art["body"].lower()]
-        self.assertTrue(len(hasKw) > 0, "None of the articles contained given keyword '%s'" % keyword)
+        hasKw = [True for art in articles if
+            re.search("(^|\s|\W)" + keyword + "($|'|\s|\W)", art["body"], re.IGNORECASE) != None]
+        if len(hasKw) == 0:
+            self.fail("None of the articles contained given keyword '%s'" % keyword)
 
 
     def ensureArticlesDoNotContainText(self, articles, keyword):

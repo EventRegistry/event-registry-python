@@ -25,17 +25,6 @@ class QueryStory(Query):
         self._setVal("storyUri", uriOrUriList)
 
 
-    def addRequestedResult(self, requestStory):
-        """
-        Add a result type that you would like to be returned.
-        In one QueryStory you can ask for multiple result types.
-        Result types can be the classes that extend RequestStory base class (see classes below).
-        """
-        assert isinstance(requestStory, RequestStory), "QueryStory class can only accept result requests that are of type RequestStory"
-        self.resultTypeList = [item for item in self.resultTypeList if item.getResultType() != requestStory.getResultType()]
-        self.resultTypeList.append(requestStory)
-
-
     def setRequestedResult(self, requestStory):
         """
         Set the single result type that you would like to be returned. If some other request type was previously set, it will be overwritten.
