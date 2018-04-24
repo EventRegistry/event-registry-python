@@ -16,6 +16,7 @@
 - Removed the RequestEventArticleUris, RequestArticlesUriList, RequestEventsUriList due to backend changes. Use the equivalent \*UriWgt\* version of the classes.
 - Removed RequestArticlesUrlList class since it is not supported anymore.
 - Removed `QueryArticles.addRequestedResult()`, `QueryEvents.addRequestedResult()`, `QueryArticle.addRequestedResult()`, `QueryEvent.addRequestedResult()`, and `Query.clearRequestedResults()`. As before, a single result type can be requested per call so the methods are not usable. Use `setRequestedResult()` methods.
+- Data model change: We removed the `id` property from different returned data objects. Although the documentation clearly stated that the property is for internal use only, users commonly used the property, which caused potential issues.
 
 
 ## [v6.7.0]() (2017-11-30)
