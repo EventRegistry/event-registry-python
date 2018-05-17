@@ -608,7 +608,7 @@ class RequestEventsRecentActivity(RequestEvents):
         @param minAvgCosSim: the minimum avg cos sim of the events to be returned (events with lower quality should not be included)
         @param returnInfo: what details should be included in the returned information
         """
-        assert maxEventCount <= 200
+        assert maxEventCount <= 2000
         assert updatesAfterTm == None or updatesAfterMinsAgo == None, "You should specify either updatesAfterTm or updatesAfterMinsAgo parameter, but not both"
         self.resultType = "recentActivityEvents"
         self.recentActivityEventsMaxEventCount = maxEventCount

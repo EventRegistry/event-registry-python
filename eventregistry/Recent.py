@@ -43,9 +43,9 @@ class GetRecentEvents(QueryParamsBase):
         # execute the query
         ret = self._er.execQuery(self)
 
-        if ret and "recentActivity" in ret and "events" in ret["recentActivity"]:
+        if ret and "recentActivityEvents" in ret:
             # return the updated information
-            return ret["recentActivity"]["events"]
+            return ret["recentActivityEvents"]
         # or empty
         return {}
 
@@ -88,8 +88,8 @@ class GetRecentArticles(QueryParamsBase):
         # execute the query
         ret = self._er.execQuery(self)
 
-        if ret and "recentActivity" in ret and "articles" in ret["recentActivity"]:
+        if ret and "recentActivityArticles" in ret:
             # return the latest articles
-            return ret["recentActivity"]["articles"]["activity"]
+            return ret["recentActivityArticles"]["activity"]
         # or empty
         return []

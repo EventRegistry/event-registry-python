@@ -2,14 +2,6 @@ import unittest, jmespath, unicodedata
 from eventregistry import *
 
 class DataValidator(unittest.TestCase):
-    @classmethod
-    def setUpClass(self):
-        # load settings from the current folder. use different instance than for regular ER requests
-        currPath = os.path.split(__file__)[0]
-        settPath = os.path.join(currPath, "settings.json")
-        self.er = EventRegistry(verboseOutput = True, settingsFName = settPath)
-
-
     def removeAccents(self, inputStr):
         nfkdForm = unicodedata.normalize('NFKD', inputStr)
         return "".join([c for c in nfkdForm if not unicodedata.combining(c)])
@@ -17,6 +9,11 @@ class DataValidator(unittest.TestCase):
 
     def __init__(self, *args, **kwargs):
         super(DataValidator, self).__init__(*args, **kwargs)
+
+        # load settings from the current folder. use different instance than for regular ER requests
+        currPath = os.path.split(__file__)[0]
+        settPath = os.path.join(currPath, "settings.json")
+        self.er = EventRegistry(verboseOutput = True, settingsFName = settPath, allowUseOfArchive = False, minDelayBetweenRequests=0)
 
         self.articleInfo = ArticleInfoFlags(bodyLen = -1, concepts = True, storyUri = True, duplicateList = True, originalArticle = True, categories = True,
                 links = True, videos = True, image = True, location = True, extractedDates = True, socialScore = True, sentiment = True)

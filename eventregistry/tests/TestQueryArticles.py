@@ -1,4 +1,4 @@
-﻿import unittest
+﻿import unittest, math
 from eventregistry import *
 from DataValidator import DataValidator
 
@@ -26,13 +26,15 @@ class TestQueryArticles(DataValidator):
 
 
     def testArticleUriWgtList(self):
-        iter = QueryArticlesIter(conceptUri=self.er.getConceptUri("germany"), dateStart="2017-10-01", dateEnd="2018-03-01")
+        iter = QueryArticlesIter(conceptUri=self.er.getConceptUri("germany"))
         expectedCount = iter.count(self.er)
 
-        q = QueryArticles(conceptUri=self.er.getConceptUri("germany"), dateStart="2017-10-01", dateEnd="2018-03-01")
+        countPerPage = 20000
+        pages = math.ceil(expectedCount / countPerPage)
+        q = QueryArticles(conceptUri=self.er.getConceptUri("germany"))
         items = []
-        for page in range(1, 100):
-            q.setRequestedResult(RequestArticlesUriWgtList(page = page, count = 20000))
+        for page in range(1, pages+1):
+            q.setRequestedResult(RequestArticlesUriWgtList(page = page, count = countPerPage))
             res = self.er.execQuery(q)
             items.extend(res.get("uriWgtList", {}).get("results", []))
         if expectedCount != len(items):
@@ -277,7 +279,7 @@ class TestQueryArticles(DataValidator):
 
     def testKeywordAggr(self):
         q = self.createQuery()
-        q.setRequestedResult(RequestArticlesKeywordAggr())
+        q.setRequestedResult(RequestArticlesKeywordAggr(articlesSampleSize=100))
         res = self.er.execQuery(q)
 
         self.assertIsNotNone(res.get("keywordAggr"), "Expected to get 'keywordAggr'")
@@ -354,7 +356,7 @@ class TestQueryArticles(DataValidator):
 
     def testQuery1(self):
         obamaUri = self.er.getConceptUri("Obama")
-        LAsourceUri = self.er.getNewsSourceUri("los angeles times")
+        LAsourceUri = self.er.getNewsSourceUri("latimes")
         iter = QueryArticlesIter(keywords = "trump", conceptUri = obamaUri, sourceUri = LAsourceUri)
         for article in iter.execQuery(self.er, returnInfo = self.returnInfo, maxItems = 500):
             self.ensureArticleHasConcept(article, obamaUri)
@@ -364,7 +366,7 @@ class TestQueryArticles(DataValidator):
 
     def testQuery2(self):
         obamaUri = self.er.getConceptUri("Obama")
-        LAsourceUri = self.er.getNewsSourceUri("los angeles times")
+        LAsourceUri = self.er.getNewsSourceUri("latimes")
         businessCatUri = self.er.getCategoryUri("business")
         iter = QueryArticlesIter(conceptUri = obamaUri, sourceUri = LAsourceUri, categoryUri = businessCatUri)
         for article in iter.execQuery(self.er, returnInfo = self.returnInfo, maxItems = 500):
@@ -413,4 +415,6 @@ class TestQueryArticles(DataValidator):
 
 if __name__ == "__main__":
     suite = unittest.TestLoader().loadTestsFromTestCase(TestQueryArticles)
+    # suite = unittest.TestSuite()
+    # suite.addTest(TestQueryArticles("testQuery2"))
     unittest.TextTestRunner(verbosity=3).run(suite)

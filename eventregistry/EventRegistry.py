@@ -378,11 +378,11 @@ class EventRegistry(object):
         return self.jsonRequest("/json/suggestCategories", params)
 
 
-    def suggestNewsSources(self, prefix, dataType = ["news", "pr"], page = 1, count = 20):
+    def suggestNewsSources(self, prefix, dataType = ["news", "pr", "blog"], page = 1, count = 20):
         """
         return a list of news sources that match the prefix
         @param prefix: input text that should be contained in the source name or uri
-        @param dataType: suggest sources that provide content in these data types
+        @param dataType: suggest sources that provide content in these data types ("news", "pr", "blog" or a list of any of those)
         @param page: page of results
         @param count: number of returned suggestions
         """
@@ -456,14 +456,15 @@ class EventRegistry(object):
         return self.jsonRequest("/json/suggestSources", params)
 
 
-    def suggestSourcesAtPlace(self, conceptUri, page = 1, count = 20):
+    def suggestSourcesAtPlace(self, conceptUri, dataType = "news", page = 1, count = 20):
         """
         return a list of news sources that are close to the provided (lat, long) values
         @param conceptUri: concept that represents a geographic location for which we would like to obtain a list of sources located at the place
+        @param dataType: type of the news source ("news", "pr", "blog" or a list of any of those)
         @param page: page of the results (1, 2, ...)
         @param count: number of returned sources
         """
-        params = { "action": "getSourcesAtPlace", "conceptUri": conceptUri, "page": page, "count": count }
+        params = { "action": "getSourcesAtPlace", "conceptUri": conceptUri, "page": page, "count": count, "dataType": dataType }
         return self.jsonRequest("/json/suggestSources", params)
 
 
@@ -541,11 +542,11 @@ class EventRegistry(object):
         return None
 
 
-    def getNewsSourceUri(self, sourceName, dataType = ["news", "pr"]):
+    def getNewsSourceUri(self, sourceName, dataType = ["news", "pr", "blog"]):
         """
         return the news source that best matches the source name
         @param sourceName: partial or full name of the source or source uri for which to return source uri
-        @param dataType: return the source uri that provides content of these data types
+        @param dataType: return the source uri that provides content of these data types ("news", "pr", "blog" or a list of any of those)
         """
         matches = self.suggestNewsSources(sourceName, dataType = dataType)
         if matches != None and isinstance(matches, list) and len(matches) > 0 and "uri" in matches[0]:

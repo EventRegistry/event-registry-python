@@ -19,14 +19,11 @@ class ReturnInfoFlagsBase(object):
             self.flags[name] = val
 
 
-    def _getFlags(self, prefix):
-        """return the dict of stored flags, where each flag name should be first prefixed using prefix"""
+    def _getFlags(self):
+        """return the dict of stored flags"""
         if not hasattr(self, "flags"):
             self.flags = {}
-        dict = {}
-        for key in list(self.flags.keys()):
-            dict[prefix + key] = self.flags[key]
-        return dict
+        return self.flags
 
 
     def _setVal(self, name, val, defVal = None):
@@ -38,7 +35,7 @@ class ReturnInfoFlagsBase(object):
         self.vals[name] = val
 
 
-    def _getVals(self, prefix):
+    def _getVals(self, prefix = ""):
         """
         return the values in the vals dict
         in case prefix is "", change the first letter of the name to lowercase, otherwise use prefix+name as the new name
@@ -52,7 +49,8 @@ class ReturnInfoFlagsBase(object):
                 newkey = key[:1].lower() + key[1:] if key else ""
                 dict[newkey] = self.vals[key]
             else:
-                dict[prefix + key] = self.vals[key]
+                newkey = key[:1].upper() + key[1:] if key else ""
+                dict[prefix + newkey] = self.vals[key]
         return dict
 
 
@@ -100,25 +98,25 @@ class ArticleInfoFlags(ReturnInfoFlagsBase):
                  duplicateList = False,
                  originalArticle = False,
                  storyUri = False):
-        self._setVal("ArticleBodyLen", bodyLen, 300)
-        self._setFlag("IncludeArticleBasicInfo", basicInfo, True)
-        self._setFlag("IncludeArticleTitle", title, True)
-        self._setFlag("IncludeArticleBody", body, True)
-        self._setFlag("IncludeArticleUrl", url, True)
-        self._setFlag("IncludeArticleEventUri", eventUri, True)
-        self._setFlag("IncludeArticleConcepts", concepts, False)
-        self._setFlag("IncludeArticleCategories", categories, False)
-        self._setFlag("IncludeArticleLinks", links, False)
-        self._setFlag("IncludeArticleVideos", videos, False)
-        self._setFlag("IncludeArticleImage", image, False)
-        self._setFlag("IncludeArticleSocialScore", socialScore, False)
-        self._setFlag("IncludeArticleSentiment", sentiment, False)
-        self._setFlag("IncludeArticleLocation", location, False)
-        self._setFlag("IncludeArticleDates", dates, False)
-        self._setFlag("IncludeArticleExtractedDates", extractedDates, False)
-        self._setFlag("IncludeArticleDuplicateList", duplicateList, False)
-        self._setFlag("IncludeArticleOriginalArticle", originalArticle, False)
-        self._setFlag("IncludeArticleStoryUri", storyUri, False)
+        self._setVal("articleBodyLen", bodyLen, 300)
+        self._setFlag("includeArticleBasicInfo", basicInfo, True)
+        self._setFlag("includeArticleTitle", title, True)
+        self._setFlag("includeArticleBody", body, True)
+        self._setFlag("includeArticleUrl", url, True)
+        self._setFlag("includeArticleEventUri", eventUri, True)
+        self._setFlag("includeArticleConcepts", concepts, False)
+        self._setFlag("includeArticleCategories", categories, False)
+        self._setFlag("includeArticleLinks", links, False)
+        self._setFlag("includeArticleVideos", videos, False)
+        self._setFlag("includeArticleImage", image, False)
+        self._setFlag("includeArticleSocialScore", socialScore, False)
+        self._setFlag("includeArticleSentiment", sentiment, False)
+        self._setFlag("includeArticleLocation", location, False)
+        self._setFlag("includeArticleDates", dates, False)
+        self._setFlag("includeArticleExtractedDates", extractedDates, False)
+        self._setFlag("includeArticleDuplicateList", duplicateList, False)
+        self._setFlag("includeArticleOriginalArticle", originalArticle, False)
+        self._setFlag("includeArticleStoryUri", storyUri, False)
 
 
 
@@ -152,18 +150,18 @@ class StoryInfoFlags(ReturnInfoFlagsBase):
                 commonDates = False,
                 socialScore = False,
                 imageCount = 0):
-        self._setFlag("IncludeStoryBasicStats", basicStats, True)
-        self._setFlag("IncludeStoryLocation", location, True)
-        self._setFlag("IncludeStoryDate", date, False)
-        self._setFlag("IncludeStoryTitle", title, False)
-        self._setFlag("IncludeStorySummary", summary, False)
-        self._setFlag("IncludeStoryConcepts", concepts, False)
-        self._setFlag("IncludeStoryCategories", categories, False)
-        self._setFlag("IncludeStoryMedoidArticle", medoidArticle, False)
-        self._setFlag("IncludeStoryInfoArticle", infoArticle, False)
-        self._setFlag("IncludeStoryCommonDates", commonDates, False)
-        self._setFlag("IncludeStorySocialScore", socialScore, False)
-        self._setVal("StoryImageCount", imageCount, 0)
+        self._setFlag("includeStoryBasicStats", basicStats, True)
+        self._setFlag("includeStoryLocation", location, True)
+        self._setFlag("includeStoryDate", date, False)
+        self._setFlag("includeStoryTitle", title, False)
+        self._setFlag("includeStorySummary", summary, False)
+        self._setFlag("includeStoryConcepts", concepts, False)
+        self._setFlag("includeStoryCategories", categories, False)
+        self._setFlag("includeStoryMedoidArticle", medoidArticle, False)
+        self._setFlag("includeStoryInfoArticle", infoArticle, False)
+        self._setFlag("includeStoryCommonDates", commonDates, False)
+        self._setFlag("includeStorySocialScore", socialScore, False)
+        self._setVal("storyImageCount", imageCount, 0)
 
 
 
@@ -197,19 +195,19 @@ class EventInfoFlags(ReturnInfoFlagsBase):
                 stories = False,
                 socialScore = False,
                 imageCount = 0):
-        self._setFlag("IncludeEventTitle", title, True)
-        self._setFlag("IncludeEventSummary", summary, True)
-        self._setFlag("IncludeEventArticleCounts", articleCounts, True)
-        self._setFlag("IncludeEventConcepts", concepts, True)
-        self._setFlag("IncludeEventCategories", categories, True)
-        self._setFlag("IncludeEventLocation", location, True)
-        self._setFlag("IncludeEventDate", date, True)
+        self._setFlag("includeEventTitle", title, True)
+        self._setFlag("includeEventSummary", summary, True)
+        self._setFlag("includeEventArticleCounts", articleCounts, True)
+        self._setFlag("includeEventConcepts", concepts, True)
+        self._setFlag("includeEventCategories", categories, True)
+        self._setFlag("includeEventLocation", location, True)
+        self._setFlag("includeEventDate", date, True)
 
-        self._setFlag("IncludeEventCommonDates", commonDates, False)
-        self._setFlag("IncludeEventInfoArticle", infoArticle, False)
-        self._setFlag("IncludeEventStories", stories, False)
-        self._setFlag("IncludeEventSocialScore", socialScore, False)
-        self._setVal("EventImageCount", imageCount, 0)
+        self._setFlag("includeEventCommonDates", commonDates, False)
+        self._setFlag("includeEventInfoArticle", infoArticle, False)
+        self._setFlag("includeEventStories", stories, False)
+        self._setFlag("includeEventSocialScore", socialScore, False)
+        self._setVal("eventImageCount", imageCount, 0)
 
 
 
@@ -235,14 +233,14 @@ class SourceInfoFlags(ReturnInfoFlagsBase):
                 articleCount = False,
                 socialMedia = False,
                 sourceGroups = False):
-        self._setFlag("IncludeSourceTitle", title, True)
-        self._setFlag("IncludeSourceDescription", description, False)
-        self._setFlag("IncludeSourceLocation", location, False)
-        self._setFlag("IncludeSourceRanking", ranking, False)
-        self._setFlag("IncludeSourceImage", image, False)
-        self._setFlag("IncludeSourceArticleCount", articleCount, False)
-        self._setFlag("IncludeSourceSocialMedia", socialMedia, False)
-        self._setFlag("IncludeSourceSourceGroups", sourceGroups, False)
+        self._setFlag("includeSourceTitle", title, True)
+        self._setFlag("includeSourceDescription", description, False)
+        self._setFlag("includeSourceLocation", location, False)
+        self._setFlag("includeSourceRanking", ranking, False)
+        self._setFlag("includeSourceImage", image, False)
+        self._setFlag("includeSourceArticleCount", articleCount, False)
+        self._setFlag("includeSourceSocialMedia", socialMedia, False)
+        self._setFlag("includeSourceSourceGroups", sourceGroups, False)
 
 
 
@@ -263,11 +261,11 @@ class CategoryInfoFlags(ReturnInfoFlagsBase):
                 trendingScore = False,
                 trendingHistory = False,
                 trendingSource = "news"):
-        self._setFlag("IncludeCategoryParentUri", parentUri, False)
-        self._setFlag("IncludeCategoryChildrenUris", childrenUris, False)
-        self._setFlag("IncludeCategoryTrendingScore", trendingScore, False)
-        self._setFlag("IncludeCategoryTrendingHistory", trendingHistory, False)
-        self._setVal("CategoryTrendingSource", trendingSource, "news")
+        self._setFlag("includeCategoryParentUri", parentUri, False)
+        self._setFlag("includeCategoryChildrenUris", childrenUris, False)
+        self._setFlag("includeCategoryTrendingScore", trendingScore, False)
+        self._setFlag("includeCategoryTrendingHistory", trendingHistory, False)
+        self._setVal("categoryTrendingSource", trendingSource, "news")
 
 
 
@@ -305,19 +303,19 @@ class ConceptInfoFlags(ReturnInfoFlagsBase):
                  totalCount = False,
                  trendingSource = "news",
                  maxConceptsPerType = 20):
-        self._setVal("ConceptType", type, "concepts")
-        self._setVal("ConceptLang", lang, "eng")
-        self._setFlag("IncludeConceptLabel", label, True)
-        self._setFlag("IncludeConceptSynonyms", synonyms, False)
-        self._setFlag("IncludeConceptImage", image, False)
-        self._setFlag("IncludeConceptDescription", description, False)
-        self._setFlag("IncludeConceptConceptClassMembership", conceptClassMembership, False)
-        self._setFlag("IncludeConceptConceptClassMembershipFull", conceptClassMembershipFull, False)
-        self._setFlag("IncludeConceptTrendingScore", trendingScore, False)
-        self._setFlag("IncludeConceptTrendingHistory", trendingHistory, False)
-        self._setFlag("IncludeConceptTotalCount", totalCount, False)
-        self._setVal("ConceptTrendingSource", trendingSource, "news")
-        self._setVal("MaxConceptsPerType", maxConceptsPerType, 20)
+        self._setVal("conceptType", type, "concepts")
+        self._setVal("conceptLang", lang, "eng")
+        self._setFlag("includeConceptLabel", label, True)
+        self._setFlag("includeConceptSynonyms", synonyms, False)
+        self._setFlag("includeConceptImage", image, False)
+        self._setFlag("includeConceptDescription", description, False)
+        self._setFlag("includeConceptConceptClassMembership", conceptClassMembership, False)
+        self._setFlag("includeConceptConceptClassMembershipFull", conceptClassMembershipFull, False)
+        self._setFlag("includeConceptTrendingScore", trendingScore, False)
+        self._setFlag("includeConceptTrendingHistory", trendingHistory, False)
+        self._setFlag("includeConceptTotalCount", totalCount, False)
+        self._setVal("conceptTrendingSource", trendingSource, "news")
+        self._setVal("maxConceptsPerType", maxConceptsPerType, 20)
 
 
 
@@ -352,18 +350,18 @@ class LocationInfoFlags(ReturnInfoFlagsBase):
 
                  placeFeatureCode = False,
                  placeCountry = True):
-        self._setFlag("IncludeLocationLabel", label, True)
-        self._setFlag("IncludeLocationWikiUri", wikiUri, False)
-        self._setFlag("IncludeLocationGeoNamesId", geoNamesId, False)
-        self._setFlag("IncludeLocationPopulation", population, False)
-        self._setFlag("IncludeLocationGeoLocation", geoLocation, False)
+        self._setFlag("includeLocationLabel", label, True)
+        self._setFlag("includeLocationWikiUri", wikiUri, False)
+        self._setFlag("includeLocationGeoNamesId", geoNamesId, False)
+        self._setFlag("includeLocationPopulation", population, False)
+        self._setFlag("includeLocationGeoLocation", geoLocation, False)
 
-        self._setFlag("IncludeLocationCountryArea", countryArea, False)
-        self._setFlag("IncludeLocationCountryDetails", countryDetails, False)
-        self._setFlag("IncludeLocationCountryContinent", countryContinent, False)
+        self._setFlag("includeLocationCountryArea", countryArea, False)
+        self._setFlag("includeLocationCountryDetails", countryDetails, False)
+        self._setFlag("includeLocationCountryContinent", countryContinent, False)
 
-        self._setFlag("IncludeLocationPlaceFeatureCode", placeFeatureCode, False)
-        self._setFlag("IncludeLocationPlaceCountry", placeCountry, True)
+        self._setFlag("includeLocationPlaceFeatureCode", placeFeatureCode, False)
+        self._setFlag("includeLocationPlaceCountry", placeCountry, True)
 
 
 
@@ -377,8 +375,8 @@ class ConceptClassInfoFlags(ReturnInfoFlagsBase):
     def __init__(self,
                 parentLabels = True,
                 concepts = False):
-        self._setFlag("IncludeConceptClassParentLabels", parentLabels, True)
-        self._setFlag("IncludeConceptClassConcepts", concepts, False)
+        self._setFlag("includeConceptClassParentLabels", parentLabels, True)
+        self._setFlag("includeConceptClassConcepts", concepts, False)
 
 
 
@@ -392,8 +390,8 @@ class ConceptFolderInfoFlags(ReturnInfoFlagsBase):
     def __init__(self,
                  definition = False,
                  owner = False):
-        self._setFlag("IncludeConceptFolderDefinition", definition, False)
-        self._setFlag("IncludeConceptFolderOwner", owner, False)
+        self._setFlag("includeConceptFolderDefinition", definition, False)
+        self._setFlag("includeConceptFolderOwner", owner, False)
 
 
 
@@ -453,23 +451,23 @@ class ReturnInfo:
 
     def getParams(self, prefix = ""):
         dict = {}
-        dict.update(self.articleInfo._getFlags(prefix == "" and "article" or prefix))
-        dict.update(self.eventInfo._getFlags(prefix == "" and "event" or prefix))
-        dict.update(self.sourceInfo._getFlags(prefix == "" and "source" or prefix))
-        dict.update(self.conceptInfo._getFlags(prefix == "" and "concept" or prefix))
-        dict.update(self.categoryInfo._getFlags(prefix == "" and "category" or prefix))
-        dict.update(self.locationInfo._getFlags(prefix == "" and "location" or prefix))
-        dict.update(self.storyInfo._getFlags(prefix == "" and "story" or prefix))
-        dict.update(self.conceptClassInfo._getFlags(prefix == "" and "conceptClass" or prefix))
-        dict.update(self.conceptFolderInfo._getFlags(prefix == "" and "conceptFolder" or prefix))
-        dict.update(self.articleInfo._getVals(prefix))
-        dict.update(self.eventInfo._getVals(prefix))
-        dict.update(self.sourceInfo._getVals(prefix))
-        dict.update(self.conceptInfo._getVals(prefix))
-        dict.update(self.categoryInfo._getVals(prefix))
-        dict.update(self.locationInfo._getVals(prefix))
-        dict.update(self.storyInfo._getVals(prefix))
-        dict.update(self.conceptClassInfo._getVals(prefix))
-        dict.update(self.conceptFolderInfo._getVals(prefix))
+        dict.update(self.articleInfo._getFlags())
+        dict.update(self.eventInfo._getFlags())
+        dict.update(self.sourceInfo._getFlags())
+        dict.update(self.conceptInfo._getFlags())
+        dict.update(self.categoryInfo._getFlags())
+        dict.update(self.locationInfo._getFlags())
+        dict.update(self.storyInfo._getFlags())
+        dict.update(self.conceptClassInfo._getFlags())
+        dict.update(self.conceptFolderInfo._getFlags())
+        dict.update(self.articleInfo._getVals())
+        dict.update(self.eventInfo._getVals())
+        dict.update(self.sourceInfo._getVals())
+        dict.update(self.conceptInfo._getVals())
+        dict.update(self.categoryInfo._getVals())
+        dict.update(self.locationInfo._getVals())
+        dict.update(self.storyInfo._getVals())
+        dict.update(self.conceptClassInfo._getVals())
+        dict.update(self.conceptFolderInfo._getVals())
         return dict
 

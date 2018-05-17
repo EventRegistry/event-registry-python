@@ -4,7 +4,7 @@ from DataValidator import DataValidator
 
 class TestQueryEvent(DataValidator):
 
-    def createQuery(self, eventCount = 50):
+    def createQuery(self, eventCount = 1):
         q = QueryEvents(lang = "eng", conceptUri = self.er.getConceptUri("Obama"))
         q.setRequestedResult(RequestEventsUriWgtList(count = eventCount))
         res = self.er.execQuery(q)
@@ -24,7 +24,7 @@ class TestQueryEvent(DataValidator):
 
 
     def testArticleCount(self):
-        q = self.createQuery(10)
+        q = self.createQuery()
         q.setRequestedResult(RequestEventArticleUriWgts())
         res = self.er.execQuery(q)
 

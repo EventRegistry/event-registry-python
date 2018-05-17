@@ -93,7 +93,7 @@ class QueryArticles(Query):
                 "skipArticlesWithoutEvent" (skip articles that are not describing any known event in ER)
                 "keepOnlyArticlesWithoutEvent" (return only the articles that are not describing any known event in ER)
                 "keepAll" (no filtering, default)
-        @param dataType: what data types should we search? "news" (news content, default), "pr" (press releases), or "blogs".
+        @param dataType: what data types should we search? "news" (news content, default), "pr" (press releases), or "blog".
                 If you want to use multiple data types, put them in an array (e.g. ["news", "pr"])
         @param requestedResult: the information to return as the result of the query. By default return the list of matching articles
         """
@@ -141,7 +141,8 @@ class QueryArticles(Query):
         self._setValIfNotDefault("isDuplicateFilter", isDuplicateFilter, "keepAll")
         self._setValIfNotDefault("hasDuplicateFilter", hasDuplicateFilter, "keepAll")
         self._setValIfNotDefault("eventFilter", eventFilter, "keepAll")
-        self._setValIfNotDefault("dataType", dataType, "news")
+        # always set the data type
+        self._setVal("dataType", dataType)
 
         # set the information that should be returned
         self.setRequestedResult(requestedResult or RequestArticlesInfo())
@@ -253,8 +254,16 @@ class QueryArticlesIter(QueryArticles, six.Iterator):
 
 
     @staticmethod
-    def initWithComplexQuery(query):
+    def initWithComplexQuery(query, dataType = "news"):
+        """
+        @param query: complex query as ComplexArticleQuery instance, string or a python dict
+        @param dataType: what data types should we search? "news" (news content, default), "pr" (press releases), or "blog".
+                If you want to use multiple data types, put them in an array (e.g. ["news", "pr"])
+        """
         q = QueryArticlesIter()
+        # set data type
+        q._setVal("dataType", dataType)
+
         # provided an instance of ComplexArticleQuery
         if isinstance(query, ComplexArticleQuery):
             q._setVal("query", json.dumps(query.getQuery()))
@@ -368,7 +377,7 @@ class RequestArticlesInfo(RequestArticles):
         @param returnInfo: what details should be included in the returned information
         """
         assert page >= 1, "page has to be >= 1"
-        assert count <= 100, "at most 100 articles can be returned per call"
+        assert count <= 200, "at most 100 articles can be returned per call"
         self.resultType = "articles"
         self.articlesPage = page
         self.articlesCount = count
@@ -476,13 +485,13 @@ class RequestArticlesSourceAggr(RequestArticles):
 class RequestArticlesKeywordAggr(RequestArticles):
     def __init__(self,
                  lang = "eng",
-                 articlesSampleSize = 10000):
+                 articlesSampleSize = 2000):
         """
         get top keywords in the resulting articles
         @param lang: articles in which language should be analyzed and processed
-        @param articlesSampleSize: on what sample of results should the aggregate be computed (at most 50000)
+        @param articlesSampleSize: on what sample of results should the aggregate be computed (at most 20000)
         """
-        assert articlesSampleSize <= 50000
+        assert articlesSampleSize <= 20000
         self.resultType = "keywordAggr"
         self.keywordAggrLang = lang
         self.keywordAggrSampleSize = articlesSampleSize
