@@ -504,15 +504,19 @@ class RequestEventsConceptMatrix(RequestEvents):
 
 class RequestEventsConceptTrends(RequestEvents):
     def __init__(self,
+                 conceptUris = None,
                  conceptCount = 10,
                  returnInfo = ReturnInfo()):
         """
         return a list of top trending concepts and their daily trending info over time
-        @param conceptCount: number of top concepts to return (at most 50)
+        @param conceptUris: list of concept URIs for which to return trending information. If None, then top concepts will be automatically computed
+        @param count: if the concepts are not provided, what should be the number of automatically determined concepts to return (at most 50)
         @param returnInfo: what details about the concepts should be included in the returned information
         """
         assert conceptCount <= 50
         self.resultType = "conceptTrends"
+        if conceptUris != None:
+            self.conceptTrendsConceptUri = conceptUris
         self.conceptTrendsConceptCount = conceptCount
         self.__dict__.update(returnInfo.getParams("conceptTrends"))
 

@@ -191,7 +191,7 @@ class TestQueryEvents(DataValidator):
         self.assertIsNotNone(res.get("conceptTrends"), "Expected to get 'conceptTrends'")
         self.assertIsNotNone(res.get("conceptTrends").get("trends"), "Expected to get 'trends' property in conceptTrends")
         self.assertIsNotNone(res.get("conceptTrends").get("conceptInfo"), "Expected to get 'conceptInfo' property in conceptTrends")
-        self.assertTrue(len(res["conceptTrends"]["conceptInfo"]) == 5, "Expected to get 5 concepts in concept trends")
+        self.assertTrue(len(res["conceptTrends"]["conceptInfo"]) <= 5, "Expected to get 5 concepts in concept trends")
         trends = res["conceptTrends"]["trends"]
         self.assertTrue(len(trends) > 0, "Expected to get trends for some days")
         for trend in trends:

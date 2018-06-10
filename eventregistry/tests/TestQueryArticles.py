@@ -30,7 +30,7 @@ class TestQueryArticles(DataValidator):
         expectedCount = iter.count(self.er)
 
         countPerPage = 20000
-        pages = math.ceil(expectedCount / countPerPage)
+        pages = int(math.ceil(expectedCount / countPerPage))
         q = QueryArticles(conceptUri=self.er.getConceptUri("germany"))
         items = []
         for page in range(1, pages+1):

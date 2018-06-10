@@ -226,7 +226,6 @@ class QueryArticlesIter(QueryArticles, six.Iterator):
                   sortBy = "rel",
                   sortByAsc = False,
                   returnInfo = ReturnInfo(),
-                  articleBatchSize = 100,
                   maxItems = -1,
                   **kwargs):
         """

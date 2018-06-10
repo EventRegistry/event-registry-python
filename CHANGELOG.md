@@ -1,5 +1,17 @@
 # Change Log
 
+## [v8.1.0]() (2018-06-10)
+
+**Added**
+- added `blog` data type. Various methods in `EventRegistry` class accept it, such as `suggestNewsSources()`, `suggestSourcesAtPlace()` and `getNewsSourceUri()`.
+
+**Updated**
+- `QueryArticlesIter.initWithComplexQuery()` now accepts also the `dataType` parameter (by default `news`).
+
+**Removed**
+- Removed the parameter `articleBatchSize` from `QueryArticlesIter.execQuery` since it was not useful. We are always returning the maximum number of results that can be obtained with a single query.
+
+
 ## [v8.0]() (2018-04-10)
 
 **Added**
