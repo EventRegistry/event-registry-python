@@ -1,5 +1,16 @@
 # Change Log
 
+
+## [v8.2.0]() (2018-06-29)
+
+**Added**
+- added `TopicPage` class. It can be used to create a topic by specifying keywords, concepts, sources, ... as well as their weights. You can specify a threshold and receive only articles and events that match enough specified conditions to reach the required weight. Alternatively you can simply sort the results by relevance and get the top ranked results that are most related to your topic page. See `TopicPageExamples.py` file for examples on how to use the topic pages.
+- added named entity extraction endpoint to `Analytics`. Call `Analytics.ner(text)` to extract named entities.
+
+**Updated**
+- sentiment analysis now supports two models - vocabulary based as well as a model using neural networks. Choose the model by specifying the `method` parameter. Possible values for it are `vocabulary` (vocabulary based sentiment analysis, default) or `rnn` (neural networks based model).
+
+
 ## [v8.1.0]() (2018-06-10)
 
 **Added**
