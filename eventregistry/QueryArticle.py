@@ -32,17 +32,6 @@ class QueryArticle(Query):
         return q
 
 
-    def addRequestedResult(self, requestArticle):
-        """
-        Add a result type that you would like to be returned. In one QueryArticle you can ask for multiple result types.
-        Result types can be the classes that extend RequestArticle base class (see classes below).
-        @param requestArticle: an instance of type RequestArticle*. Determines what info should be returned as a result of the query
-        """
-        assert isinstance(requestArticle, RequestArticle), "QueryArticle class can only accept result requests that are of type RequestArticle"
-        self.resultTypeList = [item for item in self.resultTypeList if item.getResultType() != requestArticle.getResultType()]
-        self.resultTypeList.append(requestArticle)
-
-
     def setRequestedResult(self, requestArticle):
         """
         Set the single result type that you would like to be returned. If some other request type was previously set, it will be overwritten.

@@ -3,22 +3,9 @@ main class responsible for obtaining results from the Event Registry
 """
 import six, os, sys, traceback, json, re, requests, time
 import threading
+
 from eventregistry.Base import *
-from eventregistry.EventForText import *
 from eventregistry.ReturnInfo import *
-from eventregistry.Query import *
-from eventregistry.QueryEvents import *
-from eventregistry.QueryEvent import *
-from eventregistry.QueryArticles import *
-from eventregistry.QueryArticle import *
-from eventregistry.QueryStory import *
-from eventregistry.Correlations import *
-from eventregistry.Counts import *
-from eventregistry.DailyShares import *
-from eventregistry.Info import *
-from eventregistry.Recent import *
-from eventregistry.Trends import *
-from eventregistry.Analytics import *
 
 class EventRegistry(object):
     """
@@ -347,7 +334,7 @@ class EventRegistry(object):
     #
     # suggestion methods - return type is a list of matching items
 
-    def suggestConcepts(self, prefix, sources = ["concepts"], lang = "eng", conceptLang = "eng", page = 1, count = 20, returnInfo = ReturnInfo()):
+    def suggestConcepts(self, prefix, sources = ["concepts"], lang = "eng", conceptLang = "eng", page = 1, count = 20, returnInfo = ReturnInfo(), **kwargs):
         """
         return a list of concepts that contain the given prefix. returned matching concepts are sorted based on their frequency of occurence in news (from most to least frequent)
         @param prefix: input text that should be contained in the concept
@@ -361,10 +348,11 @@ class EventRegistry(object):
         assert page > 0, "page parameter should be above 0"
         params = { "prefix": prefix, "source": sources, "lang": lang, "conceptLang": conceptLang, "page": page, "count": count}
         params.update(returnInfo.getParams())
+        params.update(kwargs)
         return self.jsonRequest("/json/suggestConcepts", params)
 
 
-    def suggestCategories(self, prefix, page = 1, count = 20, returnInfo = ReturnInfo()):
+    def suggestCategories(self, prefix, page = 1, count = 20, returnInfo = ReturnInfo(), **kwargs):
         """
         return a list of dmoz categories that contain the prefix
         @param prefix: input text that should be contained in the category name
@@ -375,10 +363,11 @@ class EventRegistry(object):
         assert page > 0, "page parameter should be above 0"
         params = { "prefix": prefix, "page": page, "count": count }
         params.update(returnInfo.getParams())
+        params.update(kwargs)
         return self.jsonRequest("/json/suggestCategories", params)
 
 
-    def suggestNewsSources(self, prefix, dataType = ["news", "pr", "blog"], page = 1, count = 20):
+    def suggestNewsSources(self, prefix, dataType = ["news", "pr", "blog"], page = 1, count = 20, **kwargs):
         """
         return a list of news sources that match the prefix
         @param prefix: input text that should be contained in the source name or uri
@@ -387,11 +376,12 @@ class EventRegistry(object):
         @param count: number of returned suggestions
         """
         assert page > 0, "page parameter should be above 0"
-        params = { "prefix": prefix, "dataType": dataType, "count": count }
+        params = {"prefix": prefix, "dataType": dataType, "page": page, "count": count}
+        params.update(kwargs)
         return self.jsonRequest("/json/suggestSources", params)
 
 
-    def suggestSourceGroups(self, prefix, page = 1, count = 20):
+    def suggestSourceGroups(self, prefix, page = 1, count = 20, **kwargs):
         """
         return a list of news source groups that match the prefix
         @param prefix: input text that should be contained in the source group name or uri
@@ -399,10 +389,12 @@ class EventRegistry(object):
         @param count: number of returned suggestions
         """
         assert page > 0, "page parameter should be above 0"
-        return self.jsonRequest("/json/suggestSourceGroups", { "prefix": prefix, "page": page, "count": count })
+        params = { "prefix": prefix, "page": page, "count": count }
+        params.update(kwargs)
+        return self.jsonRequest("/json/suggestSourceGroups", params)
 
 
-    def suggestLocations(self, prefix, sources = ["place", "country"], lang = "eng", count = 20, countryUri = None, sortByDistanceTo = None, returnInfo = ReturnInfo()):
+    def suggestLocations(self, prefix, sources = ["place", "country"], lang = "eng", count = 20, countryUri = None, sortByDistanceTo = None, returnInfo = ReturnInfo(), **kwargs):
         """
         return a list of geo locations (cities or countries) that contain the prefix
         @param prefix: input text that should be contained in the location name
@@ -415,6 +407,7 @@ class EventRegistry(object):
         """
         params = { "prefix": prefix, "count": count, "source": sources, "lang": lang, "countryUri": countryUri or "" }
         params.update(returnInfo.getParams())
+        params.update(kwargs)
         if sortByDistanceTo:
             assert isinstance(sortByDistanceTo, (tuple, list)), "sortByDistanceTo has to contain a tuple with latitude and longitude of the location"
             assert len(sortByDistanceTo) == 2, "The sortByDistanceTo should contain two float numbers"
@@ -423,7 +416,7 @@ class EventRegistry(object):
         return self.jsonRequest("/json/suggestLocations", params)
 
 
-    def suggestLocationsAtCoordinate(self, latitude, longitude, radiusKm, limitToCities = False, lang = "eng", count = 20, ignoreNonWiki = True, returnInfo = ReturnInfo()):
+    def suggestLocationsAtCoordinate(self, latitude, longitude, radiusKm, limitToCities = False, lang = "eng", count = 20, ignoreNonWiki = True, returnInfo = ReturnInfo(), **kwargs):
         """
         return a list of geo locations (cities or places) that are close to the provided (lat, long) values
         @param latitude: latitude part of the coordinate
@@ -439,10 +432,11 @@ class EventRegistry(object):
         assert isinstance(longitude, (int, float)), "The 'longitude' should be a number"
         params = { "action": "getLocationsAtCoordinate", "lat": latitude, "lon": longitude, "radius": radiusKm, "limitToCities": limitToCities, "count": count, "lang": lang }
         params.update(returnInfo.getParams())
+        params.update(kwargs)
         return self.jsonRequest("/json/suggestLocations", params)
 
 
-    def suggestSourcesAtCoordinate(self, latitude, longitude, radiusKm, count = 20):
+    def suggestSourcesAtCoordinate(self, latitude, longitude, radiusKm, count = 20, **kwargs):
         """
         return a list of news sources that are close to the provided (lat, long) values
         @param latitude: latitude part of the coordinate
@@ -452,11 +446,12 @@ class EventRegistry(object):
         """
         assert isinstance(latitude, (int, float)), "The 'latitude' should be a number"
         assert isinstance(longitude, (int, float)), "The 'longitude' should be a number"
-        params = { "action": "getSourcesAtCoordinate", "lat": latitude, "lon": longitude, "radius": radiusKm, "count": count }
+        params = {"action": "getSourcesAtCoordinate", "lat": latitude, "lon": longitude, "radius": radiusKm, "count": count}
+        params.update(kwargs)
         return self.jsonRequest("/json/suggestSources", params)
 
 
-    def suggestSourcesAtPlace(self, conceptUri, dataType = "news", page = 1, count = 20):
+    def suggestSourcesAtPlace(self, conceptUri, dataType = "news", page = 1, count = 20, **kwargs):
         """
         return a list of news sources that are close to the provided (lat, long) values
         @param conceptUri: concept that represents a geographic location for which we would like to obtain a list of sources located at the place
@@ -464,11 +459,12 @@ class EventRegistry(object):
         @param page: page of the results (1, 2, ...)
         @param count: number of returned sources
         """
-        params = { "action": "getSourcesAtPlace", "conceptUri": conceptUri, "page": page, "count": count, "dataType": dataType }
+        params = {"action": "getSourcesAtPlace", "conceptUri": conceptUri, "page": page, "count": count, "dataType": dataType}
+        params.update(kwargs)
         return self.jsonRequest("/json/suggestSources", params)
 
 
-    def suggestConceptClasses(self, prefix, lang = "eng", conceptLang = "eng", source = ["dbpedia", "custom"], page = 1, count = 20, returnInfo = ReturnInfo()):
+    def suggestConceptClasses(self, prefix, lang = "eng", conceptLang = "eng", source = ["dbpedia", "custom"], page = 1, count = 20, returnInfo = ReturnInfo(), **kwargs):
         """
         return a list of concept classes that match the given prefix
         @param prefix: input text that should be contained in the category name
@@ -482,10 +478,11 @@ class EventRegistry(object):
         assert page > 0, "page parameter should be above 0"
         params = { "prefix": prefix, "lang": lang, "conceptLang": conceptLang, "source": source, "page": page, "count": count }
         params.update(returnInfo.getParams())
+        params.update(kwargs)
         return self.jsonRequest("/json/suggestConceptClasses", params)
 
 
-    def suggestCustomConcepts(self, prefix, lang = "eng", conceptLang = "eng", page = 1, count = 20, returnInfo = ReturnInfo()):
+    def suggestCustomConcepts(self, prefix, lang = "eng", conceptLang = "eng", page = 1, count = 20, returnInfo = ReturnInfo(), **kwargs):
         """
         return a list of custom concepts that contain the given prefix. Custom concepts are the things (indicators, stock prices, ...) for which we import daily trending values that can be obtained using GetCounts class
         @param prefix: input text that should be contained in the concept name
@@ -498,6 +495,7 @@ class EventRegistry(object):
         assert page > 0, "page parameter should be above 0"
         params = { "prefix": prefix, "lang": lang, "conceptLang": conceptLang, "page": page, "count": count }
         params.update(returnInfo.getParams())
+        params.update(kwargs)
         return self.jsonRequest("/json/suggestCustomConcepts", params)
 
 
