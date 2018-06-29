@@ -38,12 +38,16 @@ class Analytics:
         return self._er.jsonRequestAnalytics("/api/v1/categorize", { "text": text })
 
 
-    def sentiment(self, text):
+    def sentiment(self, text, method = "vocabulary"):
         """
-        determine the sentiment of the provided text
+        determine the sentiment of the provided text in English language
         @param text: input text to categorize
+        @param method: method to use to compute the sentiment. possible values are "vocabulary" (vocabulary based sentiment analysis)
+            and "rnn" (neural network based sentiment classification)
         """
-        return self._er.jsonRequestAnalytics("/api/v1/sentiment", { "text": text })
+        assert method == "vocabulary" or method == "rnn"
+        endpoint = method == "vocabulary" and "sentiment" or "sentimentRNN"
+        return self._er.jsonRequestAnalytics("/api/v1/" + endpoint, { "text": text })
 
 
     def semanticSimilarity(self, text1, text2, distanceMeasure = "cosine"):
@@ -70,3 +74,10 @@ class Analytics:
         article title, body, authors, links in the articles, ...
         """
         return self._er.jsonRequestAnalytics("/api/v1/extractArticleInfo", { "url": url })
+
+
+    def ner(self, text):
+        """
+        extract named entities from the provided text. Supported languages are English, German, Spanish and Chinese.
+        """
+        return self._er.jsonRequestAnalytics("/api/v1/ner", { "text": text })
