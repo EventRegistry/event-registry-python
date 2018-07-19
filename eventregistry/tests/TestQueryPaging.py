@@ -1,7 +1,9 @@
+from __future__ import print_function
 import unittest, math, random
 from eventregistry import *
 from DataValidator import DataValidator
 from eventregistryadmin import EventRegistryAdmin
+
 
 erAdmin = EventRegistryAdmin(host = DataValidator().er._host)
 

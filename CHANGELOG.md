@@ -1,6 +1,12 @@
 # Change Log
 
 
+## [v8.2.1]() (2018-07-19)
+
+**Updated**
+- Added some utility methods to the  `TopicPage` class.
+
+
 ## [v8.2.0]() (2018-06-29)
 
 **Added**

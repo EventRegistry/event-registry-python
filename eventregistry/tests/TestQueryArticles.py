@@ -30,7 +30,7 @@ class TestQueryArticles(DataValidator):
         expectedCount = iter.count(self.er)
 
         countPerPage = 20000
-        pages = int(math.ceil(expectedCount / countPerPage))
+        pages = int(math.ceil(expectedCount / float(countPerPage)))
         q = QueryArticles(conceptUri=self.er.getConceptUri("germany"))
         items = []
         for page in range(1, pages+1):
@@ -38,7 +38,7 @@ class TestQueryArticles(DataValidator):
             res = self.er.execQuery(q)
             items.extend(res.get("uriWgtList", {}).get("results", []))
         if expectedCount != len(items):
-            self.fail("We did not retrieve all item uris. We were expecting %d, but got %d uris" %(expectedCount, len(items)))
+            self.fail("We did not retrieve all item uris. We were expecting %d, but got %d uris on %d pages" %(expectedCount, len(items), pages))
 
         lastWgt = None
         for item in items:
@@ -323,12 +323,17 @@ class TestQueryArticles(DataValidator):
         res = self.er.execQuery(q)
 
         self.assertIsNotNone(res.get("sourceAggr"), "Expected to get 'sourceAggr'")
-        for sourceInfo in res.get("sourceAggr").get("results"):
+        for sourceInfo in res.get("sourceAggr").get("countsPerSource"):
             self.assertTrue(sourceInfo.get("counts"), "Source info should contain counts object")
             self.ensureValidSource(sourceInfo.get("source"), "sourceAggr")
             counts = sourceInfo.get("counts")
             self.assertIsNotNone(counts.get("frequency"), "Counts should contain a frequency")
-            self.assertIsNotNone(counts.get("ratio"), "Counts should contain a ratio")
+            self.assertIsNotNone(counts.get("total"), "Counts should contain a total")
+
+        countries = res.get("sourceAggr", {}).get("countsPerCountry")
+        for country in countries:
+            self.assertTrue(country.get("type") == "loc", "Country should be a location")
+            self.assertTrue(country.get("frequency") > 0)
 
     #
     # tests for iterators

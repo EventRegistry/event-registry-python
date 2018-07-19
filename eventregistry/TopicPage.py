@@ -17,6 +17,7 @@ class TopicPage(QueryParamsBase):
         self.eventRegistry = eventRegistry
         # topic page definition
         self.topicPage = self._createEmptyTopicPage()
+        self.concept = {}
 
 
     def _createEmptyTopicPage(self):
@@ -60,7 +61,8 @@ class TopicPage(QueryParamsBase):
             "uri": uri
         }
         self.topicPage = self._createEmptyTopicPage()
-        self.topicPage.update(self.eventRegistry.jsonRequest("/json/topicPage", params).get("topicPage", {}))
+        self.concept = self.eventRegistry.jsonRequest("/json/topicPage", params)
+        self.topicPage.update(self.concept.get("topicPage", {}))
 
 
     def loadTopicPageFromDefinition(self, definitionDict):
@@ -166,6 +168,34 @@ class TopicPage(QueryParamsBase):
         assert isinstance(maxDaysBack, int), "maxDaysBack value has to be a positive integer"
         assert maxDaysBack >= 1
         self.topicPage["maxDaysBack"] = maxDaysBack
+
+
+    def clearConcepts(self):
+        self.topicPage["concepts"] = []
+
+
+    def clearKeywords(self):
+        self.topicPage["keywords"] = []
+
+
+    def clearCategories(self):
+        self.topicPage["categories"] = []
+
+
+    def clearSources(self):
+        self.topicPage["sources"] = []
+
+
+    def clearSourceLocations(self):
+        self.topicPage["sourceLocations"] = []
+
+
+    def clearSourceGroups(self):
+        self.topicPage["sourceGroups"] = []
+
+
+    def clearLocations(self):
+        self.topicPage["locations"] = []
 
 
     def addConcept(self, conceptUri, weight):

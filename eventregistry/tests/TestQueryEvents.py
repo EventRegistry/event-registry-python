@@ -261,13 +261,18 @@ class TestQueryEvents(DataValidator):
         res = self.er.execQuery(q)
 
         self.assertIsNotNone(res.get("sourceAggr"), "Expected to get 'sourceAggr'")
-        sources = res.get("sourceAggr",{}).get("results")
+        sources = res.get("sourceAggr",{}).get("countsPerSource")
         self.assertEqual(len(sources), 15, "Expected 15 sources")
         for sourceInfo in sources:
             self.ensureValidSource(sourceInfo.get("source"), "sourceAggr")
             self.assertTrue(sourceInfo.get("counts"), "Source info should contain counts object")
             self.assertIsNotNone(sourceInfo.get("counts").get("frequency"), "Counts should contain a frequency")
-            self.assertIsNotNone(sourceInfo.get("counts").get("ratio"), "Counts should contain ratio")
+            self.assertIsNotNone(sourceInfo.get("counts").get("total"), "Counts should contain total")
+
+        countries = res.get("sourceAggr", {}).get("countsPerCountry")
+        for country in countries:
+            self.assertTrue(country.get("type") == "loc", "Country should be a location")
+            self.assertTrue(country.get("frequency") > 0)
 
 
     def testSearchBySource(self):
