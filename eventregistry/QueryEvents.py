@@ -191,11 +191,11 @@ class QueryEventsIter(QueryEvents, six.Iterator):
         """
         return the number of events that match the criteria
         """
-        self.setRequestedResult(RequestEventsUriWgtList())
+        self.setRequestedResult(RequestEventsInfo())
         res = eventRegistry.execQuery(self)
         if "error" in res:
             print(res["error"])
-        count = res.get("uriWgtList", {}).get("totalResults", 0)
+        count = res.get("events", {}).get("totalResults", 0)
         return count
 
 
@@ -217,15 +217,13 @@ class QueryEventsIter(QueryEvents, six.Iterator):
         self._sortByAsc = sortByAsc
         self._returnInfo = returnInfo
         self._eventBatchSize = 50      # always download max - best for the user since it uses his token and we want to download as much as possible in a single search
-        self._uriPage = 0
+        self._eventPage = 0
+        self._totalPages = None
         # if we want to return only a subset of items:
         self._maxItems = maxItems
         self._currItem = 0
         # list of cached events that are yet to be returned by the iterator
         self._eventList = []
-        self._uriWgtList = []
-        # how many pages do we have for URIs. set once we call _getNextUriPage first
-        self._allUriPages = None
         return self
 
 
@@ -247,46 +245,23 @@ class QueryEventsIter(QueryEvents, six.Iterator):
         return q
 
 
-    def _getNextUriPage(self):
-        """download a simple list of event uris"""
-        self._uriPage += 1
-        self._uriWgtList = []
-        if self._allUriPages != None and self._uriPage > self._allUriPages:
-            return
-        if self._er._verboseOutput:
-            print("Downloading page %d of event uris" % (self._uriPage))
-        self.setRequestedResult(RequestEventsUriWgtList(page = self._uriPage, sortBy = self._sortBy, sortByAsc = self._sortByAsc))
-        res = self._er.execQuery(self)
-        if "error" in res:
-            print(res["error"])
-        self._uriWgtList = res.get("uriWgtList", {}).get("results", [])
-        self._allUriPages = res.get("uriWgtList", {}).get("pages", 0)
-
-
     def _getNextEventBatch(self):
         """download next batch of events based on the event uris in the uri list"""
-        # try to get more uris, if none
-        if len(self._uriWgtList) == 0:
-            self._getNextUriPage()
-        # if still no uris, then we have nothing to download
-        if len(self._uriWgtList) == 0:
+        self._eventPage += 1
+        # if we have already obtained all pages, then exit
+        if self._totalPages != None and self._eventPage > self._totalPages:
             return
-        # get uris to download
-        uriWgts = self._uriWgtList[:self._eventBatchSize]
-        # create a list of uris, without the weights
-        uriToWgts = dict([val.split(":") for val in uriWgts])
-        # remove used uris
-        self._uriWgtList = self._uriWgtList[self._eventBatchSize:]
-        if self._er._verboseOutput:
-            print("Downloading %d events..." % (len(uriWgts)))
-        q = QueryEvents.initWithEventUriWgtList(uriWgts)
-        q.setRequestedResult(RequestEventsInfo(page = 1, count = self._eventBatchSize, sortBy = "none", returnInfo = self._returnInfo))
+        self.setRequestedResult(RequestEventsInfo(page=self._eventPage, count=self._eventBatchSize,
+            sortBy= self._sortBy, sortByAsc=self._sortByAsc,
+            returnInfo = self._returnInfo))
         # download articles and make sure that we set the same archive flag as it was returned when we were processing the uriList request
-        res = self._er.execQuery(q)
+        if self._er._verboseOutput:
+            print("Downloading event page %d..." % (self._eventPage))
+        res = self._er.execQuery(self)
         if "error" in res:
             print("Error while obtaining a list of events: " + res["error"])
         else:
-            assert res.get("events", {}).get("pages", 0) == 1
+            self._totalPages = res.get("events", {}).get("pages", 0)
         results = res.get("events", {}).get("results", [])
         self._eventList.extend(results)
 

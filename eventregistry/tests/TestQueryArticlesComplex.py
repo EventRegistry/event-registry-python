@@ -305,4 +305,5 @@ class TestQueryArticlesComplex(DataValidator):
 
 if __name__ == "__main__":
     suite = unittest.TestLoader().loadTestsFromTestCase(TestQueryArticlesComplex)
+    # suite = unittest.TestLoader().suiteClass(map(TestQueryArticlesComplex, ["testCompareSameResults5"]))
     unittest.TextTestRunner(verbosity=3).run(suite)

@@ -214,11 +214,11 @@ class QueryArticlesIter(QueryArticles, six.Iterator):
         """
         return the number of articles that match the criteria
         """
-        self.setRequestedResult(RequestArticlesUriWgtList())
+        self.setRequestedResult(RequestArticlesInfo())
         res = eventRegistry.execQuery(self)
         if "error" in res:
             print(res["error"])
-        count = res.get("uriWgtList", {}).get("totalResults", 0)
+        count = res.get("articles", {}).get("totalResults", 0)
         return count
 
 
@@ -240,15 +240,13 @@ class QueryArticlesIter(QueryArticles, six.Iterator):
         self._sortByAsc = sortByAsc
         self._returnInfo = returnInfo
         self._articleBatchSize = 100    # always download 100 - best for the user since it uses his token and we want to download as much as possible in a single search
-        self._uriPage = 0
+        self._articlePage = 0
+        self._totalPages = None
         # if we want to return only a subset of items:
         self._maxItems = maxItems
         self._currItem = 0
         # list of cached articles that are yet to be returned by the iterator
         self._articleList = []
-        # self._uriWgtList = []
-        # # how many pages do we have for URIs. set once we call _getNextUriPage first
-        # self._allUriPages = None
         return self
 
 
@@ -285,50 +283,27 @@ class QueryArticlesIter(QueryArticles, six.Iterator):
         """
         q = QueryArticlesIter()
         assert isinstance(uriList, list), "uriList has to be a list of strings that represent article uris"
-        q._uriWgtList = [uri + ":1" for uri in uriList]
-        q._allUriPages = 1
+        q.queryParams = { "action": "getArticles", "articleUri": uriList }
         return q
-
-
-    def _getNextUriPage(self):
-        """download a simple list of article uris"""
-        self._uriPage += 1
-        self._uriWgtList = []
-        if "_allUriPages" in self.__dict__ and self._allUriPages != None and self._uriPage > self._allUriPages:
-            return
-        if self._er._verboseOutput:
-            print("Downloading page %d of article uris" % (self._uriPage))
-        self.setRequestedResult(RequestArticlesUriWgtList(page = self._uriPage, sortBy = self._sortBy, sortByAsc = self._sortByAsc))
-        res = self._er.execQuery(self)
-        if "error" in res:
-            print(res["error"])
-        self._uriWgtList = res.get("uriWgtList", {}).get("results", [])
-        self._allUriPages = res.get("uriWgtList", {}).get("pages", 0)
 
 
     def _getNextArticleBatch(self):
         """download next batch of articles based on the article uris in the uri list"""
         # try to get more uris, if none
-        if "_uriWgtList" not in self.__dict__ or len(self._uriWgtList) == 0:
-            self._getNextUriPage()
-        # if still no uris, then we have nothing to download
-        if len(self._uriWgtList) == 0:
+        self._articlePage += 1
+        # if we have already obtained all pages, then exit
+        if self._totalPages != None and self._articlePage > self._totalPages:
             return
-        # get uris to download
-        uriWgts = self._uriWgtList[:self._articleBatchSize]
-        # remove used uris
-        self._uriWgtList = self._uriWgtList[self._articleBatchSize:]
+        self.setRequestedResult(RequestArticlesInfo(page=self._articlePage,
+            sortBy=self._sortBy, sortByAsc=self._sortByAsc,
+            returnInfo = self._returnInfo))
         if self._er._verboseOutput:
-            print("Downloading %d articles..." % (len(uriWgts)))
-
-        q = QueryArticles.initWithArticleUriWgtList(uriWgts)
-        q.setRequestedResult(RequestArticlesInfo(page = 1, count = self._articleBatchSize, sortBy = "none", returnInfo = self._returnInfo))
-        # download articles and make sure that we set the same archive flag as it was returned when we were processing the uriList request
-        res = self._er.execQuery(q)
+            print("Downloading article page %d..." % (self._articlePage))
+        res = self._er.execQuery(self)
         if "error" in res:
             print("Error while obtaining a list of articles: " + res["error"])
         else:
-            assert res.get("articles", {}).get("pages", 0) == 1
+            self._totalPages = res.get("articles", {}).get("pages", 0)
         results = res.get("articles", {}).get("results", [])
         self._articleList.extend(results)
 

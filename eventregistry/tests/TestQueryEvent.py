@@ -1,18 +1,34 @@
-﻿import unittest
+﻿import unittest, sys
 from eventregistry import *
 from DataValidator import DataValidator
 
 class TestQueryEvent(DataValidator):
 
-    def createQuery(self, eventCount = 1):
-        q = QueryEvents(lang = "eng", conceptUri = self.er.getConceptUri("Obama"))
-        q.setRequestedResult(RequestEventsUriWgtList(count = eventCount))
+    def getValidEvent(self):
+        q = QueryEvents(lang = "eng", conceptUri = self.er.getConceptUri("Google"))
+        q.setRequestedResult(RequestEventsUriWgtList(count = 1, sortBy="size"))
         res = self.er.execQuery(q)
-        return QueryEvent(EventRegistry.getUriFromUriWgt(res["uriWgtList"]["results"]))
+        return EventRegistry.getUriFromUriWgt(res["uriWgtList"]["results"])[0]
+
+
+    def testArticleSorting(self):
+        q = QueryEventArticlesIter(self.getValidEvent())
+
+        # try ascending order
+        wgt = 0
+        for art in q.execQuery(self.er, sortBy="date", sortByAsc=True):
+            self.assertTrue(art["wgt"] >= wgt)
+            wgt = art["wgt"]
+
+        # try descending order
+        wgt = sys.maxint
+        for art in q.execQuery(self.er, sortBy="date", sortByAsc=False):
+            self.assertTrue(art["wgt"] <= wgt)
+            wgt = art["wgt"]
 
 
     def testArticleList(self):
-        q = self.createQuery()
+        q = QueryEvent(self.getValidEvent())
         q.setRequestedResult(RequestEventArticles(returnInfo = self.returnInfo))
         res = self.er.execQuery(q)
 
@@ -24,7 +40,7 @@ class TestQueryEvent(DataValidator):
 
 
     def testArticleCount(self):
-        q = self.createQuery()
+        q = QueryEvent(self.getValidEvent())
         q.setRequestedResult(RequestEventArticleUriWgts())
         res = self.er.execQuery(q)
 
@@ -39,7 +55,7 @@ class TestQueryEvent(DataValidator):
 
 
     def testArticleUris(self):
-        q = self.createQuery()
+        q = QueryEvent(self.getValidEvent())
         q.setRequestedResult(RequestEventArticleUriWgts())
         res = self.er.execQuery(q)
 
@@ -50,7 +66,7 @@ class TestQueryEvent(DataValidator):
 
 
     def testKeywords(self):
-        q = self.createQuery()
+        q = QueryEvent(self.getValidEvent())
         q.setRequestedResult(RequestEventKeywordAggr())
         res = self.er.execQuery(q)
 
@@ -66,7 +82,7 @@ class TestQueryEvent(DataValidator):
                 self.assertIsNotNone(kw.get("weight"), "Weight expected")
 
     def testSourceAggr(self):
-        q = self.createQuery()
+        q = QueryEvent(self.getValidEvent())
         q.setRequestedResult(RequestEventSourceAggr())
         res = self.er.execQuery(q)
 
@@ -77,7 +93,7 @@ class TestQueryEvent(DataValidator):
 
 
     def testArticleTrend(self):
-        q = self.createQuery()
+        q = QueryEvent(self.getValidEvent())
         q.setRequestedResult(RequestEventArticleTrend())
         res = self.er.execQuery(q)
 
@@ -88,7 +104,7 @@ class TestQueryEvent(DataValidator):
 
 
     def testSimilarEvents(self):
-        q = self.createQuery(1)
+        q = QueryEvent(self.getValidEvent())
         q.setRequestedResult(RequestEventSimilarEvents(
             [{ "uri": "http://en.wikipedia.org/wiki/Barack_Obama", "wgt": 100 }, { "uri": "http://en.wikipedia.org/wiki/Donald_Trump", "wgt": 80 }],
             addArticleTrendInfo = True, returnInfo = self.returnInfo))
@@ -104,7 +120,7 @@ class TestQueryEvent(DataValidator):
 
 
     def testSimilarStories(self):
-        q = self.createQuery(1)
+        q = QueryEvent(self.getValidEvent())
         q.setRequestedResult(RequestEventSimilarStories(
             [{ "uri": "http://en.wikipedia.org/wiki/Barack_Obama", "wgt": 100 }, { "uri": "http://en.wikipedia.org/wiki/Donald_Trump", "wgt": 80 }],
             returnInfo = self.returnInfo))

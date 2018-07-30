@@ -5,8 +5,6 @@ from DataValidator import DataValidator
 from eventregistryadmin import EventRegistryAdmin
 
 
-erAdmin = EventRegistryAdmin(host = DataValidator().er._host)
-
 class TestQueryPaging(DataValidator):
 
     def testPagingUri1(self):
@@ -24,6 +22,7 @@ class TestQueryPaging(DataValidator):
         arr = res.get("uriWgtList", {}).get("results", [])
         uriList.extend(self.er.getUriFromUriWgt(arr))
 
+        erAdmin = EventRegistryAdmin(self.er._host)
         erAdmin.clearCache()
 
         q = QueryArticles(sourceUri="bbc.co.uk", dateStart="2018-04-22", dateEnd="2018-04-25")
@@ -93,6 +92,7 @@ class TestQueryPaging(DataValidator):
             if len(arr) == 0:
                 break
 
+        erAdmin = EventRegistryAdmin(self.er._host)
         erAdmin.clearCache()
 
         q = QueryArticles(sourceUri="bbc.co.uk", dateStart="2018-04-22", dateEnd="2018-04-25")
@@ -126,7 +126,7 @@ class TestQueryPaging(DataValidator):
         # try again with a randomized order of pages
         uriSet = set()
         totArts = 0
-        pages = list(range(1, 1 + math.ceil(count / 100)))
+        pages = list(range(1, int(1 + math.ceil(count / 100))))
         random.shuffle(pages)
         for page in pages:
             q = QueryArticles(sourceUri="bbc.co.uk", dateStart="2018-04-10", dateEnd="2018-04-16")
@@ -142,11 +142,12 @@ class TestQueryPaging(DataValidator):
         self.assertTrue(len(uriSet) == count)
         self.assertTrue(totArts == count)
 
+        erAdmin = EventRegistryAdmin(self.er._host)
         erAdmin.clearCache()
 
         uriSet = set()
         totArts = 0
-        pages = list(range(1, 1 + math.ceil(count / 100)))
+        pages = list(range(1, int(1 + math.ceil(count / 100))))
         for page in pages:
             q = QueryArticles(sourceUri="bbc.co.uk", dateStart="2018-04-10", dateEnd="2018-04-16")
             q.setRequestedResult(RequestArticlesInfo(page=page, count=100))
@@ -172,7 +173,7 @@ class TestQueryPaging(DataValidator):
         print("\nFound %d articles by uris\nDownloading page:" % count, end="")
         uriSet = set()
         totArts = 0
-        pages = list(range(1, 1 + math.ceil(count / 10000)))
+        pages = list(range(1, int(1 + math.ceil(count / 10000))))
         random.shuffle(pages)
         for page in pages:
             print("%d" % page, end=", ")
@@ -189,11 +190,12 @@ class TestQueryPaging(DataValidator):
         self.assertTrue(len(uriSet) == count)
         self.assertTrue(totArts == count)
 
+        erAdmin = EventRegistryAdmin(self.er._host)
         erAdmin.clearCache()
 
         uriSet = set()
         totArts = 0
-        pages = list(range(1, 1 + math.ceil(count / 10000)))
+        pages = list(range(1, int(1 + math.ceil(count / 10000))))
         for page in pages:
             print("%d" % page, end=", ")
             q = QueryArticles(conceptUri= self.er.getConceptUri("Trump"), dateStart = "2016-12-01", dateEnd = "2017-01-01")
@@ -220,7 +222,7 @@ class TestQueryPaging(DataValidator):
         print("\nFound %d articles\nDownloading page:" % count, end="")
         uriSet = set()
         totArts = 0
-        pages = list(range(1, 1 + math.ceil(count / 100)))
+        pages = list(range(1, int(1 + math.ceil(count / 100))))
         random.shuffle(pages)
         for page in pages:
             print("%d" % page, end=", ")
@@ -237,11 +239,12 @@ class TestQueryPaging(DataValidator):
         self.assertTrue(len(uriSet) == count)
         self.assertTrue(totArts == count)
 
+        erAdmin = EventRegistryAdmin(self.er._host)
         erAdmin.clearCache()
 
         uriSet = set()
         totArts = 0
-        pages = list(range(1, 1 + math.ceil(count / 100)))
+        pages = list(range(1, int(1 + math.ceil(count / 100))))
         for page in pages:
             print("%d" % page, end=", ")
             q = QueryArticles(conceptUri= self.er.getConceptUri("peace"), dateStart = "2018-04-18", dateEnd = "2018-04-22")
@@ -268,7 +271,7 @@ class TestQueryPaging(DataValidator):
         # try again with a randomized order of pages
         print("\nFound %d events by uris\nDownloading page:" % count, end="")
         uriSet = set()
-        pages = list(range(1, 1 + math.ceil(count / 1000)))
+        pages = list(range(1, int(1 + math.ceil(count / 1000))))
         random.shuffle(pages)
         for page in pages:
             print("%d" % page, end=", ")
@@ -284,10 +287,11 @@ class TestQueryPaging(DataValidator):
             self.assertTrue(len(arts) <= 1000)
         # self.assertTrue(len(uriSet) == count)
 
+        erAdmin = EventRegistryAdmin(self.er._host)
         erAdmin.clearCache()
 
         uriSet2 = set()
-        pages = list(range(1, 1 + math.ceil(count / 1000)))
+        pages = list(range(1, int(1 + math.ceil(count / 1000))))
         for page in pages:
             print("%d" % page, end=", ")
             q = QueryEvents(conceptUri= self.er.getConceptUri("Trump"), dateStart = "2016-10-01", dateEnd = "2016-11-01")
@@ -312,7 +316,7 @@ class TestQueryPaging(DataValidator):
         # try again with a randomized order of pages
         print("\nFound %d events\nDownloading page:" % count, end="")
         uriSet = set()
-        pages = list(range(1, 1 + math.ceil(count / 50)))
+        pages = list(range(1, int(1 + math.ceil(count / 50))))
         random.shuffle(pages)
         for page in pages:
             print("%d" % page, end=", ")
@@ -328,7 +332,7 @@ class TestQueryPaging(DataValidator):
         self.assertTrue(len(uriSet) == count)
 
         uriSet = set()
-        pages = list(range(1, 1 + math.ceil(count / 50)))
+        pages = list(range(1, int(1 + math.ceil(count / 50))))
         for page in pages:
             print("%d" % page, end=", ")
             q = QueryEvents(conceptUri= self.er.getConceptUri("peace"), dateStart = "2018-03-25", dateEnd = "2018-04-05")
