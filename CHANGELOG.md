@@ -1,5 +1,14 @@
 # Change Log
 
+## [v8.3.1]() (2018-08-12)
+
+**Updated**
+- Text analytics: categorization API now supports additional parameter for determining the taxonomy of interest
+
+## [v8.3.0]() (2018-07-26)
+
+**Updated**
+- Important bug fixes related to article and event iterators. The existing classes had issues when accessing the data from the last month as well as historical data.
 
 ## [v8.2.1]() (2018-07-19)
 

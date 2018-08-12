@@ -49,7 +49,6 @@ class EventRegistry(object):
 
         # lock for making sure we make one request at a time - requests module otherwise sometimes returns incomplete json objects
         self._lock = threading.Lock()
-        self._reqSession = requests.Session()
         self._apiKey = apiKey
         self._extraParams = None
 
@@ -87,7 +86,7 @@ class EventRegistry(object):
         check what is the latest version of the python sdk and report in case there is a newer version
         """
         try:
-            respInfo = self._reqSession.get(self._host + "/static/pythonSDKVersion.txt")
+            respInfo = requests.get(self._host + "/static/pythonSDKVersion.txt")
             if respInfo.status_code != 200 or len(respInfo.text) > 20:
                 return
             latestVersion = respInfo.text.strip()
@@ -259,7 +258,7 @@ class EventRegistry(object):
                 url = self._host + methodUrl
 
                 # make the request
-                respInfo = self._reqSession.post(url, json = paramDict)
+                respInfo = requests.post(url, json = paramDict)
                 # remember the returned headers
                 self._headers = respInfo.headers
                 # if we got some error codes print the error and repeat the request after a short time period
@@ -312,7 +311,7 @@ class EventRegistry(object):
             tryCount += 1
             try:
                 # make the request
-                respInfo = self._reqSession.post(self._hostAnalytics + methodUrl, json = paramDict)
+                respInfo = requests.post(self._hostAnalytics + methodUrl, json = paramDict)
                 # remember the returned headers
                 self._headers = respInfo.headers
                 # if we got some error codes print the error and repeat the request after a short time period

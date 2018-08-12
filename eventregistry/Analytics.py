@@ -26,16 +26,20 @@ class Analytics:
         identify the list of entities and nonentities mentioned in the text
         @param text: input text to annotate
         @param lang: language of the provided document (can be an ISO2 or ISO3 code). If None is provided, the language will be automatically detected
+        @returns: dict
         """
         return self._er.jsonRequestAnalytics("/api/v1/annotate", { "lang": lang, "text": text })
 
 
-    def categorize(self, text):
+    def categorize(self, text, taxonomy = "dmoz"):
         """
         determine the set of up to 5 categories the text is about. Currently, only English text can be categorized!
         @param text: input text to categorize
+        @param taxonomy: which taxonomy use for categorization. Options "dmoz" (over 5000 categories in 3 levels, English language only)
+            or "news" (general news categorization, 9 categories, any langauge)
+        @returns: dict
         """
-        return self._er.jsonRequestAnalytics("/api/v1/categorize", { "text": text })
+        return self._er.jsonRequestAnalytics("/api/v1/categorize", { "text": text, "taxonomy": taxonomy })
 
 
     def sentiment(self, text, method = "vocabulary"):
@@ -44,6 +48,7 @@ class Analytics:
         @param text: input text to categorize
         @param method: method to use to compute the sentiment. possible values are "vocabulary" (vocabulary based sentiment analysis)
             and "rnn" (neural network based sentiment classification)
+        @returns: dict
         """
         assert method == "vocabulary" or method == "rnn"
         endpoint = method == "vocabulary" and "sentiment" or "sentimentRNN"
@@ -56,6 +61,7 @@ class Analytics:
         @param text1: first document to analyze
         @param text2: second document to analyze
         @param distanceMeasure: distance measure to use for comparing two documents. Possible values are "cosine" (default) or "jaccard"
+        @returns: dict
         """
         return self._er.jsonRequestAnalytics("/api/v1/semanticSimilarity", { "text1": text1, "text2": text2, "distanceMeasure": distanceMeasure })
 
@@ -64,6 +70,7 @@ class Analytics:
         """
         determine the language of the given text
         @param text: input text to analyze
+        @returns: dict
         """
         return self._er.jsonRequestAnalytics("/api/v1/detectLanguage", { "text": text })
 
@@ -72,6 +79,7 @@ class Analytics:
         """
         extract all available information about an article available at url `url`. Returned information will include
         article title, body, authors, links in the articles, ...
+        @returns: dict
         """
         return self._er.jsonRequestAnalytics("/api/v1/extractArticleInfo", { "url": url })
 
@@ -79,5 +87,7 @@ class Analytics:
     def ner(self, text):
         """
         extract named entities from the provided text. Supported languages are English, German, Spanish and Chinese.
+        @param text: text on wich to extract named entities
+        @returns: dict
         """
         return self._er.jsonRequestAnalytics("/api/v1/ner", { "text": text })
