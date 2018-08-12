@@ -53,8 +53,7 @@ for art in q.execQuery(er, sortBy = "date"):
 ```python
 from eventregistry import *
 er = EventRegistry(apiKey = YOUR_API_KEY)
-q = QueryEvents()
-q.addConcept(er.getConceptUri("Star Wars"))
+q = QueryEvents(conceptUri = er.getConceptUri("Star Wars"))
 q.setRequestedResult(RequestEventsInfo(sortBy = "date", count=10))   # return event details for last 10 events
 print er.execQuery(q)
 ```
