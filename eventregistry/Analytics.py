@@ -75,13 +75,18 @@ class Analytics:
         return self._er.jsonRequestAnalytics("/api/v1/detectLanguage", { "text": text })
 
 
-    def extractArticleInfo(self, url):
+    def extractArticleInfo(self, url, proxyUrl = None):
         """
         extract all available information about an article available at url `url`. Returned information will include
         article title, body, authors, links in the articles, ...
+        @param url: article url to extract article information from
+        @param proxyUrl: proxy that should be used for downloading article information. format: {schema}://{username}:{pass}@{proxy url/ip}
         @returns: dict
         """
-        return self._er.jsonRequestAnalytics("/api/v1/extractArticleInfo", { "url": url })
+        params = { "url": url }
+        if proxyUrl:
+            params["proxyUrl"] = proxyUrl
+        return self._er.jsonRequestAnalytics("/api/v1/extractArticleInfo", params)
 
 
     def ner(self, text):

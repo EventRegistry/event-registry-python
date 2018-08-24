@@ -33,7 +33,8 @@ class TestQueryEvents(DataValidator):
         res = self.er.execQuery(q)
         self.validateGeneralEventList(res)
 
-        q2 = QueryEvents(keywords = "germany")
+        q2 = QueryEvents.initWithComplexQuery(ComplexEventQuery(
+            BaseQuery(keyword = "germany")))
         q2.setRequestedResult(RequestEventsInfo(count = 10, returnInfo = self.returnInfo))
         res2 = self.er.execQuery(q2)
         self.validateGeneralEventList(res2)
@@ -47,7 +48,8 @@ class TestQueryEvents(DataValidator):
         res = self.er.execQuery(q)
         self.validateGeneralEventList(res)
 
-        q2 = QueryEvents(sourceUri = self.er.getNewsSourceUri("bbc"))
+        q2 = QueryEvents.initWithComplexQuery(ComplexEventQuery(
+            BaseQuery(sourceUri = self.er.getNewsSourceUri("bbc"))))
         q2.setRequestedResult(RequestEventsInfo(count = 10, returnInfo = self.returnInfo))
         res2 = self.er.execQuery(q2)
         self.validateGeneralEventList(res2)
@@ -59,7 +61,20 @@ class TestQueryEvents(DataValidator):
         q = QueryEvents(categoryUri = self.er.getCategoryUri("disa"))
         res = self.er.execQuery(q)
 
-        q2 = QueryEvents(categoryUri = self.er.getCategoryUri("disa"))
+        q2 = QueryEvents.initWithComplexQuery(ComplexEventQuery(
+            BaseQuery(categoryUri = self.er.getCategoryUri("disa"))))
+        res2 = self.er.execQuery(q2)
+
+        self.ensureSameResults(res, res2, '[events][].totalResults')
+
+
+    def testEventListWithAuthorSearch(self):
+        authorUri = self.er.getAuthorUri("associated")
+        q = QueryEvents(authorUri = authorUri)
+        res = self.er.execQuery(q)
+
+        q2 = QueryEvents.initWithComplexQuery(ComplexEventQuery(
+            BaseQuery(authorUri = authorUri)))
         res2 = self.er.execQuery(q2)
 
         self.ensureSameResults(res, res2, '[events][].totalResults')

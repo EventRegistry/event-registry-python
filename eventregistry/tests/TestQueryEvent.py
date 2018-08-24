@@ -11,18 +11,46 @@ class TestQueryEvent(DataValidator):
         return EventRegistry.getUriFromUriWgt(res["uriWgtList"]["results"])[0]
 
 
+    def testEventArticleFiltering(self):
+        q1 = QueryEventArticlesIter("eng-2860795")
+        counts1 = q1.count(self.er)
+        counts2 = QueryEventArticlesIter("eng-2860795", lang="eng").count(self.er)
+        self.assertTrue(counts1 != counts2)
+        counts3 = QueryEventArticlesIter("eng-2860795", conceptUri=self.er.getConceptUri("Donald Trump")).count(self.er)
+        self.assertTrue(counts1 != counts3)
+        counts4 = QueryEventArticlesIter("eng-2860795", keywords = "Trump").count(self.er)
+        self.assertTrue(counts1 != counts4)
+        counts5 = QueryEventArticlesIter("eng-2860795", sourceUri = self.er.getNewsSourceUri("fox")).count(self.er)
+        self.assertTrue(counts1 != counts5)
+        counts6 = QueryEventArticlesIter("eng-2860795", lang="eng", conceptUri=self.er.getConceptUri("Donald Trump")).count(self.er)
+        self.assertTrue(counts1 != counts6)
+
+        arts1 = [art for art in q1.execQuery(self.er)]
+        self.assertTrue(counts1 == len(arts1))
+
+        q = QueryEvent("eng-2860795")
+        q.setRequestedResult(RequestEventArticles(lang="eng", conceptUri=self.er.getConceptUri("Donald Trump")))
+        res = self.er.execQuery(q)
+        self.assertTrue(counts6 == res["eng-2860795"]["articles"]["totalResults"])
+
+
+
     def testArticleSorting(self):
         q = QueryEventArticlesIter(self.getValidEvent())
 
         # try ascending order
-        wgt = 0
+        wgt = None
         for art in q.execQuery(self.er, sortBy="date", sortByAsc=True):
+            if wgt == None:
+                wgt = art["wgt"]
             self.assertTrue(art["wgt"] >= wgt)
             wgt = art["wgt"]
 
         # try descending order
-        wgt = sys.maxint
+        wgt = None
         for art in q.execQuery(self.er, sortBy="date", sortByAsc=False):
+            if wgt == None:
+                wgt = art["wgt"]
             self.assertTrue(art["wgt"] <= wgt)
             wgt = art["wgt"]
 
@@ -138,7 +166,7 @@ class TestQueryEvent(DataValidator):
         # check that the iterator really downloads all articles in the event
         iter = QueryEventArticlesIter("eng-2866653")
         articleCount = iter.count(self.er)
-        articles = [art for art in iter.execQuery(self.er, lang = allLangs)]
+        articles = [art for art in iter.execQuery(self.er)]
         if articleCount != len(articles):
             self.fail("Event article iterator did not generate the full list of event articles")
 

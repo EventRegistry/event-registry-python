@@ -12,6 +12,7 @@ class QueryEvents(Query):
                  sourceUri = None,
                  sourceLocationUri = None,
                  sourceGroupUri = None,
+                 authorUri = None,
                  locationUri = None,
                  lang = None,
                  dateStart = None,
@@ -26,6 +27,7 @@ class QueryEvents(Query):
                  ignoreSourceUri = None,
                  ignoreSourceLocationUri = None,
                  ignoreSourceGroupUri = None,
+                 ignoreAuthorUri = None,
                  ignoreLocationUri = None,
                  ignoreLang = None,
                  keywordsLoc = "body",
@@ -56,6 +58,9 @@ class QueryEvents(Query):
         @param sourceGroupUri: find events that contain one or more articles that were written by news sources that are assigned to the specified source group.
             If multiple source groups are provided, then put them into a list inside QueryItems.OR()
             Source group uri for a given name can be obtained using EventRegistry.getSourceGroupUri().
+        @param authorUri: find events that contain one or more articles that have been written by a specific author.
+            If multiple authors should be considered use QueryItems.OR() or QueryItems.AND() to provide the list of authors.
+            Author uri for a given author name can be obtained using EventRegistry.getAuthorUri().
         @param locationUri: find events that occured at a particular location.
             If value can be a string or a list of strings provided in QueryItems.OR().
             Location uri can either be a city or a country. Location uri for a given name can be obtained using EventRegistry.getLocationUri().
@@ -73,6 +78,7 @@ class QueryEvents(Query):
         @param ignoreSourceUri: ignore events that have have articles which have been written by any of the specified news sources
         @param ignoreSourceLocationUri: ignore events that have articles which been written by sources located at *any* of the specified locations
         @param ignoreSourceGroupUri: ignore events that have articles which have been written by sources in *any* of the specified source groups
+        @param ignoreAuthorUri: ignore articles that were written by *any* of the specified authors
         @param ignoreLocationUri: ignore events that occured in any of the provided locations. A location can be a city or a place
         @param ignoreLang: ignore events that are reported in any of the provided languages
         @param keywordsLoc: what data should be used when searching using the keywords provided by "keywords" parameter. "body" (default), "title", or "body,title"
@@ -89,6 +95,7 @@ class QueryEvents(Query):
         self._setQueryArrVal(sourceUri, "sourceUri", "sourceOper", "or")
         self._setQueryArrVal(sourceLocationUri, "sourceLocationUri", None, "or")
         self._setQueryArrVal(sourceGroupUri, "sourceGroupUri", "sourceGroupOper", "or")
+        self._setQueryArrVal(authorUri, "authorUri", "authorOper", "or")
         self._setQueryArrVal(locationUri, "locationUri", None, "or")        # location such as "http://en.wikipedia.org/wiki/Ljubljana"
 
         self._setQueryArrVal(lang, "lang", None, "or")                      # a single lang or list (possible: eng, deu, spa, zho, slv)
@@ -113,6 +120,7 @@ class QueryEvents(Query):
         self._setQueryArrVal(ignoreSourceUri, "ignoreSourceUri", None, "or")
         self._setQueryArrVal(ignoreSourceLocationUri, "ignoreSourceLocationUri", None, "or")
         self._setQueryArrVal(ignoreSourceGroupUri, "ignoreSourceGroupUri", None, "or")
+        self._setQueryArrVal(ignoreAuthorUri, "ignoreAuthorUri", None, "or")
         self._setQueryArrVal(ignoreLocationUri, "ignoreLocationUri", None, "or")
 
         self._setQueryArrVal(ignoreLang, "ignoreLang", None, "or")
@@ -210,6 +218,7 @@ class QueryEventsIter(QueryEvents, six.Iterator):
         @param sortBy: how should the resulting events be sorted. Options: date (by event date), rel (relevance to the query), size (number of articles),
             socialScore (amount of shares in social media), none (no specific sorting)
         @param sortByAsc: should the results be sorted in ascending order (True) or descending (False)
+        @param returnInfo: what details should be included in the returned information
         @param maxItems: maximum number of items to be returned. Used to stop iteration sooner than results run out
         """
         self._er = eventRegistry
@@ -365,13 +374,14 @@ class RequestEventsTimeAggr(RequestEvents):
 
 
 class RequestEventsKeywordAggr(RequestEvents):
-    def __init__(self, lang = "eng"):
+    def __init__(self, lang = None):
         """
         return keyword aggregate (tag cloud) on words in articles in resulting events
-        @param lang: in which language to produce the list of top keywords
+        @param lang: in which language to produce the list of top keywords. If None, then compute on all articles
         """
         self.resultType = "keywordAggr"
-        self.keywordAggrLang = lang
+        if lang != None:
+            self.keywordAggrLang = lang
 
 
 
@@ -430,15 +440,15 @@ class RequestEventsConceptAggr(RequestEvents):
 
 class RequestEventsConceptGraph(RequestEvents):
     def __init__(self,
-                 conceptCount = 25,
-                 linkCount = 50,
-                 eventsSampleSize = 100000,
+                 conceptCount = 50,
+                 linkCount = 150,
+                 eventsSampleSize = 50000,
                  returnInfo = ReturnInfo()):
         """
         compute which concept pairs frequently co-occur together in the resulting events
-        @param conceptCount: number of top concepts to return (at most 1000)
-        @param linkCount: number of links between the concepts to return (at most 2000)
-        @param eventsSampleSize: on what sample of results should the aggregate be computed (at most 300000)
+        @param conceptCount: number of top concepts to return (at most 1,000)
+        @param linkCount: number of links between the concepts to return (at most 2,000)
+        @param eventsSampleSize: on what sample of results should the aggregate be computed (at most 100000)
         @param returnInfo: what details about the concepts should be included in the returned information
         """
         assert conceptCount <= 1000
@@ -500,7 +510,7 @@ class RequestEventsConceptTrends(RequestEvents):
 class RequestEventsSourceAggr(RequestEvents):
     def __init__(self,
                  sourceCount = 30,
-                 eventsSampleSize = 100000,
+                 eventsSampleSize = 50000,
                  returnInfo = ReturnInfo()):
         """
         return top news sources that report about the events that match the search conditions
@@ -509,7 +519,7 @@ class RequestEventsSourceAggr(RequestEvents):
         @param returnInfo: what details about the sources should be included in the returned information
         """
         assert sourceCount <= 200
-        assert eventsSampleSize <= 300000
+        assert eventsSampleSize <= 100000
         self.resultType = "sourceAggr"
         self.sourceAggrSourceCount = sourceCount
         self.sourceAggrSampleSize = eventsSampleSize
@@ -543,7 +553,7 @@ class RequestEventsEventClusters(RequestEvents):
                  returnInfo = ReturnInfo()):
         """
         return hierarchical clustering of events into smaller clusters. 2-means clustering is applied on each node in the tree
-        @param keywordCount: number of keywords to report in each of the clusters (at most !00)
+        @param keywordCount: number of keywords to report in each of the clusters (at most 100)
         @param maxEventsToCluster: try to cluster at most this number of events (at most 10000)
         @param returnInfo: what details about the concepts should be included in the returned information
         """

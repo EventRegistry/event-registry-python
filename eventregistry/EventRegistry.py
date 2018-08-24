@@ -141,13 +141,18 @@ class EventRegistry(object):
 
 
     def getRemainingAvailableRequests(self):
-        """get the number of requests that are still available for the user today"""
+        """get the number of requests that are still available for the user today. Information is only accessible after you make some query."""
         return self._remainingAvailableRequests
 
 
     def getDailyAvailableRequests(self):
-        """get the total number of requests that the user can make in a day"""
+        """get the total number of requests that the user can make in a day. Information is only accessible after you make some query."""
         return self._dailyAvailableRequests
+
+
+    def getUsageInfo(self):
+        """return the number of used and total available tokens. Can be used at any time (also before making queries)"""
+        return self.jsonRequest("/api/v1/usage", { "apiKey": self._apiKey })
 
 
     def getUrl(self, query):
@@ -349,7 +354,7 @@ class EventRegistry(object):
         params = { "prefix": prefix, "source": sources, "lang": lang, "conceptLang": conceptLang, "page": page, "count": count}
         params.update(returnInfo.getParams())
         params.update(kwargs)
-        return self.jsonRequest("/json/suggestConcepts", params)
+        return self.jsonRequest("/json/suggestConceptsFast", params)
 
 
     def suggestCategories(self, prefix, page = 1, count = 20, returnInfo = ReturnInfo(), **kwargs):
@@ -364,7 +369,7 @@ class EventRegistry(object):
         params = { "prefix": prefix, "page": page, "count": count }
         params.update(returnInfo.getParams())
         params.update(kwargs)
-        return self.jsonRequest("/json/suggestCategories", params)
+        return self.jsonRequest("/json/suggestCategoriesFast", params)
 
 
     def suggestNewsSources(self, prefix, dataType = ["news", "pr", "blog"], page = 1, count = 20, **kwargs):
@@ -378,7 +383,7 @@ class EventRegistry(object):
         assert page > 0, "page parameter should be above 0"
         params = {"prefix": prefix, "dataType": dataType, "page": page, "count": count}
         params.update(kwargs)
-        return self.jsonRequest("/json/suggestSources", params)
+        return self.jsonRequest("/json/suggestSourcesFast", params)
 
 
     def suggestSourceGroups(self, prefix, page = 1, count = 20, **kwargs):
@@ -413,7 +418,7 @@ class EventRegistry(object):
             assert len(sortByDistanceTo) == 2, "The sortByDistanceTo should contain two float numbers"
             params["closeToLat"] = sortByDistanceTo[0]
             params["closeToLon"] = sortByDistanceTo[1]
-        return self.jsonRequest("/json/suggestLocations", params)
+        return self.jsonRequest("/json/suggestLocationsFast", params)
 
 
     def suggestLocationsAtCoordinate(self, latitude, longitude, radiusKm, limitToCities = False, lang = "eng", count = 20, ignoreNonWiki = True, returnInfo = ReturnInfo(), **kwargs):
@@ -433,7 +438,7 @@ class EventRegistry(object):
         params = { "action": "getLocationsAtCoordinate", "lat": latitude, "lon": longitude, "radius": radiusKm, "limitToCities": limitToCities, "count": count, "lang": lang }
         params.update(returnInfo.getParams())
         params.update(kwargs)
-        return self.jsonRequest("/json/suggestLocations", params)
+        return self.jsonRequest("/json/suggestLocationsFast", params)
 
 
     def suggestSourcesAtCoordinate(self, latitude, longitude, radiusKm, count = 20, **kwargs):
@@ -448,7 +453,7 @@ class EventRegistry(object):
         assert isinstance(longitude, (int, float)), "The 'longitude' should be a number"
         params = {"action": "getSourcesAtCoordinate", "lat": latitude, "lon": longitude, "radius": radiusKm, "count": count}
         params.update(kwargs)
-        return self.jsonRequest("/json/suggestSources", params)
+        return self.jsonRequest("/json/suggestSourcesFast", params)
 
 
     def suggestSourcesAtPlace(self, conceptUri, dataType = "news", page = 1, count = 20, **kwargs):
@@ -461,7 +466,21 @@ class EventRegistry(object):
         """
         params = {"action": "getSourcesAtPlace", "conceptUri": conceptUri, "page": page, "count": count, "dataType": dataType}
         params.update(kwargs)
-        return self.jsonRequest("/json/suggestSources", params)
+        return self.jsonRequest("/json/suggestSourcesFast", params)
+
+
+    def suggestAuthors(self, prefix, page = 1, count = 20, **kwargs):
+        """
+        return a list of news sources that match the prefix
+        @param prefix: input text that should be contained in the author name and source url
+        @param page: page of results
+        @param count: number of returned suggestions
+        """
+        assert page > 0, "page parameter should be above 0"
+        params = {"prefix": prefix, "page": page, "count": count}
+        params.update(kwargs)
+        return self.jsonRequest("/json/suggestAuthorsFast", params)
+
 
 
     def suggestConceptClasses(self, prefix, lang = "eng", conceptLang = "eng", source = ["dbpedia", "custom"], page = 1, count = 20, returnInfo = ReturnInfo(), **kwargs):
@@ -552,6 +571,13 @@ class EventRegistry(object):
         return None
 
 
+    def getSourceUri(self, sourceName, dataType=["news", "pr", "blog"]):
+        """
+        alternative (shorter) name for the method getNewsSourceUri()
+        """
+        return self.getNewsSourceUri(sourceName, dataType)
+
+
     def getSourceGroupUri(self, sourceGroupName):
         """
         return the URI of the source group that best matches the name
@@ -595,6 +621,18 @@ class EventRegistry(object):
         @param label: label of the custom concept
         """
         matches = self.suggestCustomConcepts(label, lang = lang)
+        if matches != None and isinstance(matches, list) and len(matches) > 0 and "uri" in matches[0]:
+            return matches[0]["uri"]
+        return None
+
+
+    def getAuthorUri(self, authorName):
+        """
+        return author uri that that is the best match for the given author name (and potentially source url)
+        if there are multiple matches for the given author name, they are sorted based on the number of articles they have written (from most to least frequent)
+        @param authorName: partial or full name of the author, potentially also containing the source url (e.g. "george brown nytimes")
+        """
+        matches = self.suggestAuthors(authorName)
         if matches != None and isinstance(matches, list) and len(matches) > 0 and "uri" in matches[0]:
             return matches[0]["uri"]
         return None

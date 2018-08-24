@@ -64,6 +64,7 @@ class ArticleInfoFlags(ReturnInfoFlagsBase):
     @param body: article body
     @param url: article url
     @param eventUri: uri of the event to which the article belongs
+    @param authors: the list of authors of the news article
     @param concepts: the list of concepts mentioned in the article
     @param categories: the list of categories assigned to the article
     @param links: the list of urls of links identified in the article body
@@ -85,6 +86,7 @@ class ArticleInfoFlags(ReturnInfoFlagsBase):
                  body = True,
                  url = True,
                  eventUri = True,
+                 authors = True,
                  concepts = False,
                  categories = False,
                  links = False,
@@ -104,6 +106,7 @@ class ArticleInfoFlags(ReturnInfoFlagsBase):
         self._setFlag("includeArticleBody", body, True)
         self._setFlag("includeArticleUrl", url, True)
         self._setFlag("includeArticleEventUri", eventUri, True)
+        self._setFlag("includeArticleAuthors", authors, True)
         self._setFlag("includeArticleConcepts", concepts, False)
         self._setFlag("includeArticleCategories", categories, False)
         self._setFlag("includeArticleLinks", links, False)

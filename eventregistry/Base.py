@@ -196,27 +196,6 @@ class QueryParamsBase(object):
         return dict(self.queryParams)
 
 
-
-class Query(QueryParamsBase):
-    def __init__(self):
-        QueryParamsBase.__init__(self)
-        self.resultTypeList = []
-
-
-    def _getQueryParams(self):
-        """encode the request."""
-        allParams = {}
-        if len(self.resultTypeList) == 0:
-            raise ValueError("The query does not have any result type specified. No sense in performing such a query")
-        allParams.update(self.queryParams)
-        for request in self.resultTypeList:
-            allParams.update(request.__dict__)
-        # all requests in resultTypeList have "resultType" so each call to .update() overrides the previous one
-        # since we want to store them all we have to add them here:
-        allParams["resultType"] = [request.__dict__["resultType"] for request in self.resultTypeList]
-        return allParams
-
-
     def _setQueryArrVal(self, value, propName, propOperName, defaultOperName):
         """
         parse the value "value" and use it to set the property propName and the operator with name propOperName
@@ -252,3 +231,26 @@ class Query(QueryParamsBase):
         # there should be no other valid types
         else:
             assert False, "Parameter '%s' was of unsupported type. It should either be None, a string or an instance of QueryItems" % (propName)
+
+
+
+class Query(QueryParamsBase):
+    def __init__(self):
+        QueryParamsBase.__init__(self)
+        self.resultTypeList = []
+
+
+    def _getQueryParams(self):
+        """encode the request."""
+        allParams = {}
+        if len(self.resultTypeList) == 0:
+            raise ValueError("The query does not have any result type specified. No sense in performing such a query")
+        allParams.update(self.queryParams)
+        for request in self.resultTypeList:
+            allParams.update(request.__dict__)
+        # all requests in resultTypeList have "resultType" so each call to .update() overrides the previous one
+        # since we want to store them all we have to add them here:
+        allParams["resultType"] = [request.__dict__["resultType"] for request in self.resultTypeList]
+        return allParams
+
+

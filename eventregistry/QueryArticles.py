@@ -12,6 +12,7 @@ class QueryArticles(Query):
                 sourceUri = None,
                 sourceLocationUri = None,
                 sourceGroupUri = None,
+                authorUri = None,
                 locationUri = None,
                 lang = None,
                 dateStart = None,
@@ -26,13 +27,16 @@ class QueryArticles(Query):
                 ignoreSourceUri = None,
                 ignoreSourceLocationUri = None,
                 ignoreSourceGroupUri = None,
+                ignoreAuthorUri = None,
                 ignoreLocationUri = None,
                 ignoreLang = None,
-
                 ignoreKeywordsLoc = "body",
+
                 isDuplicateFilter = "keepAll",
                 hasDuplicateFilter = "keepAll",
-                eventFilter="keepAll",
+                eventFilter = "keepAll",
+                startSourceRankPercentile = 0,
+                endSourceRankPercentile = 100,
                 dataType = "news",
                 requestedResult = None):
         """
@@ -60,6 +64,9 @@ class QueryArticles(Query):
         @param sourceGroupUri: find articles that were written by news sources that are assigned to the specified source group.
             If multiple source groups are provided, then put them into a list inside QueryItems.OR()
             Source group uri for a given name can be obtained using EventRegistry.getSourceGroupUri().
+        @param authorUri: find articles that were written by a specific author.
+            If multiple authors should be considered use QueryItems.OR() to provide the list of authors.
+            Author uri for a given author name can be obtained using EventRegistry.getAuthorUri().
         @param locationUri: find articles that describe something that occured at a particular location.
             If value can be a string or a list of strings provided in QueryItems.OR().
             Location uri can either be a city or a country. Location uri for a given name can be obtained using EventRegistry.getLocationUri().
@@ -77,6 +84,7 @@ class QueryArticles(Query):
         @param ignoreSourceUri: ignore articles that have been written by *any* of the specified news sources
         @param ignoreSourceLocationUri: ignore articles that have been written by sources located at *any* of the specified locations
         @param ignoreSourceGroupUri: ignore articles that have been written by sources in *any* of the specified source groups
+        @param ignoreAuthorUri: ignore articles that were written by *any* of the specified authors
         @param ignoreLocationUri: ignore articles that occured in any of the provided locations. A location can be a city or a place
         @param ignoreLang: ignore articles that are written in *any* of the provided languages
         @param ignoreKeywordsLoc: where should we look when data should be used when searching using the keywords provided by "ignoreKeywords" parameter. "body" (default), "title", or "body,title"
@@ -93,6 +101,8 @@ class QueryArticles(Query):
                 "skipArticlesWithoutEvent" (skip articles that are not describing any known event in ER)
                 "keepOnlyArticlesWithoutEvent" (return only the articles that are not describing any known event in ER)
                 "keepAll" (no filtering, default)
+        @param startSourceRankPercentile: starting percentile of the sources to consider in the results (default: 0). Value should be in range 0-90 and divisible by 10.
+        @param endSourceRankPercentile: ending percentile of the sources to consider in the results (default: 100). Value should be in range 10-100 and divisible by 10.
         @param dataType: what data types should we search? "news" (news content, default), "pr" (press releases), or "blog".
                 If you want to use multiple data types, put them in an array (e.g. ["news", "pr"])
         @param requestedResult: the information to return as the result of the query. By default return the list of matching articles
@@ -106,6 +116,7 @@ class QueryArticles(Query):
         self._setQueryArrVal(sourceUri, "sourceUri", "sourceOper", "or")
         self._setQueryArrVal(sourceLocationUri, "sourceLocationUri", None, "or")
         self._setQueryArrVal(sourceGroupUri, "sourceGroupUri", "sourceGroupOper", "or")
+        self._setQueryArrVal(authorUri, "authorUri", "authorOper", "or")
         self._setQueryArrVal(locationUri, "locationUri", None, "or")        # location such as "http://en.wikipedia.org/wiki/Ljubljana"
 
         self._setQueryArrVal(lang, "lang", None, "or")                      # a single lang or list (possible: eng, deu, spa, zho, slv)
@@ -131,6 +142,7 @@ class QueryArticles(Query):
         self._setQueryArrVal(ignoreSourceUri, "ignoreSourceUri", None, "or")
         self._setQueryArrVal(ignoreSourceLocationUri, "ignoreSourceLocationUri", None, "or")
         self._setQueryArrVal(ignoreSourceGroupUri, "ignoreSourceGroupUri", None, "or")
+        self._setQueryArrVal(ignoreAuthorUri, "ignoreAuthorUri", None, "or")
         self._setQueryArrVal(ignoreLocationUri, "ignoreLocationUri", None, "or")
 
         self._setQueryArrVal(ignoreLang, "ignoreLang", None, "or")
@@ -141,6 +153,13 @@ class QueryArticles(Query):
         self._setValIfNotDefault("isDuplicateFilter", isDuplicateFilter, "keepAll")
         self._setValIfNotDefault("hasDuplicateFilter", hasDuplicateFilter, "keepAll")
         self._setValIfNotDefault("eventFilter", eventFilter, "keepAll")
+        assert startSourceRankPercentile >= 0 and startSourceRankPercentile % 10 == 0 and startSourceRankPercentile <= 100
+        assert endSourceRankPercentile >= 0 and endSourceRankPercentile % 10 == 0 and endSourceRankPercentile <= 100
+        assert startSourceRankPercentile < endSourceRankPercentile
+        if startSourceRankPercentile != 0:
+            self._setVal("startSourceRankPercentile", startSourceRankPercentile)
+        if endSourceRankPercentile != 100:
+            self._setVal("endSourceRankPercentile", endSourceRankPercentile)
         # always set the data type
         self._setVal("dataType", dataType)
 
@@ -407,12 +426,20 @@ class RequestArticlesTimeAggr(RequestArticles):
 
 class RequestArticlesConceptAggr(RequestArticles):
     def __init__(self,
-                 conceptCount = 25,
+                 conceptCount=25,
+                 conceptCountPerType = None,
+                 conceptScoring = "importance",
                  articlesSampleSize = 10000,
                  returnInfo = ReturnInfo()):
         """
         get aggreate of concepts of resulting articles
         @param conceptCount: number of top concepts to return (at most 500)
+        @param conceptCountPerType: if you wish to limit the number of top concepts per type (person, org, loc, wiki) then set this to some number.
+            If you want to get equal number of concepts for each type then set conceptCountPerType to conceptCount/4 (since there are 4 concept types)
+        @param conceptScoring: how should the top concepts be computed. Possible values are
+            "importance" (takes into account how frequently a concept is mentioned and how relevant it is in an article),
+            "frequency" (ranks the concepts simply by how frequently the concept is mentioned in the results) and
+            "uniqueness" (computes what are the top concepts that are frequently mentioned in the results of your search query but less frequently mentioned in the news in general)
         @param articlesSampleSize: on what sample of results should the aggregate be computed (at most 20000)
         @param returnInfo: what details about the concepts should be included in the returned information
         """
@@ -421,6 +448,9 @@ class RequestArticlesConceptAggr(RequestArticles):
         self.resultType = "conceptAggr"
         self.conceptAggrConceptCount = conceptCount
         self.conceptAggrSampleSize = articlesSampleSize
+        self.conceptAggrScoring = conceptScoring
+        if conceptCountPerType != None:
+            self.conceptAggrConceptCountPerType = conceptCountPerType
         self.__dict__.update(returnInfo.getParams("conceptAggr"))
 
 
@@ -444,30 +474,35 @@ class RequestArticlesCategoryAggr(RequestArticles):
 class RequestArticlesSourceAggr(RequestArticles):
     def __init__(self,
                  articlesSampleSize = 20000,
+                 sourceCount = 50,
+                 normalizeBySourceArts = False,
                  returnInfo = ReturnInfo()):
         """
         get aggreate of news sources of resulting articles
         @param articlesSampleSize: on what sample of results should the aggregate be computed (at most 1000000)
+        @param sourceCount: the number of top sources to return
+        @param normalizeBySourceArts: some sources generate significantly more content than others which is why
+            they can appear as top souce for a given query. If you want to normalize and sort the sources by the total number of
+            articles that they have published set this to True. This will return as top sources those that potentially publish less
+            content overall, but their published content is more about the searched query.
         @param returnInfo: what details about the sources should be included in the returned information
         """
         assert articlesSampleSize <= 1000000
         self.resultType = "sourceAggr"
+        self.sourceAggrSourceCount = sourceCount
         self.sourceAggrSampleSize = articlesSampleSize
         self.__dict__.update(returnInfo.getParams("sourceAggr"))
 
 
 class RequestArticlesKeywordAggr(RequestArticles):
     def __init__(self,
-                 lang = "eng",
                  articlesSampleSize = 2000):
         """
         get top keywords in the resulting articles
-        @param lang: articles in which language should be analyzed and processed
         @param articlesSampleSize: on what sample of results should the aggregate be computed (at most 20000)
         """
         assert articlesSampleSize <= 20000
         self.resultType = "keywordAggr"
-        self.keywordAggrLang = lang
         self.keywordAggrSampleSize = articlesSampleSize
 
 
@@ -477,6 +512,7 @@ class RequestArticlesConceptGraph(RequestArticles):
                  conceptCount = 25,
                  linkCount = 50,
                  articlesSampleSize = 10000,
+                 skipQueryConcepts = True,
                  returnInfo = ReturnInfo()):
         """
         get concept graph of resulting articles. Identify concepts that frequently co-occur with other concepts
@@ -492,6 +528,7 @@ class RequestArticlesConceptGraph(RequestArticles):
         self.conceptGraphConceptCount = conceptCount
         self.conceptGraphLinkCount = linkCount
         self.conceptGraphSampleSize = articlesSampleSize
+        self.conceptGraphSkipQueryConcepts = skipQueryConcepts
         self.__dict__.update(returnInfo.getParams("conceptGraph"))
 
 
@@ -522,22 +559,22 @@ class RequestArticlesConceptMatrix(RequestArticles):
 class RequestArticlesConceptTrends(RequestArticles):
     def __init__(self,
                  conceptUris = None,
-                 count = 25,
+                 conceptCount = 25,
                  articlesSampleSize=10000,
                  returnInfo = ReturnInfo()):
         """
         get trending of concepts in the resulting articles
         @param conceptUris: list of concept URIs for which to return trending information. If None, then top concepts will be automatically computed
-        @param count: if the concepts are not provided, what should be the number of automatically determined concepts to return (at most 50)
+        @param conceptCount: if the concepts are not provided, what should be the number of automatically determined concepts to return (at most 50)
         @param articlesSampleSize: on what sample of results should the aggregate be computed (at most 50000)
         @param returnInfo: what details should be included in the returned information
         """
-        assert count <= 50
+        assert conceptCount <= 50
         assert articlesSampleSize <= 50000
         self.resultType = "conceptTrends"
         if conceptUris != None:
             self.conceptTrendsConceptUri = conceptUris
-        self.conceptTrendsConceptCount = count
+        self.conceptTrendsConceptCount = conceptCount
         self.conceptTrendsSampleSize = articlesSampleSize
         self.__dict__.update(returnInfo.getParams("conceptTrends"))
 
@@ -557,27 +594,38 @@ class RequestArticlesRecentActivity(RequestArticles):
                  maxArticleCount = 100,
                  updatesAfterTm = None,
                  updatesAfterMinsAgo = None,
+                 updatesUntilTm = None,
+                 updatesUntilMinsAgo = None,
                  lang = None,
                  mandatorySourceLocation = False,
                  returnInfo = ReturnInfo()):
         """
         get the list of articles that were recently added to the Event Registry and match the selected criteria
-        @param maxArticleCount: max articles to return (at most 500)
+        @param maxArticleCount: the maximum number of articles to return in the call (the number can be even higher than 100 but in case more articles
+            are returned, the call will also use more tokens)
         @param updatesAfterTm: the time after which the articles were added (returned by previous call to the same method)
         @param updatesAfterMinsAgo: how many minutes into the past should we check (set either this or updatesAfterTm property, but not both)
+        @param updatesUntilTm: what is the latest time when the articles were added (in case you don't want the most recent articles)
+        @param updatesUntilMinsAgo: how many minutes ago was the latest time when the articles were added
         @param lang: return only articles in the specified languages (None if no limits). accepts string or a list of strings
         @param mandatorySourceLocation: return only articles for which we know the source's geographic location
         @param returnInfo: what details should be included in the returned information
         """
         assert maxArticleCount <= 1000
         assert updatesAfterTm == None or updatesAfterMinsAgo == None, "You should specify either updatesAfterTm or updatesAfterMinsAgo parameter, but not both"
+        assert updatesUntilTm == None or updatesUntilMinsAgo == None, "You should specify either updatesUntilTm or updatesUntilMinsAgo parameter, but not both"
         self.resultType = "recentActivityArticles"
         self.recentActivityArticlesMaxArticleCount  = maxArticleCount
         if updatesAfterTm != None:
             self.recentActivityArticlesUpdatesAfterTm = QueryParamsBase.encodeDateTime(updatesAfterTm)
         if updatesAfterMinsAgo != None:
             self.recentActivityArticlesUpdatesAfterMinsAgo = updatesAfterMinsAgo
+        if updatesUntilTm != None:
+            self.recentActivityArticlesUpdatesUntilTm = QueryParamsBase.encodeDateTime(updatesUntilTm)
+        if updatesUntilMinsAgo != None:
+            self.recentActivityArticlesUpdatesUntilMinsAgo = updatesUntilMinsAgo
         if lang != None:
             self.recentActivityArticlesLang = lang
+        self.recentActivityArticlesMaxArticleCount = maxArticleCount
         self.recentActivityArticlesMandatorySourceLocation = mandatorySourceLocation
         self.__dict__.update(returnInfo.getParams("recentActivityArticles"))

@@ -180,6 +180,28 @@ class TestQueryArticles(DataValidator):
                 self.assertTrue(loc.get("country").get("wikiUri") == usUri)
 
 
+    def testArticleListWithAuthorSearch(self):
+        """
+        make sure that search for author returns articles by that author
+        """
+        authorUri = self.er.getAuthorUri("associated")
+        q = QueryArticles(authorUri = authorUri)
+        q.setRequestedResult(RequestArticlesInfo(count = 100, returnInfo = self.returnInfo))
+        res = self.er.execQuery(q)
+        for art in res.get("articles", {}).get("results", []):
+            foundAuthor = False
+            for author in art.get("authors"):
+                if author["uri"] == authorUri:
+                    foundAuthor = True
+            assert foundAuthor == True
+
+        cq = ComplexArticleQuery(BaseQuery(authorUri = authorUri))
+        q = QueryArticles.initWithComplexQuery(cq)
+        q.setRequestedResult(RequestArticlesInfo(count = 100, returnInfo = self.returnInfo))
+        res2 = self.er.execQuery(q)
+
+        self.ensureSameResults(res, res2, '[articles][].totalResults')
+
 
     def testArticleListWithCategorySearch(self):
         disasterUri = self.er.getCategoryUri("disa")
