@@ -17,8 +17,8 @@ class QueryEvents(Query):
                  lang = None,
                  dateStart = None,
                  dateEnd = None,
-                 minArticlesInEvent = 0,
-                 maxArticlesInEvent = sys.maxsize,
+                 minArticlesInEvent = None,
+                 maxArticlesInEvent = None,
                  dateMentionStart = None,
                  dateMentionEnd = None,
                  ignoreKeywords = None,
@@ -105,8 +105,8 @@ class QueryEvents(Query):
         if (dateEnd != None):
             self._setDateVal("dateEnd", dateEnd)       # 2014-05-02
 
-        self._setValIfNotDefault("minArticlesInEvent", minArticlesInEvent, 0)
-        self._setValIfNotDefault("maxArticlesInEvent", maxArticlesInEvent, sys.maxsize)
+        self._setValIfNotDefault("minArticlesInEvent", minArticlesInEvent, None)
+        self._setValIfNotDefault("maxArticlesInEvent", maxArticlesInEvent, None)
 
         if (dateMentionStart != None):
             self._setDateVal("dateMentionStart", dateMentionStart)    # e.g. 2014-05-02
@@ -584,7 +584,6 @@ class RequestEventsRecentActivity(RequestEvents):
                  updatesAfterTm = None,
                  updatesAfterMinsAgo = None,
                  mandatoryLocation = True,
-                 lang = None,
                  minAvgCosSim = 0,
                  returnInfo = ReturnInfo()):
         """
@@ -593,7 +592,6 @@ class RequestEventsRecentActivity(RequestEvents):
         @param updatesAfterTm: the time after which the events were added/updated (returned by previous call to the same method)
         @param updatesAfterMinsAgo: how many minutes into the past should we check (set either this or updatesAfterTm property, but not both)
         @param mandatoryLocation: return only events that have a geographic location assigned to them
-        @param lang: limit the results to events that are described in the selected language (None if not filtered by any language)
         @param minAvgCosSim: the minimum avg cos sim of the events to be returned (events with lower quality should not be included)
         @param returnInfo: what details should be included in the returned information
         """
@@ -606,8 +604,6 @@ class RequestEventsRecentActivity(RequestEvents):
             self.recentActivityEventsUpdatesAfterTm = QueryParamsBase.encodeDateTime(updatesAfterTm)
         if updatesAfterMinsAgo != None:
             self.recentActivityEventsUpdatesAfterMinsAgo = updatesAfterMinsAgo
-        if lang != None:
-            self.recentActivityEventsLang = lang
         self.recentActivityEventsMinAvgCosSim = minAvgCosSim
         self.__dict__.update(returnInfo.getParams("recentActivityEvents"))
 

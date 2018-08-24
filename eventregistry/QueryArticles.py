@@ -596,7 +596,6 @@ class RequestArticlesRecentActivity(RequestArticles):
                  updatesAfterMinsAgo = None,
                  updatesUntilTm = None,
                  updatesUntilMinsAgo = None,
-                 lang = None,
                  mandatorySourceLocation = False,
                  returnInfo = ReturnInfo()):
         """
@@ -607,7 +606,6 @@ class RequestArticlesRecentActivity(RequestArticles):
         @param updatesAfterMinsAgo: how many minutes into the past should we check (set either this or updatesAfterTm property, but not both)
         @param updatesUntilTm: what is the latest time when the articles were added (in case you don't want the most recent articles)
         @param updatesUntilMinsAgo: how many minutes ago was the latest time when the articles were added
-        @param lang: return only articles in the specified languages (None if no limits). accepts string or a list of strings
         @param mandatorySourceLocation: return only articles for which we know the source's geographic location
         @param returnInfo: what details should be included in the returned information
         """
@@ -624,8 +622,6 @@ class RequestArticlesRecentActivity(RequestArticles):
             self.recentActivityArticlesUpdatesUntilTm = QueryParamsBase.encodeDateTime(updatesUntilTm)
         if updatesUntilMinsAgo != None:
             self.recentActivityArticlesUpdatesUntilMinsAgo = updatesUntilMinsAgo
-        if lang != None:
-            self.recentActivityArticlesLang = lang
         self.recentActivityArticlesMaxArticleCount = maxArticleCount
         self.recentActivityArticlesMandatorySourceLocation = mandatorySourceLocation
         self.__dict__.update(returnInfo.getParams("recentActivityArticles"))

@@ -13,11 +13,11 @@ class GetRecentEvents(QueryParamsBase):
                  returnInfo = ReturnInfo(),
                  **kwargs):
         """
-        return info about recently modified events
-
+        Return info about recently added/modified events
         @param eventRegistry: instance of class EventRegistry
         @param mandatoryLang: set a lang or array of langs if you wish to only get events covered at least by the specified language
         @param mandatoryLocation: if set to True then return only events that have a known geographic location
+        @param returnInfo: what details should be included in the returned information
         """
         QueryParamsBase.__init__(self)
 
@@ -59,11 +59,11 @@ class GetRecentArticles(QueryParamsBase):
                  returnInfo = ReturnInfo(),
                  **kwargs):
         """
-        return info about recently added articles
-
+        Return info about recently added articles
         @param eventRegistry: instance of class EventRegistry
         @param mandatorySourceLocation: if True then return only articles from sources for which we know geographic location
         @param articleLang: None, string or a list of strings, depending if we should return all articles, or articles in one or more languages
+        @param returnInfo: what details should be included in the returned information
         """
         QueryParamsBase.__init__(self)
 
