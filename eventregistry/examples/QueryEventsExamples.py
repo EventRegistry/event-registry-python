@@ -7,8 +7,8 @@ import json
 er = EventRegistry()
 
 # get the concept URI that matches label "Barack Obama"
-obamaConceptUri = er.getConceptUri("Obama")
-print("Concept uri for 'Obama' is " + obamaConceptUri)
+obamaUri = er.getConceptUri("Obama")
+print("Concept uri for 'Obama' is " + obamaUri)
 
 #
 # USE OF ITERATOR
@@ -18,27 +18,43 @@ print("Concept uri for 'Obama' is " + obamaConceptUri)
 # query for events related to Barack Obama. return the matching events sorted from the latest to oldest event
 # use the iterator class and easily iterate over all matching events
 # we specify maxItems to limit the results to maximum 300 results
-q = QueryEventsIter(conceptUri = obamaConceptUri)
+q = QueryEventsIter(conceptUri = obamaUri)
 for event in q.execQuery(er, sortBy = "date", maxItems = 300):
     # print(json.dumps(event, indent=2))
     print(event["uri"])
 
 
-# make a query for events - specify each condition independently
-# get events related to obama
-q = QueryEvents(conceptUri = obamaConceptUri)
+# find events that:
+# * are about Barack Obama
+# * that were covered also by New York Times
+# * that occured in 2015
+# * return events sorted by how much were articles in the event shared on social media (instead of relevance, which is default)
+q = QueryEvents(
+    conceptUri = obamaUri,
+    dateStart = "2015-01-01",
+    dateEnd = "2015-12-31",
+    sourceUri = er.getSourceUri("new york times"))
 # return a list of event URIs (i.e. ["eng-234", "deu-234", ...])
-q.setRequestedResult(RequestEventsUriWgtList())
+q.setRequestedResult(RequestEventsInfo(sortBy = "socialScore"))
+res = er.execQuery(q)
+
+# find events that:
+# * contain articles that mention words Apple, Google and Samsung
+# * contain at least one article from a news source that is located in Italy
+q = QueryEvents(
+    keywords=QueryItems.AND(["Apple", "Google", "Samsung"]),
+    sourceLocationUri=er.getLocationUri("Italy"))
 res = er.execQuery(q)
 
 
-# use the previous query, but change the return details to return information about 30 events that are most related to Obama
-q.setRequestedResult(RequestEventsInfo(count = 30, sortBy = "rel", sortByAsc = False,
+# use the previous query, but change the return details to return information about 30 events sorted from latest to oldest
+# when providing the concept information include the labels of the concept in German language
+q.setRequestedResult(RequestEventsInfo(count = 30, sortBy = "date", sortByAsc = False,
     returnInfo = ReturnInfo(conceptInfo = ConceptInfoFlags(lang = "deu", type = ["person", "wiki"]))))
 res = er.execQuery(q)
 
 
-# use the previous query, but this time compute most relevant concepts of type organization or location extracted from events about Obama
+# use the previous query, but this time compute most relevant concepts of type organization or location extracted from events matching the search
 q.setRequestedResult(RequestEventsConceptAggr(conceptCount = 20,
     returnInfo = ReturnInfo(conceptInfo = ConceptInfoFlags(type = ["org", "loc"]))))
 res = er.execQuery(q)
@@ -48,7 +64,7 @@ res = er.execQuery(q)
 bbcSourceUri = er.getNewsSourceUri("BBC")
 print("Source uri for 'BBC' is " + bbcSourceUri)
 
-# query for events reported by BBC News
+# query for events that were reported by BBC News
 q = QueryEvents(sourceUri = bbcSourceUri)
 # return details about 30 events that have been most recently reported by BBC
 q.setRequestedResult(RequestEventsInfo(count = 30, sortBy = "date", sortByAsc = False))
@@ -65,24 +81,37 @@ q = QueryEvents(categoryUri = issuesCategoryUri)
 q.setRequestedResult(RequestEventsInfo(count = 30, sortBy = "size", sortByAsc = False))
 res = er.execQuery(q)
 
+#
+# OTHER AGGREGATES (INSTEAD OF OBTAINING EVENTS)
+#
 
-# find events that occured in Berlin between 2014-04-16 and 2014-04-28
-# from the resulting events produce
-# - the trending information about the top people involved in these events
-# - info about the categories of these events
-# - general information about the 20 most recent events in that time span
+# find events that occured in Germany between 2014-04-16 and 2014-04-28
+# from the resulting events produce:
 q = QueryEvents(
     locationUri = er.getLocationUri("Germany"),
-    dateStart = datetime.date(2017, 12, 16), dateEnd = datetime.date(2018, 1, 28))
+    dateStart=datetime.date(2017, 12, 16), dateEnd=datetime.date(2018, 1, 28))
+
+# get the list of top concepts about the events that match criteria
+q.setRequestedResult(RequestEventsConceptAggr())
+res = er.execQuery(q)
+
+# find where the events occured geographically
+q.setRequestedResult(RequestEventsLocAggr())
+res = er.execQuery(q)
+
+# find when the events matching the criteria occurred
+q.setRequestedResult(RequestEventsTimeAggr())
+res = er.execQuery(q)
+
+# the trending information about the top people involved in these events
 q.setRequestedResult(RequestEventsConceptTrends(conceptCount = 40,
     returnInfo = ReturnInfo(conceptInfo = ConceptInfoFlags(type = ["person"]))))
 res = er.execQuery(q)
 
+# get the top categories about the same events
 q.setRequestedResult(RequestEventsCategoryAggr())
 res = er.execQuery(q)
 
-q.setRequestedResult(RequestEventsInfo())
-res = er.execQuery(q)
 
 # query for events about Obama and produce the concept co-occurence graph - which concepts appear frequently together in the matching events
 q = QueryEvents(conceptUri = er.getConceptUri("Obama"))
@@ -94,7 +123,7 @@ res = er.execQuery(q)
 # examples of complex queries that combine various OR and AND operators
 #
 
-# events that are occured between 2017-02-05 and 2017-02-05 and are not about business
+# events that are occured between 2017-02-05 and 2017-02-06 and are not about business
 businessUri = er.getCategoryUri("Business")
 q = QueryEvents.initWithComplexQuery("""
 {
@@ -109,8 +138,12 @@ q = QueryEvents.initWithComplexQuery("""
 res = er.execQuery(q)
 
 # example of a complex query containing a combination of OR and AND parameters
-# get events that happened on 2017-02-05 or are about trump or are about politics or are about Merkel and business
-# # and did not happen on 2017-02-05 or are about Obama
+# get events that:
+# * happened on 2017-02-05
+# * are about trump, or
+# * are about politics, or
+# * are about Merkel and business
+# and did not happen on 2017-02-04 or are about Obama
 trumpUri = er.getConceptUri("Trump")
 obamaUri = er.getConceptUri("Obama")
 politicsUri = er.getCategoryUri("politics")

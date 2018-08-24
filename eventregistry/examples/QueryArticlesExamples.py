@@ -38,18 +38,54 @@ q.setRequestedResult(RequestArticlesInfo(count = 30,
 res = er.execQuery(q)
 
 
+# search for articles that:
+# * mentions the concept Samsung
+# * mention the phrase "iphone" in the article title
+# * by BBC or by any news source located in Germany
+# * in English or German language
+# * return results sorted by relevance to the query (instead of "date" which is default)
+q = QueryArticles(
+    conceptUri = er.getConceptUri("Samsung"),
+    keywords = "iphone",
+    keywordsLoc="title",
+    lang = ["eng", "deu"],
+    sourceUri=er.getSourceUri("bbc"),
+    sourceLocationUri=er.getLocationUri("Germany"))
+q.setRequestedResult(RequestArticlesInfo(sortBy="rel"))
+res = er.execQuery(q)
+
+# find articles that:
+# * are related to business (categorized into business category)
+# * were published between 1st and 20th August 2018
+# * don't mention Trump in the article title
+# * are not a duplicate (copy) of another article
+# * are from a news source that is among top 20 percentile of sources
+# * return results sorted from most shared on social media to least
+q = QueryArticles(
+    categoryUri=er.getCategoryUri("business"),
+    dateStart="2018-08-01",
+    dateEnd="2018-08-20",
+    ignoreKeywords="Trump",
+    ignoreKeywordsLoc="title",
+    isDuplicateFilter="skipDuplicates",
+    startSourceRankPercentile = 0,
+    endSourceRankPercentile = 20)
+q.setRequestedResult(RequestArticlesInfo(sortBy="socialScore"))
+res = er.execQuery(q)
+
 #
 # USE OF ITERATOR
 # example of using the QueryArticlesIter to easily iterate through all results matching the search
 #
 
-# Search for articles mentioning George Clooney that were reported from sources from Germany or sources from Los Angeles
+# Search for articles mentioning George Clooney that were reported from sources from Spain or sources from Los Angeles
 # iterator class simplifies retrieving and listing the list of matching articles
 # by specifying maxItems we say that we want to retrieve maximum 500 articles (without specifying the parameter we would iterate through all results)
+# the results will be sorted from those that are from highest ranked news sources down
 q = QueryArticlesIter(
     conceptUri = er.getConceptUri("George Clooney"),
-    sourceLocationUri = QueryItems.OR([er.getLocationUri("Germany"), er.getLocationUri("Los Angeles")]))
-for art in q.execQuery(er, sortBy = "date", maxItems = 500):
+    sourceLocationUri = QueryItems.OR([er.getLocationUri("Spain"), er.getLocationUri("Los Angeles")]))
+for art in q.execQuery(er, sortBy = "sourceAlexaGlobalRank", maxItems = 500):
     print(art["uri"])
 
 
@@ -83,6 +119,27 @@ q.setRequestedResult(RequestArticlesInfo(count = 30,
 res = er.execQuery(q)
 
 #
+# OTHER AGGREGATES (INSTEAD OF OBTAINING ARTICLES)
+#
+
+# return top concept mentioned in the articles about Apple
+q = QueryArticles(conceptUri=er.getConceptUri("apple"))
+q.setRequestedResult(RequestArticlesConceptAggr())
+
+# return the top categories in the articles about Tesla
+q = QueryArticles(conceptUri=er.getConceptUri("Tesla"))
+q.setRequestedResult(RequestArticlesCategoryAggr())
+
+# obtain the top news sources that report about iphones
+q = QueryArticles(keywords="iphone")
+q.setRequestedResult(RequestArticlesSourceAggr())
+
+# obtain the top keywords that summarize articles about Trump
+q = QueryArticles(keywords="Trump")
+q.setRequestedResult(RequestArticlesKeywordAggr())
+
+
+#
 # RECENT ACTIVITY
 # example of querying most recently added content related to a particular thing
 #
@@ -104,6 +161,7 @@ res = er.execQuery(q)
 #
 # COMPLEX QUERIES
 # examples of complex queries that combine various OR and AND operators
+# as well as nested sub-queries
 #
 
 # prepare some variables used in the queries
