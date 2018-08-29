@@ -380,8 +380,8 @@ class TestQueryEvents(DataValidator):
         for event in iter.execQuery(self.er, returnInfo = self.returnInfo, maxItems = 10):
             self.ensureEventHasCategory(event, businessCat)
 
-            articleIter = QueryEventArticlesIter(event["uri"])
-            articles = list(articleIter.execQuery(self.er, lang = allLangs, returnInfo = self.returnInfo))
+            articleIter = QueryEventArticlesIter(event["uri"], lang = allLangs)
+            articles = list(articleIter.execQuery(self.er, returnInfo = self.returnInfo))
             self.ensureArticlesContainText(articles, "obama")
             self.ensureArticlesContainText(articles, "trump")
 
@@ -416,8 +416,8 @@ class TestQueryEvents(DataValidator):
             self.ensureEventHasNotConcept(event, chinaUri)
             self.ensureEventHasNotConcept(event, unitedStatesUri)
 
-            artIter = QueryEventArticlesIter(event["uri"])
-            articles = list(artIter.execQuery(self.er, lang = allLangs))
+            artIter = QueryEventArticlesIter(event["uri"], lang = allLangs)
+            articles = list(artIter.execQuery(self.er))
             self.ensureArticlesDoNotContainText(articles, "trump")
             self.ensureArticlesDoNotContainText(articles, "politics")
             self.ensureArticlesDoNotContainText(articles, "michelle")

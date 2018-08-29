@@ -1,4 +1,4 @@
-﻿import unittest
+﻿import unittest, time
 import eventregistry as ER
 from DataValidator import DataValidator
 
@@ -70,6 +70,39 @@ class TestAnalytics(DataValidator):
         self.assertTrue("datetime" in info)
         self.assertTrue("image" in info)
         # there can be other additional properties available, depending on what is available in the article
+
+
+    def testTrainTopic(self):
+        analytics = ER.Analytics(self.er)
+        ret = analytics.trainTopicCreateTopic("my topic")
+        assert ret and "uri" in ret
+        uri = ret["uri"]
+        analytics.trainTopicAddDocument(uri, "Facebook has removed 18 accounts and 52 pages associated with the Myanmar military, including the page of its commander-in-chief, after a UN report accused the armed forces of genocide and war crimes.")
+        analytics.trainTopicAddDocument(uri, "Emmanuel Macron’s climate commitment to “make this planet great again” has come under attack after his environment minister dramatically quit, saying the French president was not doing enough on climate and other environmental goals.")
+        analytics.trainTopicAddDocument(uri, "Theresa May claimed that a no-deal Brexit “wouldn’t be the end of the world” as she sought to downplay a controversial warning made by Philip Hammond last week that it would cost £80bn in extra borrowing and inhibit long-term economic growth.")
+        # finish training of the topic
+        ret = analytics.trainTopicFinishTraining(uri)
+        assert ret and "topic" in ret
+        topic = ret["topic"]
+        assert "concepts" in topic and len(topic["concepts"]) > 0
+        assert "categories" in topic and len(topic["categories"]) > 0
+        # check that we can also get the topic later on
+        ret = analytics.trainTopicGetTrainedTopic(uri)
+        assert ret and "topic" in ret
+        topic = ret["topic"]
+        assert "concepts" in topic and len(topic["concepts"]) > 0
+        assert "categories" in topic and len(topic["categories"]) > 0
+
+
+    def testTrainTopicOnTwitter(self):
+        analytics = ER.Analytics(self.er)
+        ret = analytics.trainTopicOnTweets("@SeanEllis", maxConcepts = 50, maxCategories = 20, maxTweets = 400)
+        assert ret and "uri" in ret
+        uri = ret["uri"]
+        # here we should sleep more than 5 seconds
+        time.sleep(5)
+        ret = analytics.trainTopicGetTrainedTopic(uri)
+        assert ret and "topic" in ret
 
 
 
