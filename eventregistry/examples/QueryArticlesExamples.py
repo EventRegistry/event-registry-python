@@ -38,6 +38,13 @@ q.setRequestedResult(RequestArticlesInfo(count = 30,
 res = er.execQuery(q)
 
 
+# if you already have some articles that you have received from Event Registry
+# for which you would like to obtain some potentially updated metadata (shared counts, event uri)
+# you can use the query shown below. When making such a query you can specify up to 100 article uris in a call.
+q = QueryArticles.initWithArticleUriList(["934903913", "934902493", "934902499", "934902488", "934899375", "934900984", "934890360", "934888250"])
+res = er.execQuery(q)
+
+
 # search for articles that:
 # * mentions the concept Samsung
 # * mention the phrase "iphone" in the article title
