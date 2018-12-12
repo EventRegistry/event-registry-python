@@ -1,5 +1,14 @@
 # Change Log
 
+## [v8.5.1]() (2018-12-12)
+
+**Updated**
+
+- Analytics. updated `trainTopicOnTweets()`, `trainTopicClearTopic()` and `trainTopicGetTrainedTopic()` methods in the `Analytics` class.
+- `QueryArticles.initWithComplexQuery()` was updated - the parameter `dataType` was removed (since the `dataType` value should be provided in the `$filter` section of the query)
+
+
+
 ## [v8.5]() (2018-08-29)
 
 **Added**

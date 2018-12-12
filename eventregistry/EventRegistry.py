@@ -165,7 +165,10 @@ class EventRegistry(object):
         # don't modify original query params
         allParams = query._getQueryParams()
         # make the url
-        url = self._host + query._getPath() + "?" + urllib.urlencode(allParams, doseq=True)
+        try:
+            url = self._host + query._getPath() + "?" + urllib.urlencode(allParams, doseq=True)
+        except:
+            url = self._host + query._getPath() + "?" + urllib.parse.urlencode(allParams, doseq=True)
         return url
 
 
@@ -234,7 +237,7 @@ class EventRegistry(object):
                 with open(customLogFName or self._requestLogFName, "a") as log:
                     if paramDict != None:
                         log.write("# " + json.dumps(paramDict) + "\n")
-                    log.write(methodUrl + "\n")
+                    log.write(methodUrl + "\n\n")
             except Exception as ex:
                 self._lastException = ex
 
@@ -292,6 +295,7 @@ class EventRegistry(object):
                 # in case of invalid input parameters, don't try to repeat the search
                 if respInfo != None and respInfo.status_code == 530:
                     break
+                print("The request will be automatically repeated in 3 seconds...")
                 time.sleep(3)   # sleep for X seconds on error
         self._lock.release()
         if returnData == None:
@@ -327,9 +331,13 @@ class EventRegistry(object):
                 break
             except Exception as ex:
                 self._lastException = ex
-                print("Event Registry exception while executing the request:")
+                print("Event Registry Analytics exception while executing the request:")
                 self.printLastException()
-                break
+                # in case of invalid input parameters, don't try to repeat the action
+                if respInfo != None and respInfo.status_code == 530:
+                    print("The request will not be repeated since we received a response code 530")
+                    break
+                print("The request will be automatically repeated in 3 seconds...")
                 time.sleep(3)   # sleep for X seconds on error
         self._lock.release()
         if returnData == None:

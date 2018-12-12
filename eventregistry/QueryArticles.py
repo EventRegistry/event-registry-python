@@ -270,16 +270,12 @@ class QueryArticlesIter(QueryArticles, six.Iterator):
 
 
     @staticmethod
-    def initWithComplexQuery(query, dataType = "news"):
+    def initWithComplexQuery(query):
         """
         @param query: complex query as ComplexArticleQuery instance, string or a python dict
-        @param dataType: what data types should we search? "news" (news content, default), "pr" (press releases), or "blog".
-                If you want to use multiple data types, put them in an array (e.g. ["news", "pr"])
         """
         q = QueryArticlesIter()
-        # set data type
-        q._setVal("dataType", dataType)
-
+        
         # provided an instance of ComplexArticleQuery
         if isinstance(query, ComplexArticleQuery):
             q._setVal("query", json.dumps(query.getQuery()))

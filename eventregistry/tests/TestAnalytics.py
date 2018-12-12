@@ -81,11 +81,13 @@ class TestAnalytics(DataValidator):
         analytics.trainTopicAddDocument(uri, "Emmanuel Macron’s climate commitment to “make this planet great again” has come under attack after his environment minister dramatically quit, saying the French president was not doing enough on climate and other environmental goals.")
         analytics.trainTopicAddDocument(uri, "Theresa May claimed that a no-deal Brexit “wouldn’t be the end of the world” as she sought to downplay a controversial warning made by Philip Hammond last week that it would cost £80bn in extra borrowing and inhibit long-term economic growth.")
         # finish training of the topic
-        ret = analytics.trainTopicFinishTraining(uri)
+        ret = analytics.trainTopicFinishTraining(uri, ignoreConceptTypes="wiki")
         assert ret and "topic" in ret
         topic = ret["topic"]
         assert "concepts" in topic and len(topic["concepts"]) > 0
         assert "categories" in topic and len(topic["categories"]) > 0
+        for concept in topic["concepts"]:
+            assert concept["type"] != "wiki"
         # check that we can also get the topic later on
         ret = analytics.trainTopicGetTrainedTopic(uri)
         assert ret and "topic" in ret
@@ -96,7 +98,8 @@ class TestAnalytics(DataValidator):
 
     def testTrainTopicOnTwitter(self):
         analytics = ER.Analytics(self.er)
-        ret = analytics.trainTopicOnTweets("@SeanEllis", maxConcepts = 50, maxCategories = 20, maxTweets = 400)
+        ret = analytics.trainTopicOnTweets("@SeanEllis", maxConcepts=50, maxCategories=20,
+            maxTweets = 400, maxUsedLinks = 400, ignoreConceptTypes = ["wiki", "loc"])
         assert ret and "uri" in ret
         uri = ret["uri"]
         # here we should sleep more than 5 seconds
