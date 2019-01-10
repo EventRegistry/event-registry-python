@@ -6,6 +6,8 @@
 
 - Analytics. updated `trainTopicOnTweets()`, `trainTopicClearTopic()` and `trainTopicGetTrainedTopic()` methods in the `Analytics` class.
 - `QueryArticles.initWithComplexQuery()` was updated - the parameter `dataType` was removed (since the `dataType` value should be provided in the `$filter` section of the query)
+- `TopicPage` now supports setting also the source rank percentile
+- `Analytics.extractArticleInfo` now also supports setting the headers and cookies to be used when making the requests
 
 
 

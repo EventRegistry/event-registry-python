@@ -10,6 +10,7 @@ These include:
 NOTE: the functionality is currently in BETA. The API calls or the provided outputs may change in the future.
 """
 
+import json
 from eventregistry.Base import *
 from eventregistry.ReturnInfo import *
 
@@ -75,17 +76,27 @@ class Analytics:
         return self._er.jsonRequestAnalytics("/api/v1/detectLanguage", { "text": text })
 
 
-    def extractArticleInfo(self, url, proxyUrl = None):
+    def extractArticleInfo(self, url, proxyUrl = None, headers = None, cookies = None):
         """
         extract all available information about an article available at url `url`. Returned information will include
         article title, body, authors, links in the articles, ...
         @param url: article url to extract article information from
         @param proxyUrl: proxy that should be used for downloading article information. format: {schema}://{username}:{pass}@{proxy url/ip}
+        @param headers: dict with headers to set in the request (optional)
+        @param cookies: dict with cookies to set in the request (optional)
         @returns: dict
         """
         params = { "url": url }
         if proxyUrl:
             params["proxyUrl"] = proxyUrl
+        if headers:
+            if isinstance(headers, dict):
+                headers = json.dumps(headers)
+            params["headers"] = headers
+        if cookies:
+            if isinstance(cookies, dict):
+                cookies = json.dumps(cookies)
+            params["cookies"] = cookies
         return self._er.jsonRequestAnalytics("/api/v1/extractArticleInfo", params)
 
 
