@@ -26,17 +26,6 @@ class QueryEvent(Query):
         return "/json/event"
 
 
-    def addRequestedResult(self, requestEvent):
-        """
-        Add a result type that you would like to be returned.
-        In case you are a subscribed customer you can ask for multiple result types in a single query (for free users, only a single result type can be required per call).
-        Result types can be the classes that extend RequestEvent base class (see classes below).
-        """
-        assert isinstance(requestEvent, RequestEvent), "QueryEvent class can only accept result requests that are of type RequestEvent"
-        self.resultTypeList = [item for item in self.resultTypeList if item.getResultType() != requestEvent.getResultType()]
-        self.resultTypeList.append(requestEvent)
-
-
     def setRequestedResult(self, requestEvent):
         """
         Set the single result type that you would like to be returned. Any previously set result types will be overwritten.
@@ -68,7 +57,9 @@ class QueryEventArticlesIter(QueryEvent, six.Iterator):
                 keywordsLoc="body",
 
                 startSourceRankPercentile = 0,
-                endSourceRankPercentile = 100):
+                endSourceRankPercentile=100,
+                minSentiment = -1,
+                maxSentiment = 1):
         """
         @param eventUri: a single event for which we want to obtain the list of articles in it
         @param lang: find articles that are written in the specified language.
@@ -108,6 +99,10 @@ class QueryEventArticlesIter(QueryEvent, six.Iterator):
 
         @param startSourceRankPercentile: starting percentile of the sources to consider in the results (default: 0). Value should be in range 0-90 and divisible by 10.
         @param endSourceRankPercentile: ending percentile of the sources to consider in the results (default: 100). Value should be in range 10-100 and divisible by 10.
+        @param minSentiment: minimum value of the sentiment, that the returned articles should have. Range [-1, 1]. Note: setting the value will remove all articles that don't have
+                a computed value for the sentiment (all articles that are not reported in English language)
+        @param maxSentiment: maximum value of the sentiment, that the returned articles should have. Range [-1, 1]. Note: setting the value will remove all articles that don't have
+                a computed value for the sentiment (all articles that are not reported in English language)
         """
         super(QueryEventArticlesIter, self).__init__(eventUri)
         self._setQueryArrVal(keywords, "keyword", "keywordOper", "and")
@@ -144,6 +139,12 @@ class QueryEventArticlesIter(QueryEvent, six.Iterator):
             self._setVal("startSourceRankPercentile", startSourceRankPercentile)
         if endSourceRankPercentile != 100:
             self._setVal("endSourceRankPercentile", endSourceRankPercentile)
+        if minSentiment != -1:
+            assert minSentiment >= -1 and minSentiment <= 1
+            self._setVal("minSentiment", minSentiment)      # e.g. -0.5
+        if maxSentiment != 1:
+            assert maxSentiment >= -1 and maxSentiment <= 1
+            self._setVal("maxSentiment", maxSentiment)      # e.g. 0.5
 
 
     def count(self, eventRegistry):
@@ -161,7 +162,7 @@ class QueryEventArticlesIter(QueryEvent, six.Iterator):
 
     def execQuery(self, eventRegistry,
             sortBy = "cosSim", sortByAsc = False,
-            returnInfo = ReturnInfo(articleInfo = ArticleInfoFlags(bodyLen = -1)),
+            returnInfo = None,
             maxItems = -1):
         """
         @param eventRegistry: instance of EventRegistry class. used to obtain the necessary data
@@ -275,7 +276,7 @@ class RequestEventArticles(RequestEvent, QueryParamsBase):
                 endSourceRankPercentile = 100,
 
                 sortBy = "cosSim", sortByAsc = False,
-                returnInfo=ReturnInfo(articleInfo=ArticleInfoFlags(bodyLen=-1)),
+                returnInfo = None,
                 **kwds):
         """
         return articles about the event
@@ -322,7 +323,7 @@ class RequestEventArticles(RequestEvent, QueryParamsBase):
 
         @param sortBy: order in which event articles are sorted. Options: id (internal id), date (published date), cosSim (closeness to event centroid), sourceImportanceRank (importance of the news source, custom set), sourceAlexaGlobalRank (global rank of the news source), sourceAlexaCountryRank (country rank of the news source), socialScore (total shares in social media)
         @param sortByAsc: should the articles be sorted in ascending order (True) or descending (False) based on sortBy value
-        @param returnInfo: what details should be included in the returned information
+        @param returnInfo: what details should be included in the returned information. Use None to get the default information.
         """
         RequestEvent.__init__(self)
         QueryParamsBase.__init__(self)
@@ -371,7 +372,8 @@ class RequestEventArticles(RequestEvent, QueryParamsBase):
         self.articlesSortByAsc = sortByAsc
         # the filtering params are stored in queryParams. update the params on the self and delete the queryParams object
         self.__dict__.update(self.queryParams)
-        self.__dict__.update(returnInfo.getParams("articles"))
+        if returnInfo:
+            self.__dict__.update(returnInfo.getParams("articles"))
         del self.queryParams
 
 

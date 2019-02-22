@@ -1,5 +1,21 @@
 # Change Log
 
+## [v8.6]() (2019-02-22)
+
+**Added**
+- We added sentiment, which can now be used in querying of articles and events. The `QueryArticles`, `QueryArticlesIter`, `QueryEvents`, `QueryEventsIter` constructors now all have additional parameters `minSentiment` and `maxSentiment` that can be used to filter the articles and events. The valid values are between -1 (very negative sentiment) and 1 (very positive sentiment). Value 0 represents neutral sentiment.
+- Sentiment was also added as a property in the returned articles and events.
+
+**Updated**
+
+- Analytics: We updated `trainTopicOnTweets()`, `trainTopicClearTopic()` and `trainTopicGetTrainedTopic()` methods in the `Analytics` class.
+- `QueryArticles.initWithComplexQuery()` was updated - the parameter `dataType` was removed (since the `dataType` value should be provided in the `$filter` section of the query)
+- `TopicPage` now supports setting also the source rank percentile
+- `Analytics.annotate()` method now supports passing custom parameters that should be used when annotating the text.
+- `Analytics.extractArticleInfo()` now also supports passing headers and cookies to be used when extracting article info from url.
+- Changed some defaults in the returned data. When searching articles, we now by default return article image and sentiment.
+
+
 ## [v8.5]() (2018-08-29)
 
 **Added**

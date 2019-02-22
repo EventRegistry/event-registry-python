@@ -52,3 +52,31 @@ while True:
     # wait exactly a minute until next batch of new content is ready
     print("sleeping for 10 minutes...")
     time.sleep(10 * 60.0 - ((time.time() - starttime) % 60.0))
+
+
+
+#
+# similar example but uses the updatesAfterTm parameter value provided in the previous calls
+#
+starttime = time.time()
+updatesAfterTm = None
+while True:
+    # q = QueryArticles(keywords="strike", keywordsLoc="title")
+    q = QueryArticles(keywords="Trump")
+    q.setRequestedResult(
+        RequestArticlesRecentActivity(
+            # download at most 2000 articles. if less of matching articles were added in last 10 minutes, less will be returned
+            maxArticleCount=100,
+            # specify the last time that was used when making the request - only articles added after that will be potentially returned
+            updatesAfterTm = updatesAfterTm
+        ))
+
+    res = er.execQuery(q)
+    for article in res.get("recentActivityArticles", {}).get("activity", []):
+        print("Added article %s: %s" % (article["uri"], article["title"]))
+
+
+    # wait for some time - the next request will return results published after the last request
+    print("sleeping for 10 minutes...")
+    time.sleep(10 * 60.0)
+    updatesAfterTm = res["recentActivityArticles"]["currTime"]

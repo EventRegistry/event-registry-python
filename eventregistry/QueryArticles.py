@@ -37,6 +37,8 @@ class QueryArticles(Query):
                 eventFilter = "keepAll",
                 startSourceRankPercentile = 0,
                 endSourceRankPercentile = 100,
+                minSentiment = -1,
+                maxSentiment = 1,
                 dataType = "news",
                 requestedResult = None):
         """
@@ -103,6 +105,10 @@ class QueryArticles(Query):
                 "keepAll" (no filtering, default)
         @param startSourceRankPercentile: starting percentile of the sources to consider in the results (default: 0). Value should be in range 0-90 and divisible by 10.
         @param endSourceRankPercentile: ending percentile of the sources to consider in the results (default: 100). Value should be in range 10-100 and divisible by 10.
+        @param minSentiment: minimum value of the sentiment, that the returned articles should have. Range [-1, 1]. Note: setting the value will remove all articles that don't have
+                a computed value for the sentiment (all non-English articles)
+        @param maxSentiment: maximum value of the sentiment, that the returned articles should have. Range [-1, 1]. Note: setting the value will remove all articles that don't have
+                a computed value for the sentiment (all non-English articles)
         @param dataType: what data types should we search? "news" (news content, default), "pr" (press releases), or "blog".
                 If you want to use multiple data types, put them in an array (e.g. ["news", "pr"])
         @param requestedResult: the information to return as the result of the query. By default return the list of matching articles
@@ -160,6 +166,12 @@ class QueryArticles(Query):
             self._setVal("startSourceRankPercentile", startSourceRankPercentile)
         if endSourceRankPercentile != 100:
             self._setVal("endSourceRankPercentile", endSourceRankPercentile)
+        if minSentiment != -1:
+            assert minSentiment >= -1 and minSentiment <= 1
+            self._setVal("minSentiment", minSentiment)
+        if maxSentiment != 1:
+            assert maxSentiment >= -1 and maxSentiment <= 1
+            self._setVal("maxSentiment", maxSentiment)
         # always set the data type
         self._setVal("dataType", dataType)
 
@@ -244,7 +256,7 @@ class QueryArticlesIter(QueryArticles, six.Iterator):
     def execQuery(self, eventRegistry,
                   sortBy = "rel",
                   sortByAsc = False,
-                  returnInfo = ReturnInfo(),
+                  returnInfo = None,
                   maxItems = -1,
                   **kwargs):
         """
@@ -270,15 +282,11 @@ class QueryArticlesIter(QueryArticles, six.Iterator):
 
 
     @staticmethod
-    def initWithComplexQuery(query, dataType = "news"):
+    def initWithComplexQuery(query):
         """
         @param query: complex query as ComplexArticleQuery instance, string or a python dict
-        @param dataType: what data types should we search? "news" (news content, default), "pr" (press releases), or "blog".
-                If you want to use multiple data types, put them in an array (e.g. ["news", "pr"])
         """
         q = QueryArticlesIter()
-        # set data type
-        q._setVal("dataType", dataType)
 
         # provided an instance of ComplexArticleQuery
         if isinstance(query, ComplexArticleQuery):
@@ -360,7 +368,7 @@ class RequestArticlesInfo(RequestArticles):
                  page = 1,
                  count = 100,
                  sortBy = "date", sortByAsc = False,
-                 returnInfo = ReturnInfo()):
+                 returnInfo = None):
         """
         return article details for resulting articles
         @param page: page of the articles to return
@@ -376,7 +384,8 @@ class RequestArticlesInfo(RequestArticles):
         self.articlesCount = count
         self.articlesSortBy = sortBy
         self.articlesSortByAsc = sortByAsc
-        self.__dict__.update(returnInfo.getParams("articles"))
+        if returnInfo != None:
+            self.__dict__.update(returnInfo.getParams("articles"))
 
 
     def setPage(self, page):
@@ -597,7 +606,7 @@ class RequestArticlesRecentActivity(RequestArticles):
                  updatesUntilTm = None,
                  updatesUntilMinsAgo = None,
                  mandatorySourceLocation = False,
-                 returnInfo = ReturnInfo()):
+                 returnInfo = None):
         """
         get the list of articles that were recently added to the Event Registry and match the selected criteria
         @param maxArticleCount: the maximum number of articles to return in the call (the number can be even higher than 100 but in case more articles
@@ -624,4 +633,5 @@ class RequestArticlesRecentActivity(RequestArticles):
             self.recentActivityArticlesUpdatesUntilMinsAgo = updatesUntilMinsAgo
         self.recentActivityArticlesMaxArticleCount = maxArticleCount
         self.recentActivityArticlesMandatorySourceLocation = mandatorySourceLocation
-        self.__dict__.update(returnInfo.getParams("recentActivityArticles"))
+        if returnInfo != None:
+            self.__dict__.update(returnInfo.getParams("recentActivityArticles"))

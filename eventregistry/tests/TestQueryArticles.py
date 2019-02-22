@@ -1,6 +1,6 @@
 ﻿import unittest, math
 from eventregistry import *
-from DataValidator import DataValidator
+from .DataValidator import DataValidator
 
 class TestQueryArticles(DataValidator):
 

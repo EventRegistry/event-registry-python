@@ -170,6 +170,16 @@ class TopicPage(QueryParamsBase):
         self.topicPage["maxDaysBack"] = maxDaysBack
 
 
+    def setSourceRankPercentile(self, startPercentile=0, endPercentile=100):
+        assert startPercentile >= 0 and startPercentile <= 90, "startPercentile is out of valid values (0 - 90)"
+        assert endPercentile >= 10 and endPercentile <= 100, "endPercentile is out of valid values (10 - 100)"
+        assert startPercentile < endPercentile, "startPercentile has to be smaller than endPercentile"
+        assert startPercentile % 10 == 0, "startPecentile has to be a multiple of 10"
+        assert endPercentile % 10 == 0, "endPercentile has to be a multiple of 10"
+        self.topicPage["startSourceRankPercentile"] = startPercentile
+        self.topicPage["endSourceRankPercentile"] = endPercentile
+
+
     def clearConcepts(self):
         self.topicPage["concepts"] = []
 
@@ -198,14 +208,17 @@ class TopicPage(QueryParamsBase):
         self.topicPage["locations"] = []
 
 
-    def addConcept(self, conceptUri, weight):
+    def addConcept(self, conceptUri, weight, label = None, conceptType = None):
         """
         add a relevant concept to the topic page
         @param conceptUri: uri of the concept to be added
         @param weight: importance of the provided concept (typically in range 1 - 50)
         """
-        assert isinstance(weight, int), "weight value has to be a positive or negative integer"
-        self.topicPage["concepts"].append({"uri": conceptUri, "wgt": weight})
+        assert isinstance(weight, (float, int)), "weight value has to be a positive or negative integer"
+        concept = {"uri": conceptUri, "wgt": weight}
+        if label != None: concept["label"] = label
+        if conceptType != None: concept["type"] = conceptType
+        self.topicPage["concepts"].append(concept)
 
 
     def addKeyword(self, keyword, weight):
@@ -214,7 +227,7 @@ class TopicPage(QueryParamsBase):
         @param keyword: keyword or phrase to be added
         @param weight: importance of the provided keyword (typically in range 1 - 50)
         """
-        assert isinstance(weight, int), "weight value has to be a positive or negative integer"
+        assert isinstance(weight, (float, int)), "weight value has to be a positive or negative integer"
         self.topicPage["keywords"].append({"keyword": keyword, "wgt": weight})
 
 
@@ -224,7 +237,7 @@ class TopicPage(QueryParamsBase):
         @param categoryUri: uri of the category to be added
         @param weight: importance of the provided category (typically in range 1 - 50)
         """
-        assert isinstance(weight, int), "weight value has to be a positive or negative integer"
+        assert isinstance(weight, (float, int)), "weight value has to be a positive or negative integer"
         self.topicPage["categories"].append({"uri": categoryUri, "wgt": weight})
 
 
@@ -234,7 +247,7 @@ class TopicPage(QueryParamsBase):
         @param sourceUri: uri of the news source to add to the topic page
         @param weight: importance of the news source (typically in range 1 - 50)
         """
-        assert isinstance(weight, int), "weight value has to be a positive or negative integer"
+        assert isinstance(weight, (float, int)), "weight value has to be a positive or negative integer"
         self.topicPage["sources"].append({"uri": sourceUri, "wgt": weight})
 
 
@@ -244,7 +257,7 @@ class TopicPage(QueryParamsBase):
         @param sourceLocationUri: uri of the location where the sources should be geographically located
         @param weight: importance of the provided list of sources (typically in range 1 - 50)
         """
-        assert isinstance(weight, int), "weight value has to be a positive or negative integer"
+        assert isinstance(weight, (float, int)), "weight value has to be a positive or negative integer"
         self.topicPage["sourceLocations"].append({"uri": sourceLocationUri, "wgt": weight})
 
 
@@ -254,7 +267,7 @@ class TopicPage(QueryParamsBase):
         @param sourceGroupUri: uri of the source group to add
         @param weight: importance of the provided list of sources (typically in range 1 - 50)
         """
-        assert isinstance(weight, int), "weight value has to be a positive or negative integer"
+        assert isinstance(weight, (float, int)), "weight value has to be a positive or negative integer"
         self.topicPage["sourceGroups"].append({"uri": sourceGroupUri, "wgt": weight})
 
 
@@ -264,7 +277,7 @@ class TopicPage(QueryParamsBase):
         @param locationUri: uri of the location to add
         @param weight: importance of the provided location (typically in range 1 - 50)
         """
-        assert isinstance(weight, int), "weight value has to be a positive or negative integer"
+        assert isinstance(weight, (float, int)), "weight value has to be a positive or negative integer"
         self.topicPage["locations"].append({"uri": locationUri, "wgt": weight})
 
 

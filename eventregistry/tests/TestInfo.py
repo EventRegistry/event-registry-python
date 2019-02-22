@@ -1,7 +1,7 @@
 ﻿import unittest
 from eventregistry import *
 
-from DataValidator import DataValidator
+from .DataValidator import DataValidator
 
 class TestInfo(DataValidator):
     def test_sourcesByUri(self):
@@ -39,8 +39,6 @@ class TestInfo(DataValidator):
                                            description = True,
                                            conceptClassMembership = True,
                                            conceptClassMembershipFull = True,
-                                           trendingScore = True,
-                                           trendingHistory = True,
                                            trendingSource = ["news", "social"])))
 
         res = self.er.execQuery(q)
@@ -58,12 +56,6 @@ class TestInfo(DataValidator):
             self.assertTrue("synonyms" in item, "Concept should have synonyms")
             self.assertIsNotNone(item.get("conceptClassMembership"), "Concept should have conceptClassMembership")
             self.assertIsNotNone(item.get("conceptClassMembershipFull"), "Concept should have conceptClassMembershipFull")
-            self.assertIsNotNone(item.get("trendingScore"), "Concept should have trendingScore")
-            self.assertIsNotNone(item.get("trendingScore").get("news"), "Concept should have trendingScore for news")
-            self.assertIsNotNone(item.get("trendingScore").get("social"), "Concept should have trendingScore for social")
-            self.assertIsNotNone(item.get("trendingHistory"), "Concept should have trendingHistory")
-            self.assertIsNotNone(item.get("trendingHistory").get("news"), "Concept should have trendingHistory for news")
-            self.assertIsNotNone(item.get("trendingHistory").get("social"), "Concept should have trendingHistory for social")
 
 
     def test_categories(self):
@@ -72,22 +64,13 @@ class TestInfo(DataValidator):
         q = GetCategoryInfo(catUriList, returnInfo = ReturnInfo(
             categoryInfo = CategoryInfoFlags(
                 parentUri = True,
-                childrenUris = True,
-                trendingScore = True,
-                trendingHistory = True,
-                trendingSource = ["news", "social"])))
+                childrenUris = True)))
         res = self.er.execQuery(q)
         self.assertEqual(len(res), len(catUriList), "Expected 10 categories")
         for item in list(res.values()):
             self.assertIsNotNone(item.get("uri"), "Category uri is missing")
             self.assertTrue("parentUri" in item, "Category parent uri is missing")
             self.assertIsNotNone(item.get("childrenUris"), "Category children uris are missing")
-            self.assertIsNotNone(item.get("trendingScore"), "Category trending score is missing")
-            self.assertIsNotNone(item.get("trendingHistory"), "Category trending history is missing")
-            self.assertIsNotNone(item.get("trendingScore").get("news"), "Category trending score for news is missing")
-            self.assertIsNotNone(item.get("trendingScore").get("social"), "Category trending score for social is missing")
-            self.assertIsNotNone(item.get("trendingHistory").get("news"), "Category trending history for news is missing")
-            self.assertIsNotNone(item.get("trendingHistory").get("social"), "Category trending history for social is missing")
 
 
 

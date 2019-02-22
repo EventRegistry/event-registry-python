@@ -19,11 +19,11 @@ class DataValidator(unittest.TestCase):
                 links = True, videos = True, image = True, location = True, extractedDates = True, socialScore = True, sentiment = True)
         self.sourceInfo = SourceInfoFlags(title = True, description = True, location = True, ranking = True, image = True, articleCount = True, socialMedia = True, sourceGroups = True)
         self.conceptInfo = ConceptInfoFlags(type=["entities"], lang = ["eng", "spa"], synonyms = True, image = True, description = True,
-                conceptClassMembership = True, trendingScore = True, trendingHistory = True, maxConceptsPerType = 50)
+                conceptClassMembership = True, maxConceptsPerType = 50)
         self.locationInfo = LocationInfoFlags(wikiUri = True, label = True, geoNamesId = True, geoLocation = True, population = True,
                 countryArea = True, countryDetails = True, countryContinent = True,
                 placeFeatureCode = True, placeCountry = True)
-        self.categoryInfo = CategoryInfoFlags(parentUri = True, childrenUris = True, trendingScore = True, trendingHistory = True)
+        self.categoryInfo = CategoryInfoFlags(parentUri = True, childrenUris = True)
         self.eventInfo = EventInfoFlags(commonDates = True, stories = True, socialScore = True, imageCount = 2)
         self.storyInfo = StoryInfoFlags(categories = True, date = True, concepts = True, title = True, summary = True,
                                         medoidArticle = True, commonDates = True, socialScore = True, imageCount = 2)
@@ -32,7 +32,7 @@ class DataValidator(unittest.TestCase):
 
 
     def ensureValidConcept(self, concept, testName):
-        for prop in [ "uri", "label", "synonyms", "image", "trendingScore"]:
+        for prop in [ "uri", "label", "synonyms", "image"]:
             self.assertTrue(prop in concept, "Property '%s' was expected in concept for test %s" % (prop, testName))
         self.assertTrue(concept.get("type") in ["person", "loc", "org"], "Expected concept to be an entity type, but got %s" % (concept.get("type")))
         if concept.get("location"):
@@ -53,7 +53,7 @@ class DataValidator(unittest.TestCase):
 
 
     def ensureValidCategory(self, category, testName):
-        for prop in ["uri", "parentUri", "trendingScore"]:
+        for prop in ["uri", "parentUri"]:
             self.assertTrue(prop in category, "Property '%s' was expected in source for test %s" % (prop, testName))
 
 

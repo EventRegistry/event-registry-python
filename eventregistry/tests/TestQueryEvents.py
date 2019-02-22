@@ -1,6 +1,6 @@
 ﻿import unittest
 from eventregistry import *
-from DataValidator import DataValidator
+from .DataValidator import DataValidator
 
 class TestQueryEvents(DataValidator):
     def validateGeneralEventList(self, res):
@@ -365,8 +365,8 @@ class TestQueryEvents(DataValidator):
         iter = QueryEventsIter(keywords = "germany", conceptUri = obamaUri)
         for event in iter.execQuery(self.er, returnInfo = self.returnInfo, maxItems = 10):
             self.ensureEventHasConcept(event, obamaUri)
-            articleIter = QueryEventArticlesIter(event["uri"])
-            articles = list(articleIter.execQuery(self.er, lang = allLangs, returnInfo = self.returnInfo))
+            articleIter = QueryEventArticlesIter(event["uri"], lang = allLangs)
+            articles = list(articleIter.execQuery(self.er, returnInfo = self.returnInfo))
             self.ensureArticlesContainText(articles, "germany")
 
 

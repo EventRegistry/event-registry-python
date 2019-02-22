@@ -5,6 +5,7 @@ from Event Registry requests
 the ReturnInfo class specifies all types of these parameters and is needed as
 a parameter in all query requests
 """
+import os, json
 
 class ReturnInfoFlagsBase(object):
     """
@@ -91,16 +92,16 @@ class ArticleInfoFlags(ReturnInfoFlagsBase):
                  categories = False,
                  links = False,
                  videos = False,
-                 image = False,
+                 image = True,
                  socialScore = False,
-                 sentiment = False,
+                 sentiment = True,
                  location = False,
                  dates = False,
                  extractedDates = False,
                  duplicateList = False,
                  originalArticle = False,
                  storyUri = False):
-        self._setVal("articleBodyLen", bodyLen, 300)
+        self._setVal("articleBodyLen", bodyLen, -1)
         self._setFlag("includeArticleBasicInfo", basicInfo, True)
         self._setFlag("includeArticleTitle", title, True)
         self._setFlag("includeArticleBody", body, True)
@@ -111,9 +112,9 @@ class ArticleInfoFlags(ReturnInfoFlagsBase):
         self._setFlag("includeArticleCategories", categories, False)
         self._setFlag("includeArticleLinks", links, False)
         self._setFlag("includeArticleVideos", videos, False)
-        self._setFlag("includeArticleImage", image, False)
+        self._setFlag("includeArticleImage", image, True)
         self._setFlag("includeArticleSocialScore", socialScore, False)
-        self._setFlag("includeArticleSentiment", sentiment, False)
+        self._setFlag("includeArticleSentiment", sentiment, True)
         self._setFlag("includeArticleLocation", location, False)
         self._setFlag("includeArticleDates", dates, False)
         self._setFlag("includeArticleExtractedDates", extractedDates, False)
@@ -301,8 +302,6 @@ class ConceptInfoFlags(ReturnInfoFlagsBase):
                  description = False,
                  conceptClassMembership = False,
                  conceptClassMembershipFull = False,
-                 trendingScore = False,
-                 trendingHistory = False,
                  totalCount = False,
                  trendingSource = "news",
                  maxConceptsPerType = 20):
@@ -314,8 +313,6 @@ class ConceptInfoFlags(ReturnInfoFlagsBase):
         self._setFlag("includeConceptDescription", description, False)
         self._setFlag("includeConceptConceptClassMembership", conceptClassMembership, False)
         self._setFlag("includeConceptConceptClassMembershipFull", conceptClassMembershipFull, False)
-        self._setFlag("includeConceptTrendingScore", trendingScore, False)
-        self._setFlag("includeConceptTrendingHistory", trendingHistory, False)
         self._setFlag("includeConceptTotalCount", totalCount, False)
         self._setVal("conceptTrendingSource", trendingSource, "news")
         self._setVal("maxConceptsPerType", maxConceptsPerType, 20)
@@ -452,6 +449,54 @@ class ReturnInfo:
         self.conceptFolderInfo = conceptFolderInfo
 
 
+    @staticmethod
+    def loadFromFile(fileName):
+        """
+        load the configuration for the ReturnInfo from a fileName
+        @param fileName: filename that contains the json configuration to use in the ReturnInfo
+        """
+        assert os.path.exists(fileName), "File " + fileName + " does not exist"
+        conf = json.load(open(fileName))
+        return ReturnInfo(
+            articleInfo=ArticleInfoFlags(**conf.get("articleInfo", {})),
+            eventInfo=EventInfoFlags(**conf.get("eventInfo", {})),
+            sourceInfo=SourceInfoFlags(**conf.get("sourceInfo", {})),
+            categoryInfo=CategoryInfoFlags(**conf.get("categoryInfo", {})),
+            conceptInfo=ConceptInfoFlags(**conf.get("conceptInfo", {})),
+            locationInfo=LocationInfoFlags(**conf.get("locationInfo", {})),
+            storyInfo=StoryInfoFlags(**conf.get("storyInfo", {})),
+            conceptClassInfo=ConceptClassInfoFlags(**conf.get("conceptClassInfo", {})),
+            conceptFolderInfo=ConceptFolderInfoFlags(**conf.get("conceptFolderInfo", {}))
+        )
+
+
+    def getConf(self):
+        """
+        return configuration in a json object that stores properties set by each *InfoFlags class
+        """
+        conf = {
+            "articleInfo": self.articleInfo._getFlags().copy(),
+            "eventInfo": self.eventInfo._getFlags().copy(),
+            "sourceInfo": self.sourceInfo._getFlags().copy(),
+            "categoryInfo":  self.categoryInfo._getFlags().copy(),
+            "conceptInfo": self.conceptInfo._getFlags().copy(),
+            "locationInfo": self.locationInfo._getFlags().copy(),
+            "storyInfo": self.storyInfo._getFlags().copy(),
+            "conceptClassInfo": self.articleInfo._getFlags().copy(),
+            "conceptFolderInfo": self.articleInfo._getFlags().copy()
+        }
+        conf["articleInfo"].update(self.articleInfo._getVals())
+        conf["eventInfo"].update(self.eventInfo._getVals())
+        conf["sourceInfo"].update(self.sourceInfo._getVals())
+        conf["categoryInfo"].update(self.categoryInfo._getVals())
+        conf["conceptInfo"].update(self.conceptInfo._getVals())
+        conf["locationInfo"].update(self.locationInfo._getVals())
+        conf["storyInfo"].update(self.storyInfo._getVals())
+        conf["conceptClassInfo"].update(self.conceptClassInfo._getVals())
+        conf["conceptFolderInfo"].update(self.conceptFolderInfo._getVals())
+        return conf
+
+
     def getParams(self, prefix = ""):
         dict = {}
         dict.update(self.articleInfo._getFlags())
@@ -463,6 +508,7 @@ class ReturnInfo:
         dict.update(self.storyInfo._getFlags())
         dict.update(self.conceptClassInfo._getFlags())
         dict.update(self.conceptFolderInfo._getFlags())
+
         dict.update(self.articleInfo._getVals())
         dict.update(self.eventInfo._getVals())
         dict.update(self.sourceInfo._getVals())

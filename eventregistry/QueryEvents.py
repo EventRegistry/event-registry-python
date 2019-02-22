@@ -17,6 +17,8 @@ class QueryEvents(Query):
                  lang = None,
                  dateStart = None,
                  dateEnd = None,
+                 minSentiment = -1,
+                 maxSentiment = 1,
                  minArticlesInEvent = None,
                  maxArticlesInEvent = None,
                  dateMentionStart = None,
@@ -68,6 +70,10 @@ class QueryEvents(Query):
             If more than one language is specified, resulting events has to be reported in *any* of the languages.
         @param dateStart: find events that occured on or after dateStart. Date should be provided in YYYY-MM-DD format, datetime.time or datetime.datetime.
         @param dateEnd: find events that occured before or on dateEnd. Date should be provided in YYYY-MM-DD format, datetime.time or datetime.datetime.
+        @param minSentiment: minimum value of the sentiment, that the returned events should have. Range [-1, 1]. Note: setting the value will remove all events that don't have
+                a computed value for the sentiment (all events that are not reported in English language)
+        @param maxSentiment: maximum value of the sentiment, that the returned events should have. Range [-1, 1]. Note: setting the value will remove all events that don't have
+                a computed value for the sentiment (all events that are not reported in English language)
         @param minArticlesInEvent: find events that have been reported in at least minArticlesInEvent articles (regardless of language)
         @param maxArticlesInEvent: find events that have not been reported in more than maxArticlesInEvent articles (regardless of language)
         @param dateMentionStart: find events where articles explicitly mention a date that is equal or greater than dateMentionStart.
@@ -101,17 +107,24 @@ class QueryEvents(Query):
         self._setQueryArrVal(lang, "lang", None, "or")                      # a single lang or list (possible: eng, deu, spa, zho, slv)
 
         if (dateStart != None):
-            self._setDateVal("dateStart", dateStart)   # 2014-05-02
+            self._setDateVal("dateStart", dateStart)        # e.g. 2014-05-02
         if (dateEnd != None):
-            self._setDateVal("dateEnd", dateEnd)       # 2014-05-02
+            self._setDateVal("dateEnd", dateEnd)            # e.g. 2014-05-02
+        if minSentiment != -1:
+            assert minSentiment >= -1 and minSentiment <= 1
+            self._setVal("minSentiment", minSentiment)      # e.g. -0.5
+        if maxSentiment != 1:
+            assert maxSentiment >= -1 and maxSentiment <= 1
+            self._setVal("maxSentiment", maxSentiment)      # e.g. 0.5
 
         self._setValIfNotDefault("minArticlesInEvent", minArticlesInEvent, None)
         self._setValIfNotDefault("maxArticlesInEvent", maxArticlesInEvent, None)
 
         if (dateMentionStart != None):
-            self._setDateVal("dateMentionStart", dateMentionStart)    # e.g. 2014-05-02
+            self._setDateVal("dateMentionStart", dateMentionStart)      # e.g. 2014-05-02
         if (dateMentionEnd != None):
-            self._setDateVal("dateMentionEnd", dateMentionEnd)        # e.g. 2014-05-02
+            self._setDateVal("dateMentionEnd", dateMentionEnd)          # e.g. 2014-05-02
+
 
         # for the negative conditions, only the OR is a valid operator type
         self._setQueryArrVal(ignoreKeywords, "ignoreKeywords", None, "or")
@@ -210,7 +223,7 @@ class QueryEventsIter(QueryEvents, six.Iterator):
     def execQuery(self, eventRegistry,
                   sortBy = "rel",
                   sortByAsc = False,
-                  returnInfo = ReturnInfo(),
+                  returnInfo = None,
                   maxItems = -1,
                   **kwargs):
         """
@@ -307,7 +320,7 @@ class RequestEventsInfo(RequestEvents):
     def __init__(self, page = 1,
                  count = 50,
                  sortBy = "rel", sortByAsc = False,
-                 returnInfo = ReturnInfo()):
+                 returnInfo = None):
         """
         return event details for resulting events
         @param page: page of the results to return (1, 2, ...)
@@ -324,7 +337,8 @@ class RequestEventsInfo(RequestEvents):
         self.eventsCount = count
         self.eventsSortBy = sortBy
         self.eventsSortByAsc = sortByAsc
-        self.__dict__.update(returnInfo.getParams("events"))
+        if returnInfo != None:
+            self.__dict__.update(returnInfo.getParams("events"))
 
 
     def setPage(self, page):
@@ -585,7 +599,7 @@ class RequestEventsRecentActivity(RequestEvents):
                  updatesAfterMinsAgo = None,
                  mandatoryLocation = True,
                  minAvgCosSim = 0,
-                 returnInfo = ReturnInfo()):
+                 returnInfo = None):
         """
         return a list of recently changed events that match search conditions
         @param maxEventCount: max events to return (at most 200)
@@ -605,6 +619,7 @@ class RequestEventsRecentActivity(RequestEvents):
         if updatesAfterMinsAgo != None:
             self.recentActivityEventsUpdatesAfterMinsAgo = updatesAfterMinsAgo
         self.recentActivityEventsMinAvgCosSim = minAvgCosSim
-        self.__dict__.update(returnInfo.getParams("recentActivityEvents"))
+        if returnInfo != None:
+            self.__dict__.update(returnInfo.getParams("recentActivityEvents"))
 
 
