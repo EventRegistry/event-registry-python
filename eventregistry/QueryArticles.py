@@ -287,7 +287,7 @@ class QueryArticlesIter(QueryArticles, six.Iterator):
         @param query: complex query as ComplexArticleQuery instance, string or a python dict
         """
         q = QueryArticlesIter()
-
+        
         # provided an instance of ComplexArticleQuery
         if isinstance(query, ComplexArticleQuery):
             q._setVal("query", json.dumps(query.getQuery()))

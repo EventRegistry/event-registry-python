@@ -9,11 +9,19 @@
 **Updated**
 
 - Analytics: We updated `trainTopicOnTweets()`, `trainTopicClearTopic()` and `trainTopicGetTrainedTopic()` methods in the `Analytics` class.
+- `Analytics.annotate()` method now supports passing custom parameters that should be used when annotating the text.
+- Changed some defaults in the returned data. When searching articles, we now by default return article image and sentiment.
+
+
+## [v8.5.1]() (2018-12-12)
+
+**Updated**
+
+- Analytics. updated `trainTopicOnTweets()`, `trainTopicClearTopic()` and `trainTopicGetTrainedTopic()` methods in the `Analytics` class.
 - `QueryArticles.initWithComplexQuery()` was updated - the parameter `dataType` was removed (since the `dataType` value should be provided in the `$filter` section of the query)
 - `TopicPage` now supports setting also the source rank percentile
-- `Analytics.annotate()` method now supports passing custom parameters that should be used when annotating the text.
-- `Analytics.extractArticleInfo()` now also supports passing headers and cookies to be used when extracting article info from url.
-- Changed some defaults in the returned data. When searching articles, we now by default return article image and sentiment.
+- `Analytics.extractArticleInfo` now also supports setting the headers and cookies to be used when making the requests
+
 
 
 ## [v8.5]() (2018-08-29)
