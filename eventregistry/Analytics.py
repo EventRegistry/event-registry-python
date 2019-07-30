@@ -47,17 +47,19 @@ class Analytics:
         return self._er.jsonRequestAnalytics("/api/v1/categorize", { "text": text, "taxonomy": taxonomy })
 
 
-    def sentiment(self, text, method = "vocabulary"):
+    def sentiment(self, text, method = "vocabulary", sentencesToAnalyze = 10, returnSentences = True):
         """
         determine the sentiment of the provided text in English language
         @param text: input text to categorize
         @param method: method to use to compute the sentiment. possible values are "vocabulary" (vocabulary based sentiment analysis)
             and "rnn" (neural network based sentiment classification)
+        @param sentencesToAnalyze: number of sentences in the provided text on which to compute the sentiment.
+        @param returnSentences: should the output also contain the list of sentences on which we computed sentiment?
         @returns: dict
         """
         assert method == "vocabulary" or method == "rnn"
         endpoint = method == "vocabulary" and "sentiment" or "sentimentRNN"
-        return self._er.jsonRequestAnalytics("/api/v1/" + endpoint, { "text": text })
+        return self._er.jsonRequestAnalytics("/api/v1/" + endpoint, { "text": text, "sentences": sentencesToAnalyze, "returnSentences": returnSentences })
 
 
     def semanticSimilarity(self, text1, text2, distanceMeasure = "cosine"):
