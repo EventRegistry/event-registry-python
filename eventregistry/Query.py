@@ -163,7 +163,13 @@ class CombinedQuery(_QueryCore):
 class ComplexArticleQuery(_QueryCore):
     def __init__(self,
                  query,
-                 dataType = "news",
+                 dataType="news",
+                 minSentiment=None,
+                 maxSentiment=None,
+                 minSocialScore=0,
+                 minFacebookShares=0,
+                 startSourceRankPercentile=0,
+                 endSourceRankPercentile = 100,
                  isDuplicateFilter = "keepAll",
                  hasDuplicateFilter = "keepAll",
                  eventFilter = "keepAll"):
@@ -172,6 +178,12 @@ class ComplexArticleQuery(_QueryCore):
         @param query: an instance of CombinedQuery or BaseQuery to use to find articles that match the conditions
         @param dataType: data type to search for. Possible values are "news" (news content), "pr" (PR content) or "blogs".
                 If you want to use multiple data types, put them in an array (e.g. ["news", "pr"])
+        @param minSentiment: what should be the minimum sentiment on the articles in order to return them (None means that we don't filter by sentiment)
+        @param maxSentiment: what should be the maximum sentiment on the articles in order to return them (None means that we don't filter by sentiment)
+        @param minSocialScore: at least how many times should the articles be shared on social media in order to return them
+        @param minFacebookShares: at least how many times should the articles be shared on Facebook in order to return them
+        @param startSourceRankPercentile: starting percentile of the sources to consider in the results (default: 0). Value should be in range 0-90 and divisible by 10.
+        @param endSourceRankPercentile: ending percentile of the sources to consider in the results (default: 100). Value should be in range 10-100 and divisible by 10.
         @param isDuplicateFilter: some articles can be duplicates of other articles. What should be done with them. Possible values are:
                 "skipDuplicates" (skip the resulting articles that are duplicates of other articles)
                 "keepOnlyDuplicates" (return only the duplicate articles)
@@ -193,19 +205,38 @@ class ComplexArticleQuery(_QueryCore):
         filter = {}
         if dataType != "news":
             filter["dataType"] = dataType
+
+        if minSentiment != None:
+            filter["minSentiment"] = minSentiment
+        if maxSentiment != None:
+            filter["maxSentiment"] = maxSentiment
+
+        if minSocialScore > 0:
+            filter["minSocialScore"] = minSocialScore
+        if minFacebookShares > 0:
+            filter["minFacebookShares"] = minFacebookShares
+        if startSourceRankPercentile != 0:
+            filter["startSourceRankPercentile"] = startSourceRankPercentile
+        if endSourceRankPercentile != 100:
+            filter["endSourceRankPercentile"] = endSourceRankPercentile
+
         if isDuplicateFilter != "keepAll":
             filter["isDuplicate"] = isDuplicateFilter
         if hasDuplicateFilter != "keepAll":
             filter["hasDuplicate"] = hasDuplicateFilter
         if eventFilter != "keepAll":
             filter["hasEvent"] = eventFilter
+
         if len(filter) > 0:
             self._queryObj["$filter"] = filter
 
 
 
 class ComplexEventQuery(_QueryCore):
-    def __init__(self, query):
+    def __init__(self,
+                query,
+                minSentiment=None,
+                maxSentiment=None):
         """
         create an event query using a complex query
         @param query: an instance of CombinedQuery or BaseQuery to use to find events that match the conditions
@@ -213,4 +244,12 @@ class ComplexEventQuery(_QueryCore):
         super(ComplexEventQuery, self).__init__()
 
         assert isinstance(query, (CombinedQuery, BaseQuery)), "query parameter was not a CombinedQuery or BaseQuery instance"
+        filter = {}
+        if minSentiment != None:
+            filter["minSentiment"] = minSentiment
+        if maxSentiment != None:
+            filter["maxSentiment"] = maxSentiment
+
+        if len(filter) > 0:
+            self._queryObj["$filter"] = filter
         self._queryObj["$query"] = query.getQuery()

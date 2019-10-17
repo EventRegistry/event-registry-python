@@ -9,7 +9,6 @@ from eventregistry.QueryEvent import *
 from eventregistry.QueryArticles import *
 from eventregistry.QueryArticle import *
 from eventregistry.QueryStory import *
-from eventregistry.Correlations import *
 from eventregistry.Counts import *
 from eventregistry.DailyShares import *
 from eventregistry.Info import *

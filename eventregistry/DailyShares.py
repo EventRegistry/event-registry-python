@@ -30,7 +30,7 @@ class GetTopSharedArticles(QueryParamsBase):
 
 
     def _getPath(self):
-        return "/json/article"
+        return "/api/v1/article"
 
 
 # get top shared events for today or any other day
@@ -53,4 +53,4 @@ class GetTopSharedEvents(QueryParamsBase):
 
 
     def _getPath(self):
-        return "/json/event"
+        return "/api/v1/event"

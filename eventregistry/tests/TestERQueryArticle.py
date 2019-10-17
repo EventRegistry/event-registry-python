@@ -1,6 +1,6 @@
 ﻿import unittest
 from eventregistry import *
-from .DataValidator import DataValidator
+from eventregistry.tests.DataValidator import DataValidator
 
 class TestQueryArticle(DataValidator):
 

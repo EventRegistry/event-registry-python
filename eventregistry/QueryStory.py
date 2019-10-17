@@ -17,7 +17,7 @@ class QueryStory(Query):
 
 
     def _getPath(self):
-        return "/json/story"
+        return "/api/v1/story"
 
 
     def queryByUri(self, uriOrUriList):
@@ -118,17 +118,33 @@ class RequestStoryArticleTrend(RequestStory):
 
 class RequestStorySimilarStories(RequestStory):
     """
-    return a list of similar stories
-    """
+        compute and return a list of similar stories
+        @param conceptInfoList: array of concepts and their importance, e.g. [{ "uri": "http://en.wikipedia.org/wiki/Barack_Obama", "wgt": 100 }, ...]
+        @param count: number of similar stories to return (at most 50)
+        @param dateStart: what can be the oldest date of the similar stories
+        @param dateEnd: what can be the newest date of the similar stories
+        @param addArticleTrendInfo: for the returned stories compute how they were trending (intensity of reporting) in different time periods
+        @param aggrHours: time span that is used as a unit when computing the trending info
+        @param returnInfo: what details should be included in the returned information
+        """
     def __init__(self,
-                 count = 50,                    # number of similar stories to return
-                 source = "concept",            # how to compute similarity. Options: concept cca
-                 maxDayDiff = sys.maxsize,       # what is the maximum time difference between the similar stories and this one
-                 returnInfo = ReturnInfo()):
+                conceptInfoList,
+                count=50,                   # number of similar stories to return
+                dateStart = None,           # what can be the oldest date of the similar stories
+                dateEnd = None,             # what can be the newest date of the similar stories
+                lang = [],
+                returnInfo = ReturnInfo()):
         assert count <= 50
+        assert isinstance(conceptInfoList, list)
+        self.action = "getSimilarStories"
+        self.concepts = json.dumps(conceptInfoList)
+        self.storiesCount = count
+        if dateStart != None:
+            self.dateStart = QueryParamsBase.encodeDate(dateStart)
+        if dateEnd != None:
+            self.dateEnd = QueryParamsBase.encodeDate(dateEnd)
+        if len(lang) > 0:
+            self.lang = lang
+        # setting resultType since we have to, but it's actually ignored on the backend
         self.resultType = "similarStories"
-        self.similarStoriesCount = count
-        self.similarStoriesSource = source
-        if maxDayDiff != sys.maxsize:
-            self.similarStoriesMaxDayDiff = maxDayDiff
         self.__dict__.update(returnInfo.getParams("similarStories"))

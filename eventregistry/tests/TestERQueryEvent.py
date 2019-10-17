@@ -1,6 +1,6 @@
 ﻿import unittest, sys
 from eventregistry import *
-from .DataValidator import DataValidator
+from eventregistry.tests.DataValidator import DataValidator
 
 class TestQueryEvent(DataValidator):
 
@@ -138,28 +138,10 @@ class TestQueryEvent(DataValidator):
             addArticleTrendInfo = True, returnInfo = self.returnInfo))
         res = self.er.execQuery(q)
 
-        for event in list(res.values()):
-            if "newEventUri" in event:
+        for simEvent in res.get("events", {}).get("results", []):
+            if "newEventUri" in simEvent:
                 continue
-            self.assertIsNotNone(event.get("similarEvents"), "Expected to see 'similarEvents'")
-            for simEvent in event.get("similarEvents").get("results"):
-                self.ensureValidEvent(simEvent, "testSimilarEvents")
-            self.assertIsNotNone(event.get("similarEvents").get("trends"), "Expected to see a 'trends' property")
-
-
-    def testSimilarStories(self):
-        q = QueryEvent(self.getValidEvent())
-        q.setRequestedResult(RequestEventSimilarStories(
-            [{ "uri": "http://en.wikipedia.org/wiki/Barack_Obama", "wgt": 100 }, { "uri": "http://en.wikipedia.org/wiki/Donald_Trump", "wgt": 80 }],
-            returnInfo = self.returnInfo))
-        res = self.er.execQuery(q)
-
-        for event in list(res.values()):
-            if "newEventUri" in event:
-                continue
-            self.assertIsNotNone(event.get("similarStories"), "Expected to see 'similarStories'")
-            for simStory in event.get("similarStories").get("results"):
-                self.ensureValidStory(simStory, "testSimilarStories")
+            self.ensureValidEvent(simEvent, "testSimilarEvents")
 
 
     def testEventArticlesIterator(self):

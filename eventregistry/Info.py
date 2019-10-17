@@ -29,7 +29,7 @@ class GetSourceInfo(QueryParamsBase):
 
 
     def _getPath(self):
-        return "/json/source"
+        return "/api/v1/source"
 
 
 
@@ -50,7 +50,7 @@ class GetConceptInfo(QueryParamsBase):
 
 
     def _getPath(self):
-        return "/json/concept"
+        return "/api/v1/concept"
 
 
 
@@ -76,7 +76,7 @@ class GetCategoryInfo(QueryParamsBase):
 
 
     def _getPath(self):
-        return "/json/category"
+        return "/api/v1/category"
 
 
 
@@ -100,9 +100,9 @@ class GetSourceStats(QueryParamsBase):
 
 
     def _getPath(self):
-        return "/json/source"
+        return "/api/v1/source"
 
 
     def queryByUri(self, uriOrUriList):
         """ get stats about one or more sources specified by their uris """
-        self.queryParams["uri"] = uriOrUriList;
+        self.queryParams["uri"] = uriOrUriList

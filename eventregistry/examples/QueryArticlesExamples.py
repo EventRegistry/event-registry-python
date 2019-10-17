@@ -34,7 +34,8 @@ res = er.execQuery(q)
 q = QueryArticles(keywords = QueryItems.OR(["Barack Obama", "Trump"]))
 q.setRequestedResult(RequestArticlesInfo(count = 30,
     returnInfo = ReturnInfo(
-        articleInfo = ArticleInfoFlags(duplicateList = True, concepts = True, categories = True, location = True, image = True))))
+        articleInfo=ArticleInfoFlags(duplicateList=True, concepts=True, categories=True, location=True, image=True),
+        conceptInfo=ConceptInfoFlags(trendingScore=True))))
 res = er.execQuery(q)
 
 

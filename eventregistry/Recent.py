@@ -31,7 +31,7 @@ class GetRecentEvents(QueryParamsBase):
 
 
     def _getPath(self):
-        return "/json/minuteStreamEvents"
+        return "/api/v1/minuteStreamEvents"
 
 
     def getUpdates(self):
@@ -76,7 +76,7 @@ class GetRecentArticles(QueryParamsBase):
 
 
     def _getPath(self):
-        return "/json/minuteStreamArticles"
+        return "/api/v1/minuteStreamArticles"
 
 
     def getUpdates(self):

@@ -1,6 +1,6 @@
 ﻿import unittest, time
 import eventregistry as ER
-from .DataValidator import DataValidator
+from eventregistry.tests.DataValidator import DataValidator
 
 class TestAnalytics(DataValidator):
 
@@ -81,7 +81,7 @@ class TestAnalytics(DataValidator):
         analytics.trainTopicAddDocument(uri, "Emmanuel Macron’s climate commitment to “make this planet great again” has come under attack after his environment minister dramatically quit, saying the French president was not doing enough on climate and other environmental goals.")
         analytics.trainTopicAddDocument(uri, "Theresa May claimed that a no-deal Brexit “wouldn’t be the end of the world” as she sought to downplay a controversial warning made by Philip Hammond last week that it would cost £80bn in extra borrowing and inhibit long-term economic growth.")
         # finish training of the topic
-        ret = analytics.trainTopicFinishTraining(uri, ignoreConceptTypes="wiki")
+        ret = analytics.trainTopicGetTrainedTopic(uri, ignoreConceptTypes="wiki")
         assert ret and "topic" in ret
         topic = ret["topic"]
         assert "concepts" in topic and len(topic["concepts"]) > 0

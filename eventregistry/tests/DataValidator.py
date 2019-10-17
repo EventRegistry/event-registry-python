@@ -11,19 +11,19 @@ class DataValidator(unittest.TestCase):
         super(DataValidator, self).__init__(*args, **kwargs)
 
         # load settings from the current folder. use different instance than for regular ER requests
-        currPath = os.path.split(__file__)[0]
+        currPath = os.path.split(os.path.realpath(__file__))[0]
         settPath = os.path.join(currPath, "settings.json")
         self.er = EventRegistry(verboseOutput = True, settingsFName = settPath, allowUseOfArchive = False, minDelayBetweenRequests=0)
 
-        self.articleInfo = ArticleInfoFlags(bodyLen = -1, concepts = True, storyUri = True, duplicateList = True, originalArticle = True, categories = True,
-                links = True, videos = True, image = True, location = True, extractedDates = True, socialScore = True, sentiment = True)
-        self.sourceInfo = SourceInfoFlags(title = True, description = True, location = True, ranking = True, image = True, articleCount = True, socialMedia = True, sourceGroups = True)
+        self.articleInfo = ArticleInfoFlags(bodyLen = -1, concepts = True, storyUri = True, originalArticle = True, categories = True,
+                links = True, videos = True, image = True, location = True, extractedDates = True, socialScore = True, sentiment = True, includeArticleDuplicateList = True)
+        self.sourceInfo = SourceInfoFlags(title = True, description = True, location = True, ranking = True, image = True, socialMedia = True)
         self.conceptInfo = ConceptInfoFlags(type=["entities"], lang = ["eng", "spa"], synonyms = True, image = True, description = True,
-                conceptClassMembership = True, maxConceptsPerType = 50)
+                includeConceptConceptClassMembership = True, maxConceptsPerType = 50)
         self.locationInfo = LocationInfoFlags(wikiUri = True, label = True, geoNamesId = True, geoLocation = True, population = True,
                 countryArea = True, countryDetails = True, countryContinent = True,
                 placeFeatureCode = True, placeCountry = True)
-        self.categoryInfo = CategoryInfoFlags(parentUri = True, childrenUris = True)
+        self.categoryInfo = CategoryInfoFlags(includeCategoryParentUri = True, includeCategoryChildrenUris = True)
         self.eventInfo = EventInfoFlags(commonDates = True, stories = True, socialScore = True, imageCount = 2)
         self.storyInfo = StoryInfoFlags(categories = True, date = True, concepts = True, title = True, summary = True,
                                         medoidArticle = True, commonDates = True, socialScore = True, imageCount = 2)
@@ -48,7 +48,7 @@ class DataValidator(unittest.TestCase):
 
 
     def ensureValidSource(self, source, testName):
-        for prop in ["uri", "title", "description", "image", "thumbImage", "favicon", "location", "ranking", "articleCount", "sourceGroups", "socialMedia"]:
+        for prop in ["uri", "title", "description", "image", "thumbImage", "favicon", "location", "ranking", "socialMedia"]:
             self.assertTrue(prop in source, "Property '%s' was expected in source for test %s" % (prop, testName))
 
 

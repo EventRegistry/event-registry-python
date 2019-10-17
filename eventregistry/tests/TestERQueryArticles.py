@@ -1,11 +1,14 @@
 ﻿import unittest, math
 from eventregistry import *
-from .DataValidator import DataValidator
+from eventregistry.tests.DataValidator import DataValidator
+
 
 class TestQueryArticles(DataValidator):
 
     def createQuery(self):
-        q = QueryArticles(conceptUri = self.er.getConceptUri("Obama"))
+        conceptUri = self.er.getConceptUri("Obama")
+        self.assertTrue(conceptUri != None)
+        q = QueryArticles(conceptUri = conceptUri)
         return q
 
 
@@ -26,12 +29,16 @@ class TestQueryArticles(DataValidator):
 
 
     def testArticleUriWgtList(self):
-        iter = QueryArticlesIter(conceptUri=self.er.getConceptUri("germany"))
+        conceptUri = self.er.getConceptUri("germany")
+        self.assertTrue(conceptUri != None)
+        iter = QueryArticlesIter(conceptUri=conceptUri)
         expectedCount = iter.count(self.er)
 
         countPerPage = 20000
         pages = int(math.ceil(expectedCount / float(countPerPage)))
-        q = QueryArticles(conceptUri=self.er.getConceptUri("germany"))
+        conceptUri = self.er.getConceptUri("germany")
+        self.assertTrue(conceptUri != None)
+        q = QueryArticles(conceptUri=conceptUri)
         items = []
         for page in range(1, pages+1):
             q.setRequestedResult(RequestArticlesUriWgtList(page = page, count = countPerPage))
@@ -42,7 +49,7 @@ class TestQueryArticles(DataValidator):
 
         lastWgt = None
         for item in items:
-            wgt = item.split(":")[1]
+            wgt = int(item.split(":")[1])
             if lastWgt == None: lastWgt = wgt
             else:
                 assert lastWgt >= wgt
@@ -245,7 +252,11 @@ class TestQueryArticles(DataValidator):
 
 
     def testEventListWithCombinedSearch1(self):
-        q = QueryArticles(keywords="germany", lang = ["eng", "deu"], conceptUri = [self.er.getConceptUri("Merkel")], categoryUri = self.er.getCategoryUri("Business"))
+        merkelUri = self.er.getConceptUri("Merkel")
+        businessUri = self.er.getCategoryUri("business")
+        self.assertTrue(merkelUri != None)
+        self.assertTrue(businessUri != None)
+        q = QueryArticles(keywords="germany", lang = ["eng", "deu"], conceptUri = [merkelUri], categoryUri = businessUri)
         q.setRequestedResult(RequestArticlesInfo(count = 30, returnInfo = self.returnInfo))
         res = self.er.execQuery(q)
         self.validateGeneralArticleList(res)
@@ -253,8 +264,8 @@ class TestQueryArticles(DataValidator):
         q2 = QueryArticles(
             keywords="germany",
             lang = ["eng", "deu"],
-            conceptUri = self.er.getConceptUri("Merkel"),
-            categoryUri = self.er.getCategoryUri("Business"))
+            conceptUri = merkelUri,
+            categoryUri = businessUri)
         q2.setRequestedResult(RequestArticlesInfo(count = 30, returnInfo = self.returnInfo))
         res2 = self.er.execQuery(q2)
         self.validateGeneralArticleList(res2)
@@ -267,8 +278,10 @@ class TestQueryArticles(DataValidator):
 
     def testConceptTrends(self):
         q = self.createQuery()
+        obamaUri = self.er.getConceptUri("obama")
+        trumpUri = self.er.getConceptUri("trump")
         q.setRequestedResult(RequestArticlesConceptTrends(
-            conceptUris = [self.er.getConceptUri("Obama"), self.er.getConceptUri("Trump")],
+            conceptUris = [obamaUri, trumpUri],
             returnInfo = self.returnInfo))
         res = self.er.execQuery(q)
 
@@ -384,6 +397,8 @@ class TestQueryArticles(DataValidator):
     def testQuery1(self):
         obamaUri = self.er.getConceptUri("Obama")
         LAsourceUri = self.er.getNewsSourceUri("latimes")
+        self.assertTrue(obamaUri != None)
+        self.assertTrue(LAsourceUri != None)
         iter = QueryArticlesIter(keywords = "trump", conceptUri = obamaUri, sourceUri = LAsourceUri)
         for article in iter.execQuery(self.er, returnInfo = self.returnInfo, maxItems = 500):
             self.ensureArticleHasConcept(article, obamaUri)
@@ -395,6 +410,9 @@ class TestQueryArticles(DataValidator):
         obamaUri = self.er.getConceptUri("Obama")
         LAsourceUri = self.er.getNewsSourceUri("latimes")
         businessCatUri = self.er.getCategoryUri("business")
+        self.assertTrue(obamaUri != None)
+        self.assertTrue(LAsourceUri != None)
+        self.assertTrue(businessCatUri != None)
         iter = QueryArticlesIter(conceptUri = obamaUri, sourceUri = LAsourceUri, categoryUri = businessCatUri)
         for article in iter.execQuery(self.er, returnInfo = self.returnInfo, maxItems = 500):
             self.ensureArticleHasCategory(article, businessCatUri)
@@ -412,6 +430,14 @@ class TestQueryArticles(DataValidator):
         srcDailyCallerUri = self.er.getNewsSourceUri("daily caller")
         srcAawsatUri = self.er.getNewsSourceUri("aawsat")
         srcSvodkaUri = self.er.getNewsSourceUri("svodka")
+
+        self.assertTrue(obamaUri != None)
+        self.assertTrue(politicsUri != None)
+        self.assertTrue(chinaUri != None)
+        self.assertTrue(unitedStatesUri != None)
+        self.assertTrue(srcDailyCallerUri != None)
+        self.assertTrue(srcAawsatUri != None)
+        self.assertTrue(srcSvodkaUri != None)
 
         catBusinessUri = self.er.getCategoryUri("business")
         catPoliticsUri = self.er.getCategoryUri("politics")
@@ -437,6 +463,49 @@ class TestQueryArticles(DataValidator):
 
             self.ensureArticleHasNotCategory(article, catBusinessUri)
             self.ensureArticleHasNotCategory(article, catPoliticsUri)
+
+
+    #
+    # test if we download all content
+    #
+    def testGetAllArticlesCount(self):
+        returnInfo = ReturnInfo(articleInfo = ArticleInfoFlags(body = 0))
+        unitedStatesUri = self.er.getConceptUri("united states")
+        self.assertTrue(unitedStatesUri != None)
+        iter = QueryArticlesIter(conceptUri=unitedStatesUri, lang="eng", dataType=["news", "blog"])
+
+        total = iter.count(self.er)
+        uniqueUris = set()
+        for article in iter.execQuery(self.er, returnInfo=returnInfo):
+            if article["uri"] in uniqueUris:
+                print("again seeing " + article["uri"])
+            uniqueUris.add(article["uri"])
+        self.assertTrue(total == len(uniqueUris))
+
+
+    def testGetAllArticlesCount2(self):
+        returnInfo = ReturnInfo(articleInfo = ArticleInfoFlags(body = 0))
+        twitterUri = self.er.getConceptUri("twitter")
+        self.assertTrue(twitterUri != None)
+        iter = QueryArticlesIter(conceptUri=twitterUri, lang="eng", dataType=["news", "blog"])
+
+        total = iter.count(self.er)
+        uniqueUris = set()
+        for article in iter.execQuery(self.er, returnInfo=returnInfo, sortBy="date"):
+            if article["uri"] in uniqueUris:
+                print("again seeing " + article["uri"])
+            uniqueUris.add(article["uri"])
+        self.assertTrue(total == len(uniqueUris))
+
+        total = iter.count(self.er)
+        uniqueUris = set()
+        for article in iter.execQuery(self.er, returnInfo=returnInfo, sortBy="rel"):
+            if article["uri"] in uniqueUris:
+                print("again seeing " + article["uri"])
+            uniqueUris.add(article["uri"])
+        self.assertTrue(total == len(uniqueUris))
+
+
 
 
 

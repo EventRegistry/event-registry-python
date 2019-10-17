@@ -55,6 +55,14 @@ class ReturnInfoFlagsBase(object):
         return dict
 
 
+    def _addKwdArgs(self, kwdArgs):
+        for name, val in kwdArgs.items():
+            if isinstance(val, bool):
+                self._setFlag(name, val, not val)
+            else:
+                self._setVal(name, val)
+
+
 class ArticleInfoFlags(ReturnInfoFlagsBase):
     """"
     What information about an article should be returned by the API call
@@ -76,7 +84,6 @@ class ArticleInfoFlags(ReturnInfoFlagsBase):
     @param location: the geographic location that the event mentioned in the article is about
     @param dates: the dates when the articles was crawled and the date when it was published (based on the rss feed date)
     @param extractedDates: the list of dates found mentioned in the article
-    @param duplicateList: the list of articles that are a copy of this article
     @param originalArticle: if the article is a duplicate, this will provide information about the original article
     @param storyUri: uri of the story (cluster) to which the article belongs
     """
@@ -98,9 +105,9 @@ class ArticleInfoFlags(ReturnInfoFlagsBase):
                  location = False,
                  dates = False,
                  extractedDates = False,
-                 duplicateList = False,
                  originalArticle = False,
-                 storyUri = False):
+                 storyUri=False,
+                 **kwdArgs):
         self._setVal("articleBodyLen", bodyLen, -1)
         self._setFlag("includeArticleBasicInfo", basicInfo, True)
         self._setFlag("includeArticleTitle", title, True)
@@ -118,9 +125,9 @@ class ArticleInfoFlags(ReturnInfoFlagsBase):
         self._setFlag("includeArticleLocation", location, False)
         self._setFlag("includeArticleDates", dates, False)
         self._setFlag("includeArticleExtractedDates", extractedDates, False)
-        self._setFlag("includeArticleDuplicateList", duplicateList, False)
         self._setFlag("includeArticleOriginalArticle", originalArticle, False)
         self._setFlag("includeArticleStoryUri", storyUri, False)
+        self._addKwdArgs(kwdArgs)
 
 
 
@@ -153,7 +160,8 @@ class StoryInfoFlags(ReturnInfoFlagsBase):
                 infoArticle = False,
                 commonDates = False,
                 socialScore = False,
-                imageCount = 0):
+                imageCount = 0,
+                **kwdArgs):
         self._setFlag("includeStoryBasicStats", basicStats, True)
         self._setFlag("includeStoryLocation", location, True)
         self._setFlag("includeStoryDate", date, False)
@@ -166,6 +174,7 @@ class StoryInfoFlags(ReturnInfoFlagsBase):
         self._setFlag("includeStoryCommonDates", commonDates, False)
         self._setFlag("includeStorySocialScore", socialScore, False)
         self._setVal("storyImageCount", imageCount, 0)
+        self._addKwdArgs(kwdArgs)
 
 
 
@@ -178,7 +187,7 @@ class EventInfoFlags(ReturnInfoFlagsBase):
     @param articleCounts: return the number of articles that are assigned to the event
     @param concepts: return information about the main concepts related to the event
     @param categories: return information about the categories related to the event
-    @param location: return the location where the event occured
+    @param location: return the location where the event occurred
     @param date: return information about the date of the event
     @param commonDates: return the dates that were commonly found in the articles about the event
     @param infoArticle: return for each language the article from which we have extracted the summary and title for event for that language
@@ -198,7 +207,8 @@ class EventInfoFlags(ReturnInfoFlagsBase):
                 infoArticle = False,
                 stories = False,
                 socialScore = False,
-                imageCount = 0):
+                imageCount = 0,
+                **kwdArgs):
         self._setFlag("includeEventTitle", title, True)
         self._setFlag("includeEventSummary", summary, True)
         self._setFlag("includeEventArticleCounts", articleCounts, True)
@@ -212,6 +222,7 @@ class EventInfoFlags(ReturnInfoFlagsBase):
         self._setFlag("includeEventStories", stories, False)
         self._setFlag("includeEventSocialScore", socialScore, False)
         self._setVal("eventImageCount", imageCount, 0)
+        self._addKwdArgs(kwdArgs)
 
 
 
@@ -224,9 +235,7 @@ class SourceInfoFlags(ReturnInfoFlagsBase):
     @param location: geographic location of the news source
     @param ranking: a set of rankings for the news source
     @param image: different images associated with the news source
-    @param articleCount: the number of articles from this news source that are stored in Event Registry
     @param socialMedia: different social media accounts used by the news source
-    @param sourceGroups: info about the names of the source groups to which the source belongs to
     """
     def __init__(self,
                 title = True,
@@ -234,17 +243,15 @@ class SourceInfoFlags(ReturnInfoFlagsBase):
                 location = False,
                 ranking = False,
                 image = False,
-                articleCount = False,
                 socialMedia = False,
-                sourceGroups = False):
+                **kwdArgs):
         self._setFlag("includeSourceTitle", title, True)
         self._setFlag("includeSourceDescription", description, False)
         self._setFlag("includeSourceLocation", location, False)
         self._setFlag("includeSourceRanking", ranking, False)
         self._setFlag("includeSourceImage", image, False)
-        self._setFlag("includeSourceArticleCount", articleCount, False)
         self._setFlag("includeSourceSocialMedia", socialMedia, False)
-        self._setFlag("includeSourceSourceGroups", sourceGroups, False)
+        self._addKwdArgs(kwdArgs)
 
 
 
@@ -252,24 +259,13 @@ class CategoryInfoFlags(ReturnInfoFlagsBase):
     """
     What information about a category should be returned by the API call
 
-    @param parentUri: uri of the parent category
-    @param childrenUris: the list of category uris that are children of the category
     @param trendingScore: information about how the category is currently trending. The score is computed as Pearson residual by comparing the trending of the category in last 2 days compared to last 14 days
-    @param trendingHistory: information about the number of times articles were assigned to the category in last 30 days
-    @param trendingSource: source of information to be used when computing the trending score for a category. Relevant only if CategoryInfoFlags.trendingScore == True or CategoryInfoFlags.trendingHistory == True. Valid options: news, social
-    @type trendingSource: string | list
     """
     def __init__(self,
-                parentUri = False,
-                childrenUris = False,
                 trendingScore = False,
-                trendingHistory = False,
-                trendingSource = "news"):
-        self._setFlag("includeCategoryParentUri", parentUri, False)
-        self._setFlag("includeCategoryChildrenUris", childrenUris, False)
+                **kwdArgs):
         self._setFlag("includeCategoryTrendingScore", trendingScore, False)
-        self._setFlag("includeCategoryTrendingHistory", trendingHistory, False)
-        self._setVal("categoryTrendingSource", trendingSource, "news")
+        self._addKwdArgs(kwdArgs)
 
 
 
@@ -283,39 +279,29 @@ class ConceptInfoFlags(ReturnInfoFlagsBase):
     @param synonyms: return concept synonyms (if any)
     @param image: provide an image associated with the concept
     @param description: description of the concept
-    @param conceptClassMembership: provide a list of concept classes where the concept is a member
-    @param conceptClassMembershipFull: provide a list of concept classes and their parents where the concept is a member
     @param trendingScore: information about how the concept is currently trending. The score is computed as Pearson residual by comparing the trending of the concept in last 2 days compared to last 14 days
-    @param trendingHistory: information about the number of times articles were assigned to the concept in last 30 days
-    @param trendingSource: source of information to be used when computing the trending score for a concept. Relevant only if ConceptInfoFlags.trendingScore == True or ConceptInfoFlags.trendingHistory == True. Valid options: news, social
-    @param totalCount: the total number of times the concept appeared in the news articles
-    @type conceptType: str | list
-    @type conceptLang: str | list
-    @type trendingSource: string | list
+    @type type: str | list
+    @type lang: str | list
     """
     def __init__(self,
-                 type = "concepts",
-                 lang = "eng",
-                 label = True,
-                 synonyms = False,
-                 image = False,
-                 description = False,
-                 conceptClassMembership = False,
-                 conceptClassMembershipFull = False,
-                 totalCount = False,
-                 trendingSource = "news",
-                 maxConceptsPerType = 20):
+                type = "concepts",
+                lang = "eng",
+                label = True,
+                synonyms = False,
+                image = False,
+                description = False,
+                trendingScore = False,
+                maxConceptsPerType = 20,
+                **kwdArgs):
         self._setVal("conceptType", type, "concepts")
         self._setVal("conceptLang", lang, "eng")
         self._setFlag("includeConceptLabel", label, True)
         self._setFlag("includeConceptSynonyms", synonyms, False)
         self._setFlag("includeConceptImage", image, False)
         self._setFlag("includeConceptDescription", description, False)
-        self._setFlag("includeConceptConceptClassMembership", conceptClassMembership, False)
-        self._setFlag("includeConceptConceptClassMembershipFull", conceptClassMembershipFull, False)
-        self._setFlag("includeConceptTotalCount", totalCount, False)
-        self._setVal("conceptTrendingSource", trendingSource, "news")
+        self._setFlag("includeConceptTrendingScore", trendingScore, False)
         self._setVal("maxConceptsPerType", maxConceptsPerType, 20)
+        self._addKwdArgs(kwdArgs)
 
 
 
@@ -338,18 +324,19 @@ class LocationInfoFlags(ReturnInfoFlagsBase):
     @param placeCountry: return information about the country where the place is located
     """
     def __init__(self,
-                 label = True,
-                 wikiUri = False,
-                 geoNamesId = False,
-                 population = False,
-                 geoLocation = False,
+                label = True,
+                wikiUri = False,
+                geoNamesId = False,
+                population = False,
+                geoLocation = False,
 
-                 countryArea = False,
-                 countryDetails = False,
-                 countryContinent = False,
+                countryArea = False,
+                countryDetails = False,
+                countryContinent = False,
 
-                 placeFeatureCode = False,
-                 placeCountry = True):
+                placeFeatureCode = False,
+                placeCountry = True,
+                **kwdArgs):
         self._setFlag("includeLocationLabel", label, True)
         self._setFlag("includeLocationWikiUri", wikiUri, False)
         self._setFlag("includeLocationGeoNamesId", geoNamesId, False)
@@ -362,6 +349,7 @@ class LocationInfoFlags(ReturnInfoFlagsBase):
 
         self._setFlag("includeLocationPlaceFeatureCode", placeFeatureCode, False)
         self._setFlag("includeLocationPlaceCountry", placeCountry, True)
+        self._addKwdArgs(kwdArgs)
 
 
 
@@ -374,9 +362,11 @@ class ConceptClassInfoFlags(ReturnInfoFlagsBase):
     """
     def __init__(self,
                 parentLabels = True,
-                concepts = False):
+                concepts = False,
+                **kwdArgs):
         self._setFlag("includeConceptClassParentLabels", parentLabels, True)
         self._setFlag("includeConceptClassConcepts", concepts, False)
+        self._addKwdArgs(kwdArgs)
 
 
 
@@ -388,10 +378,12 @@ class ConceptFolderInfoFlags(ReturnInfoFlagsBase):
     @param owner: return information about the owner of the concept folder
     """
     def __init__(self,
-                 definition = False,
-                 owner = False):
+                definition = False,
+                owner = False,
+                **kwdArgs):
         self._setFlag("includeConceptFolderDefinition", definition, False)
         self._setFlag("includeConceptFolderOwner", owner, False)
+        self._addKwdArgs(kwdArgs)
 
 
 

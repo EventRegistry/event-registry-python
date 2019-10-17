@@ -1,5 +1,22 @@
 # Change Log
 
+## [v8.7]() (2019-10-16)
+
+**Added**
+
+- added `EventRegistry.getServiceStatus()` method that reports status of the services
+- `ComplexQueryArticles` and `ComplexQueryEvents` classes now support in the constructor additional filters like `minSentiment`, `maxSentiment`, `minFacebookShares`, `endSourceRankPercentile`, etc.
+
+**Updated**
+
+- `ReturnInfo` classes (`ArticleInfoFlags`, `ConceptInfoFlags`, ...) were updated. Some obsolete parameters were removed and we have added support for kwdargs to supply some very rarely used parameters directly.
+- `TopicPage.getArticles` and `TopicPage.getEvents` methods now support also `**kwargs` so that you can now also provide other available parameters that are less frequently used.
+
+**Removed**
+
+- removed `EventRegistry.suggestCustomConcepts()` and `EventRegistry.getCustomConceptUri()` methods. Not used anymore since we are not supporting anymore the correlation feature.
+
+
 ## [v8.6]() (2019-02-22)
 
 **Added**

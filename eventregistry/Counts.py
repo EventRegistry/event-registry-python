@@ -9,7 +9,7 @@ from eventregistry.ReturnInfo import *
 
 class CountsBase(QueryParamsBase):
     def _getPath(self):
-        return "/json/counters"
+        return "/api/v1/counters"
 
 
 

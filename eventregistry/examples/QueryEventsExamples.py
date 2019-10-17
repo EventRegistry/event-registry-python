@@ -27,7 +27,7 @@ for event in q.execQuery(er, sortBy = "date", maxItems = 300):
 # find events that:
 # * are about Barack Obama
 # * that were covered also by New York Times
-# * that occured in 2015
+# * that occurred in 2015
 # * return events sorted by how much were articles in the event shared on social media (instead of relevance, which is default)
 q = QueryEvents(
     conceptUri = obamaUri,
@@ -85,7 +85,7 @@ res = er.execQuery(q)
 # OTHER AGGREGATES (INSTEAD OF OBTAINING EVENTS)
 #
 
-# find events that occured in Germany between 2014-04-16 and 2014-04-28
+# find events that occurred in Germany between 2014-04-16 and 2014-04-28
 # from the resulting events produce:
 q = QueryEvents(
     locationUri = er.getLocationUri("Germany"),
@@ -95,7 +95,7 @@ q = QueryEvents(
 q.setRequestedResult(RequestEventsConceptAggr())
 res = er.execQuery(q)
 
-# find where the events occured geographically
+# find where the events occurred geographically
 q.setRequestedResult(RequestEventsLocAggr())
 res = er.execQuery(q)
 
@@ -123,7 +123,7 @@ res = er.execQuery(q)
 # examples of complex queries that combine various OR and AND operators
 #
 
-# events that are occured between 2017-02-05 and 2017-02-06 and are not about business
+# events that are occurred between 2017-02-05 and 2017-02-06 and are not about business
 businessUri = er.getCategoryUri("Business")
 q = QueryEvents.initWithComplexQuery("""
 {

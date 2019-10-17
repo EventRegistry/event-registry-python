@@ -46,12 +46,12 @@ class GetEventForText(QueryParamsBase):
         compute the list of most similar events for the given text
         """
         params = { "lang": lang, "text": text, "topClustersCount": self._nrOfEventsToReturn }
-        res = self._er.jsonRequest("/json/getEventForText/enqueueRequest", params)
+        res = self._er.jsonRequest("/api/v1/getEventForText/enqueueRequest", params)
 
         requestId = res["requestId"]
         for i in range(10):
             time.sleep(1)   # sleep for 1 second to wait for the clustering to perform computation
-            res = self._er.jsonRequest("/json/getEventForText/testRequest", { "requestId": requestId })
+            res = self._er.jsonRequest("/api/v1/getEventForText/testRequest", { "requestId": requestId })
             if isinstance(res, list) and len(res) > 0:
                 return res
         return None

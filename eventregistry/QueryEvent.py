@@ -23,7 +23,7 @@ class QueryEvent(Query):
 
 
     def _getPath(self):
-        return "/json/event"
+        return "/api/v1/event"
 
 
     def setRequestedResult(self, requestEvent):
@@ -87,11 +87,11 @@ class QueryEventArticlesIter(QueryEvent, six.Iterator):
         @param authorUri: find articles that were written by a specific author.
             If multiple authors should be considered use QueryItems.OR() to provide the list of authors.
             Author uri for a given author name can be obtained using EventRegistry.getAuthorUri().
-        @param locationUri: find articles that describe something that occured at a particular location.
+        @param locationUri: find articles that describe something that occurred at a particular location.
             If value can be a string or a list of strings provided in QueryItems.OR().
             Location uri can either be a city or a country. Location uri for a given name can be obtained using EventRegistry.getLocationUri().
         @param dateStart: find articles that were written on or after dateStart. Date should be provided in YYYY-MM-DD format, datetime.time or datetime.datetime.
-        @param dateEnd: find articles that occured before or on dateEnd. Date should be provided in YYYY-MM-DD format, datetime.time or datetime.datetime.
+        @param dateEnd: find articles that occurred before or on dateEnd. Date should be provided in YYYY-MM-DD format, datetime.time or datetime.datetime.
 
         @param dateMentionStart: limit the event articles to those that explicitly mention a date that is equal or greater than dateMentionStart.
         @param dateMentionEnd: limit the event articles to those that explicitly mention a date that is lower or equal to dateMentionEnd.
@@ -306,13 +306,13 @@ class RequestEventArticles(RequestEvent, QueryParamsBase):
         @param authorUri: find articles that were written by a specific author.
             If multiple authors should be considered use QueryItems.OR() to provide the list of authors.
             Author uri for a given author name can be obtained using EventRegistry.getAuthorUri().
-        @param locationUri: find articles that describe something that occured at a particular location.
+        @param locationUri: find articles that describe something that occurred at a particular location.
             If value can be a string or a list of strings provided in QueryItems.OR().
             Location uri can either be a city or a country. Location uri for a given name can be obtained using EventRegistry.getLocationUri().
         @param lang: find articles that are written in the specified language.
             If more than one language is specified, resulting articles has to be written in *any* of the languages.
         @param dateStart: find articles that were written on or after dateStart. Date should be provided in YYYY-MM-DD format, datetime.time or datetime.datetime.
-        @param dateEnd: find articles that occured before or on dateEnd. Date should be provided in YYYY-MM-DD format, datetime.time or datetime.datetime.
+        @param dateEnd: find articles that occurred before or on dateEnd. Date should be provided in YYYY-MM-DD format, datetime.time or datetime.datetime.
 
         @param dateMentionStart: limit the event articles to those that explicitly mention a date that is equal or greater than dateMentionStart.
         @param dateMentionEnd: limit the event articles to those that explicitly mention a date that is lower or equal to dateMentionEnd.
@@ -461,56 +461,32 @@ class RequestEventSimilarEvents(RequestEvent):
     def __init__(self,
                 conceptInfoList,
                 count = 50,                    # number of similar events to return
-                maxDayDiff = sys.maxsize,      # what is the maximum time difference between the similar events and this one
+                dateStart = None,              # what can be the oldest date of the similar events
+                dateEnd = None,                # what can be the newest date of the similar events
                 addArticleTrendInfo = False,   # add info how the articles in the similar events are distributed over time
                 aggrHours = 6,                 # if similarEventsAddArticleTrendInfo == True then this is the aggregating window
-                includeSelf = False,           # should the info about the event itself be included among the results
                 returnInfo = ReturnInfo()):
         """
         compute and return a list of similar events
         @param conceptInfoList: array of concepts and their importance, e.g. [{ "uri": "http://en.wikipedia.org/wiki/Barack_Obama", "wgt": 100 }, ...]
         @param count: number of similar events to return (at most 50)
-        @param maxDayDiff: find only those events that are at most maxDayDiff days apart from the tested event
+        @param dateStart: what can be the oldest date of the similar events
+        @param dateEnd: what can be the newest date of the similar events
         @param addArticleTrendInfo: for the returned events compute how they were trending (intensity of reporting) in different time periods
         @param aggrHours: time span that is used as a unit when computing the trending info
-        @param includeSel: include also the tested event in the results (True or False)
         @param returnInfo: what details should be included in the returned information
         """
         assert count <= 50
         assert isinstance(conceptInfoList, list)
-        self.resultType = "similarEvents"
-        self.similarEventsConcepts = json.dumps(conceptInfoList)
-        self.similarEventsCount = count
-        if maxDayDiff != sys.maxsize:
-            self.similarEventsMaxDayDiff = maxDayDiff
+        self.action = "getSimilarEvents"
+        self.concepts = json.dumps(conceptInfoList)
+        self.eventsCount = count
+        if dateStart != None:
+            self.dateStart = QueryParamsBase.encodeDate(dateStart)
+        if dateEnd != None:
+            self.dateEnd = QueryParamsBase.encodeDate(dateEnd)
         self.similarEventsAddArticleTrendInfo = addArticleTrendInfo
         self.similarEventsAggrHours = aggrHours
-        self.similarEventsIncludeSelf = includeSelf
-        self.__dict__.update(returnInfo.getParams("similarEvents"))
-
-
-
-class RequestEventSimilarStories(RequestEvent):
-    def __init__(self,
-                conceptInfoList,
-                count = 50,                # number of similar stories to return
-                lang = ["eng"],            # in which language should be the similar stories
-                maxDayDiff = sys.maxsize,   # what is the maximum time difference between the similar stories and this one
-                returnInfo = ReturnInfo()):
-        """
-        return a list of similar stories (clusters)
-        @param conceptInfoList: array of concepts and their importance, e.g. [{ "uri": "http://en.wikipedia.org/wiki/Barack_Obama", "wgt": 100 }, ...]
-        @param count: number of similar stories to return (at most 50)
-        @param lang: in what language(s) should be the returned stories
-        @param maxDayDiff: maximum difference in days between the returned stories and the tested event
-        @param returnInfo: what details should be included in the returned information
-        """
-        assert count <= 50
-        assert isinstance(conceptInfoList, list)
-        self.resultType = "similarStories"
-        self.similarStoriesConcepts = json.dumps(conceptInfoList)
-        self.similarStoriesCount = count
-        self.similarStoriesLang = lang
-        if maxDayDiff != sys.maxsize:
-            self.similarStoriesMaxDayDiff = maxDayDiff
-        self.__dict__.update(returnInfo.getParams("similarStories"))
+        # setting resultType since we have to, but it's actually ignored on the backend
+        self.resultType = "similarEvents"
+        self.__dict__.update(returnInfo.getParams(""))

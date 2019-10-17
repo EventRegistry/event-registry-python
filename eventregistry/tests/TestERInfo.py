@@ -1,7 +1,7 @@
 ﻿import unittest
 from eventregistry import *
 
-from .DataValidator import DataValidator
+from eventregistry.tests.DataValidator import DataValidator
 
 class TestInfo(DataValidator):
     def test_sourcesByUri(self):
@@ -12,9 +12,7 @@ class TestInfo(DataValidator):
                                          description = True,
                                          location = True,
                                          ranking = True,
-                                         articleCount = True,
-                                         socialMedia = True,
-                                         sourceGroups = True)))
+                                         socialMedia = True)))
         res = self.er.execQuery(q)
         self.assertEqual(len(res), len(sourceUriList), "Expected different number of sources")
         for item in list(res.values()):
@@ -22,8 +20,6 @@ class TestInfo(DataValidator):
             self.assertIsNotNone(item.get("title"), "Source title is missing")
             self.assertIsNotNone(item.get("description"), "Source description is missing")
             self.assertIsNotNone(item.get("ranking"), "Source ranking is missing")
-            self.assertIsNotNone(item.get("articleCount"), "Source articleCount is missing")
-            self.assertIsNotNone(item.get("sourceGroups"), "Source sourceGroups is missing")
             self.assertIsNotNone(item.get("socialMedia"), "Source socialMedia is missing")
 
 
@@ -37,9 +33,8 @@ class TestInfo(DataValidator):
                                            synonyms = True,
                                            image = True,
                                            description = True,
-                                           conceptClassMembership = True,
-                                           conceptClassMembershipFull = True,
-                                           trendingSource = ["news", "social"])))
+                                           includeConceptConceptClassMembership = True,
+                                           includeConceptConceptClassMembershipFull = True)))
 
         res = self.er.execQuery(q)
         self.assertEqual(len(res), len(uriList), "Expected 10 concepts")
@@ -63,8 +58,8 @@ class TestInfo(DataValidator):
         catUriList = [category.get("uri") for category in categories]
         q = GetCategoryInfo(catUriList, returnInfo = ReturnInfo(
             categoryInfo = CategoryInfoFlags(
-                parentUri = True,
-                childrenUris = True)))
+                includeCategoryParentUri = True,
+                includeCategoryChildrenUris = True)))
         res = self.er.execQuery(q)
         self.assertEqual(len(res), len(catUriList), "Expected 10 categories")
         for item in list(res.values()):

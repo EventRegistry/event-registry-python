@@ -1,7 +1,7 @@
 from __future__ import print_function
 import unittest, math, random
 from eventregistry import *
-from .DataValidator import DataValidator
+from eventregistry.tests.DataValidator import DataValidator
 from eventregistryadmin import EventRegistryAdmin
 
 
@@ -11,11 +11,12 @@ class TestQueryPaging(DataValidator):
         """
         test pages 1 and 2, download uriwgtlist and then test in reverse
         """
-        q = QueryArticles(sourceUri="bbc.co.uk", dateStart="2018-04-22", dateEnd="2018-04-25")
+        q = QueryArticles(sourceUri="bbc.co.uk", dateStart="2017-02-04", dateEnd="2017-02-06")
         q.setRequestedResult(RequestArticlesUriWgtList(page=1, count=1000))
         res = self.er.execQuery(q)
         arr = res.get("uriWgtList", {}).get("results", [])
         uriList = self.er.getUriFromUriWgt(arr)
+        self.assertTrue(len(uriList) > 0)
 
         q.setRequestedResult(RequestArticlesUriWgtList(page=2, count=1000))
         res = self.er.execQuery(q)
@@ -25,7 +26,7 @@ class TestQueryPaging(DataValidator):
         erAdmin = EventRegistryAdmin(self.er._host)
         erAdmin.clearCache()
 
-        q = QueryArticles(sourceUri="bbc.co.uk", dateStart="2018-04-22", dateEnd="2018-04-25")
+        q = QueryArticles(sourceUri="bbc.co.uk", dateStart="2017-02-04", dateEnd="2017-02-06")
         q.setRequestedResult(RequestArticlesUriWgtList(page=2, count=1000))
         res = self.er.execQuery(q)
         arr = res.get("uriWgtList", {}).get("results", [])
@@ -47,18 +48,19 @@ class TestQueryPaging(DataValidator):
         """
         test pages 1 and 2, download items
         """
-        q = QueryArticles(sourceUri="bbc.co.uk", dateStart="2018-04-22", dateEnd="2018-04-25")
+        q = QueryArticles(sourceUri="bbc.co.uk", dateStart="2017-02-04", dateEnd="2017-02-06")
         q.setRequestedResult(RequestArticlesInfo(page=1, count=100))
         res = self.er.execQuery(q)
         arr = res.get("articles", {}).get("results", [])
         uriList = [art["uri"] for art in arr]
+        self.assertTrue(len(uriList) > 0)
 
         q.setRequestedResult(RequestArticlesInfo(page=2, count=100))
         res = self.er.execQuery(q)
         arr = res.get("articles", {}).get("results", [])
         uriList.extend([art["uri"] for art in arr])
 
-        q = QueryArticles(sourceUri="bbc.co.uk", dateStart="2018-04-22", dateEnd="2018-04-25")
+        q = QueryArticles(sourceUri="bbc.co.uk", dateStart="2017-02-04", dateEnd="2017-02-06")
         q.setRequestedResult(RequestArticlesInfo(page=2, count=100))
         res = self.er.execQuery(q)
         arr = res.get("articles", {}).get("results", [])
@@ -80,7 +82,7 @@ class TestQueryPaging(DataValidator):
         """
         download all pages of results through articles directly and using uriWgtList - in both cases should be the same
         """
-        q = QueryArticles(sourceUri="bbc.co.uk", dateStart="2018-04-22", dateEnd="2018-04-25")
+        q = QueryArticles(sourceUri="bbc.co.uk", dateStart="2017-02-04", dateEnd="2017-02-06")
         page = 1
         uriList = []
         while True:
@@ -95,7 +97,7 @@ class TestQueryPaging(DataValidator):
         erAdmin = EventRegistryAdmin(self.er._host)
         erAdmin.clearCache()
 
-        q = QueryArticles(sourceUri="bbc.co.uk", dateStart="2018-04-22", dateEnd="2018-04-25")
+        q = QueryArticles(sourceUri="bbc.co.uk", dateStart="2017-02-04", dateEnd="2017-02-06")
         page = 1
         uriList2 = []
         while True:
@@ -107,6 +109,7 @@ class TestQueryPaging(DataValidator):
             if len(arr) == 0:
                 break
 
+        self.assertTrue(len(uriList) > 0)
         uriList.sort()
         uriList2.sort()
         self.assertTrue(len(uriList) == len(uriList2))
@@ -118,9 +121,10 @@ class TestQueryPaging(DataValidator):
         """
         download article pages in random order of pages and in the normal order
         """
-        iter = QueryArticlesIter(sourceUri="bbc.co.uk", dateStart="2018-04-10", dateEnd="2018-04-16")
+        iter = QueryArticlesIter(sourceUri="bbc.co.uk", dateStart="2017-02-04", dateEnd="2017-02-06")
         # number of matches
         count = iter.count(self.er)
+        self.assertTrue(count > 0)
         print("\nFound %d articles" % count)
 
         # try again with a randomized order of pages
@@ -129,7 +133,7 @@ class TestQueryPaging(DataValidator):
         pages = list(range(1, int(1 + math.ceil(count / 100))))
         random.shuffle(pages)
         for page in pages:
-            q = QueryArticles(sourceUri="bbc.co.uk", dateStart="2018-04-10", dateEnd="2018-04-16")
+            q = QueryArticles(sourceUri="bbc.co.uk", dateStart="2017-02-04", dateEnd="2017-02-06")
             q.setRequestedResult(RequestArticlesInfo(page=page, count=100))
             res = self.er.execQuery(q)
             c = res.get("articles", {}).get("totalResults", -1)
@@ -149,7 +153,7 @@ class TestQueryPaging(DataValidator):
         totArts = 0
         pages = list(range(1, int(1 + math.ceil(count / 100))))
         for page in pages:
-            q = QueryArticles(sourceUri="bbc.co.uk", dateStart="2018-04-10", dateEnd="2018-04-16")
+            q = QueryArticles(sourceUri="bbc.co.uk", dateStart="2017-02-04", dateEnd="2017-02-06")
             q.setRequestedResult(RequestArticlesInfo(page=page, count=100))
             res = self.er.execQuery(q)
             c = res.get("articles", {}).get("totalResults", -1)
@@ -164,9 +168,10 @@ class TestQueryPaging(DataValidator):
 
 
     def testDownloadingOfArticleUris(self):
-        iter = QueryArticlesIter(conceptUri= self.er.getConceptUri("Trump"), dateStart = "2016-12-01", dateEnd = "2017-01-01")
+        iter = QueryArticlesIter(conceptUri= self.er.getConceptUri("Trump"), dateStart="2017-02-04", dateEnd="2017-02-06")
         # number of matches
         count = iter.count(self.er)
+        self.assertTrue(count > 0)
         print("\nFound %d articles by uris\nDownloading page:" % count, end="")
 
         # try again with a randomized order of pages
@@ -177,7 +182,7 @@ class TestQueryPaging(DataValidator):
         random.shuffle(pages)
         for page in pages:
             print("%d" % page, end=", ")
-            q = QueryArticles(conceptUri= self.er.getConceptUri("Trump"), dateStart = "2016-12-01", dateEnd = "2017-01-01")
+            q = QueryArticles(conceptUri= self.er.getConceptUri("Trump"), dateStart="2017-02-04", dateEnd="2017-02-06")
             q.setRequestedResult(RequestArticlesUriWgtList(page=page, count=10000))
             res = self.er.execQuery(q)
             c = res.get("uriWgtList", {}).get("totalResults", -1)
@@ -198,7 +203,7 @@ class TestQueryPaging(DataValidator):
         pages = list(range(1, int(1 + math.ceil(count / 10000))))
         for page in pages:
             print("%d" % page, end=", ")
-            q = QueryArticles(conceptUri= self.er.getConceptUri("Trump"), dateStart = "2016-12-01", dateEnd = "2017-01-01")
+            q = QueryArticles(conceptUri= self.er.getConceptUri("Trump"), dateStart="2017-02-04", dateEnd="2017-02-06")
             q.setRequestedResult(RequestArticlesUriWgtList(page=page, count=10000))
             res = self.er.execQuery(q)
             c = res.get("uriWgtList", {}).get("totalResults", -1)
@@ -213,9 +218,10 @@ class TestQueryPaging(DataValidator):
 
 
     def testDownloadingOfArticles(self):
-        iter = QueryArticlesIter(conceptUri= self.er.getConceptUri("peace"), dateStart = "2018-04-18", dateEnd = "2018-04-22")
+        iter = QueryArticlesIter(conceptUri= self.er.getConceptUri("peace"), dateStart="2017-02-04", dateEnd="2017-02-06")
         # number of matches
         count = iter.count(self.er)
+        self.assertTrue(count > 0)
         print("\nFound %d articles\nDownloading page:" % count, end="")
 
         # try again with a randomized order of pages
@@ -226,7 +232,7 @@ class TestQueryPaging(DataValidator):
         random.shuffle(pages)
         for page in pages:
             print("%d" % page, end=", ")
-            q = QueryArticles(conceptUri= self.er.getConceptUri("peace"), dateStart = "2018-04-18", dateEnd = "2018-04-22")
+            q = QueryArticles(conceptUri= self.er.getConceptUri("peace"), dateStart="2017-02-04", dateEnd="2017-02-06")
             q.setRequestedResult(RequestArticlesInfo(page=page, count=100))
             res = self.er.execQuery(q)
             c = res.get("articles", {}).get("totalResults", -1)
@@ -247,7 +253,7 @@ class TestQueryPaging(DataValidator):
         pages = list(range(1, int(1 + math.ceil(count / 100))))
         for page in pages:
             print("%d" % page, end=", ")
-            q = QueryArticles(conceptUri= self.er.getConceptUri("peace"), dateStart = "2018-04-18", dateEnd = "2018-04-22")
+            q = QueryArticles(conceptUri= self.er.getConceptUri("peace"), dateStart="2017-02-04", dateEnd="2017-02-06")
             q.setRequestedResult(RequestArticlesInfo(page=page, count=100))
             res = self.er.execQuery(q)
             c = res.get("articles", {}).get("totalResults", -1)
@@ -263,9 +269,10 @@ class TestQueryPaging(DataValidator):
 
 
     def testDownloadingOfEventUris(self):
-        iter = QueryEventsIter(conceptUri= self.er.getConceptUri("Trump"), dateStart = "2016-10-01", dateEnd = "2016-11-01")
+        iter = QueryEventsIter(conceptUri= self.er.getConceptUri("Trump"), dateStart="2017-02-04", dateEnd="2017-02-06")
         # number of matches
         count = iter.count(self.er)
+        self.assertTrue(count > 0)
         print("\nFound %d events by uris\nDownloading page:" % count, end="")
 
         # try again with a randomized order of pages
@@ -275,7 +282,7 @@ class TestQueryPaging(DataValidator):
         random.shuffle(pages)
         for page in pages:
             print("%d" % page, end=", ")
-            q = QueryEvents(conceptUri= self.er.getConceptUri("Trump"), dateStart = "2016-10-01", dateEnd = "2016-11-01")
+            q = QueryEvents(conceptUri= self.er.getConceptUri("Trump"), dateStart="2017-02-04", dateEnd="2017-02-06")
             q.setRequestedResult(RequestEventsUriWgtList(page=page, count=1000))
             res = self.er.execQuery(q)
             c = res.get("uriWgtList", {}).get("totalResults", -1)
@@ -294,7 +301,7 @@ class TestQueryPaging(DataValidator):
         pages = list(range(1, int(1 + math.ceil(count / 1000))))
         for page in pages:
             print("%d" % page, end=", ")
-            q = QueryEvents(conceptUri= self.er.getConceptUri("Trump"), dateStart = "2016-10-01", dateEnd = "2016-11-01")
+            q = QueryEvents(conceptUri= self.er.getConceptUri("Trump"), dateStart="2017-02-04", dateEnd="2017-02-06")
             q.setRequestedResult(RequestEventsUriWgtList(page=page, count=1000))
             res = self.er.execQuery(q)
             c = res.get("uriWgtList", {}).get("totalResults", -1)
@@ -308,9 +315,10 @@ class TestQueryPaging(DataValidator):
 
 
     def testDownloadingOfEvents(self):
-        iter = QueryEventsIter(conceptUri= self.er.getConceptUri("peace"), dateStart = "2018-03-25", dateEnd = "2018-04-05")
+        iter = QueryEventsIter(conceptUri= self.er.getConceptUri("peace"), dateStart="2017-02-04", dateEnd="2017-02-06")
         # number of matches
         count = iter.count(self.er)
+        self.assertTrue(count > 0)
         print("\nFound %d events\nDownloading page:" % count, end="")
 
         # try again with a randomized order of pages
@@ -320,7 +328,7 @@ class TestQueryPaging(DataValidator):
         random.shuffle(pages)
         for page in pages:
             print("%d" % page, end=", ")
-            q = QueryEvents(conceptUri= self.er.getConceptUri("peace"), dateStart = "2018-03-25", dateEnd = "2018-04-05")
+            q = QueryEvents(conceptUri= self.er.getConceptUri("peace"), dateStart="2017-02-04", dateEnd="2017-02-06")
             q.setRequestedResult(RequestEventsInfo(page=page, count=50))
             res = self.er.execQuery(q)
             c = res.get("events", {}).get("totalResults", -1)
@@ -335,7 +343,7 @@ class TestQueryPaging(DataValidator):
         pages = list(range(1, int(1 + math.ceil(count / 50))))
         for page in pages:
             print("%d" % page, end=", ")
-            q = QueryEvents(conceptUri= self.er.getConceptUri("peace"), dateStart = "2018-03-25", dateEnd = "2018-04-05")
+            q = QueryEvents(conceptUri= self.er.getConceptUri("peace"), dateStart="2017-02-04", dateEnd="2017-02-06")
             q.setRequestedResult(RequestEventsInfo(page=page, count=50))
             res = self.er.execQuery(q)
             c = res.get("events", {}).get("totalResults", -1)

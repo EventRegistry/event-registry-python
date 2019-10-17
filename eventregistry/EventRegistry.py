@@ -7,6 +7,7 @@ import threading
 from eventregistry.Base import *
 from eventregistry.ReturnInfo import *
 
+
 class EventRegistry(object):
     """
     the core object that is used to access any data in Event Registry
@@ -55,7 +56,7 @@ class EventRegistry(object):
 
         # if there is a settings.json file in the directory then try using it to load the API key from it
         # and to read the host name from it (if custom host is not specified)
-        currPath = os.path.split(__file__)[0]
+        currPath = os.path.split(os.path.realpath(__file__))[0]
         settFName = settingsFName or os.path.join(currPath, "settings.json")
         if apiKey:
             print("using user provided API key for making requests")
@@ -155,6 +156,11 @@ class EventRegistry(object):
         return self.jsonRequest("/api/v1/usage", { "apiKey": self._apiKey })
 
 
+    def getServiceStatus(self):
+        """return the status of various services used in Event Registry pipeline"""
+        return self.jsonRequest("/api/v1/getServiceStatus", {"apiKey": self._apiKey})
+
+
     def getUrl(self, query):
         """
         return the url that can be used to get the content that matches the query
@@ -221,7 +227,7 @@ class EventRegistry(object):
     def jsonRequest(self, methodUrl, paramDict, customLogFName = None, allowUseOfArchive = None):
         """
         make a request for json data. repeat it _repeatFailedRequestCount times, if they fail (indefinitely if _repeatFailedRequestCount = -1)
-        @param methodUrl: url on er (e.g. "/json/article")
+        @param methodUrl: url on er (e.g. "/api/v1/article")
         @param paramDict: optional object containing the parameters to include in the request (e.g. { "articleUri": "123412342" }).
         @param customLogFName: potentially a file name where the request information can be logged into
         @param allowUseOfArchive: potentially override the value set when constructing EventRegistry class.
@@ -279,9 +285,6 @@ class EventRegistry(object):
                 # remember the available requests
                 self._dailyAvailableRequests = tryParseInt(self.getLastHeader("x-ratelimit-limit", ""), val = -1)
                 self._remainingAvailableRequests = tryParseInt(self.getLastHeader("x-ratelimit-remaining", ""), val = -1)
-                if self._verboseOutput:
-                    timeSec = int(self.getLastHeader("x-response-time", "0")) / 1000.
-                    self.printConsole("request took %.3f sec. Response size: %.2fKB" % (timeSec, len(respInfo.text) / 1024.0))
                 try:
                     returnData = respInfo.json()
                     break
@@ -291,6 +294,8 @@ class EventRegistry(object):
             except Exception as ex:
                 self._lastException = ex
                 print("Event Registry exception while executing the request:")
+                if self._verboseOutput:
+                    print("endpoint: %s\nParams: %s" % (url, json.dumps(paramDict, indent=4)))
                 self.printLastException()
                 # in case of invalid input parameters, don't try to repeat the search
                 if respInfo != None and respInfo.status_code == 530:
@@ -320,8 +325,9 @@ class EventRegistry(object):
         while self._repeatFailedRequestCount < 0 or tryCount < self._repeatFailedRequestCount:
             tryCount += 1
             try:
+                url = self._hostAnalytics + methodUrl
                 # make the request
-                respInfo = self._reqSession.post(self._hostAnalytics + methodUrl, json = paramDict)
+                respInfo = self._reqSession.post(url, json = paramDict)
                 # remember the returned headers
                 self._headers = respInfo.headers
                 # if we got some error codes print the error and repeat the request after a short time period
@@ -332,6 +338,8 @@ class EventRegistry(object):
             except Exception as ex:
                 self._lastException = ex
                 print("Event Registry Analytics exception while executing the request:")
+                if self._verboseOutput:
+                    print("endpoint: %s\nParams: %s" % (url, json.dumps(paramDict, indent=4)))
                 self.printLastException()
                 # in case of invalid input parameters, don't try to repeat the action
                 if respInfo != None and respInfo.status_code == 530:
@@ -362,7 +370,7 @@ class EventRegistry(object):
         params = { "prefix": prefix, "source": sources, "lang": lang, "conceptLang": conceptLang, "page": page, "count": count}
         params.update(returnInfo.getParams())
         params.update(kwargs)
-        return self.jsonRequest("/json/suggestConceptsFast", params)
+        return self.jsonRequest("/api/v1/suggestConceptsFast", params)
 
 
     def suggestCategories(self, prefix, page = 1, count = 20, returnInfo = ReturnInfo(), **kwargs):
@@ -377,7 +385,7 @@ class EventRegistry(object):
         params = { "prefix": prefix, "page": page, "count": count }
         params.update(returnInfo.getParams())
         params.update(kwargs)
-        return self.jsonRequest("/json/suggestCategoriesFast", params)
+        return self.jsonRequest("/api/v1/suggestCategoriesFast", params)
 
 
     def suggestNewsSources(self, prefix, dataType = ["news", "pr", "blog"], page = 1, count = 20, **kwargs):
@@ -391,7 +399,7 @@ class EventRegistry(object):
         assert page > 0, "page parameter should be above 0"
         params = {"prefix": prefix, "dataType": dataType, "page": page, "count": count}
         params.update(kwargs)
-        return self.jsonRequest("/json/suggestSourcesFast", params)
+        return self.jsonRequest("/api/v1/suggestSourcesFast", params)
 
 
     def suggestSourceGroups(self, prefix, page = 1, count = 20, **kwargs):
@@ -404,7 +412,7 @@ class EventRegistry(object):
         assert page > 0, "page parameter should be above 0"
         params = { "prefix": prefix, "page": page, "count": count }
         params.update(kwargs)
-        return self.jsonRequest("/json/suggestSourceGroups", params)
+        return self.jsonRequest("/api/v1/suggestSourceGroups", params)
 
 
     def suggestLocations(self, prefix, sources = ["place", "country"], lang = "eng", count = 20, countryUri = None, sortByDistanceTo = None, returnInfo = ReturnInfo(), **kwargs):
@@ -426,7 +434,7 @@ class EventRegistry(object):
             assert len(sortByDistanceTo) == 2, "The sortByDistanceTo should contain two float numbers"
             params["closeToLat"] = sortByDistanceTo[0]
             params["closeToLon"] = sortByDistanceTo[1]
-        return self.jsonRequest("/json/suggestLocationsFast", params)
+        return self.jsonRequest("/api/v1/suggestLocationsFast", params)
 
 
     def suggestLocationsAtCoordinate(self, latitude, longitude, radiusKm, limitToCities = False, lang = "eng", count = 20, ignoreNonWiki = True, returnInfo = ReturnInfo(), **kwargs):
@@ -446,7 +454,7 @@ class EventRegistry(object):
         params = { "action": "getLocationsAtCoordinate", "lat": latitude, "lon": longitude, "radius": radiusKm, "limitToCities": limitToCities, "count": count, "lang": lang }
         params.update(returnInfo.getParams())
         params.update(kwargs)
-        return self.jsonRequest("/json/suggestLocationsFast", params)
+        return self.jsonRequest("/api/v1/suggestLocationsFast", params)
 
 
     def suggestSourcesAtCoordinate(self, latitude, longitude, radiusKm, count = 20, **kwargs):
@@ -461,7 +469,7 @@ class EventRegistry(object):
         assert isinstance(longitude, (int, float)), "The 'longitude' should be a number"
         params = {"action": "getSourcesAtCoordinate", "lat": latitude, "lon": longitude, "radius": radiusKm, "count": count}
         params.update(kwargs)
-        return self.jsonRequest("/json/suggestSourcesFast", params)
+        return self.jsonRequest("/api/v1/suggestSourcesFast", params)
 
 
     def suggestSourcesAtPlace(self, conceptUri, dataType = "news", page = 1, count = 20, **kwargs):
@@ -474,7 +482,7 @@ class EventRegistry(object):
         """
         params = {"action": "getSourcesAtPlace", "conceptUri": conceptUri, "page": page, "count": count, "dataType": dataType}
         params.update(kwargs)
-        return self.jsonRequest("/json/suggestSourcesFast", params)
+        return self.jsonRequest("/api/v1/suggestSourcesFast", params)
 
 
     def suggestAuthors(self, prefix, page = 1, count = 20, **kwargs):
@@ -487,7 +495,7 @@ class EventRegistry(object):
         assert page > 0, "page parameter should be above 0"
         params = {"prefix": prefix, "page": page, "count": count}
         params.update(kwargs)
-        return self.jsonRequest("/json/suggestAuthorsFast", params)
+        return self.jsonRequest("/api/v1/suggestAuthorsFast", params)
 
 
 
@@ -506,24 +514,7 @@ class EventRegistry(object):
         params = { "prefix": prefix, "lang": lang, "conceptLang": conceptLang, "source": source, "page": page, "count": count }
         params.update(returnInfo.getParams())
         params.update(kwargs)
-        return self.jsonRequest("/json/suggestConceptClasses", params)
-
-
-    def suggestCustomConcepts(self, prefix, lang = "eng", conceptLang = "eng", page = 1, count = 20, returnInfo = ReturnInfo(), **kwargs):
-        """
-        return a list of custom concepts that contain the given prefix. Custom concepts are the things (indicators, stock prices, ...) for which we import daily trending values that can be obtained using GetCounts class
-        @param prefix: input text that should be contained in the concept name
-        @param lang: language in which the prefix is specified
-        @param conceptLang: languages in which the label(s) for the concepts are to be returned
-        @param page:  page of the results (1, 2, ...)
-        @param count: number of returned suggestions
-        @param returnInfo: what details about categories should be included in the returned information
-        """
-        assert page > 0, "page parameter should be above 0"
-        params = { "prefix": prefix, "lang": lang, "conceptLang": conceptLang, "page": page, "count": count }
-        params.update(returnInfo.getParams())
-        params.update(kwargs)
-        return self.jsonRequest("/json/suggestCustomConcepts", params)
+        return self.jsonRequest("/api/v1/suggestConceptClasses", params)
 
 
     #
@@ -617,26 +608,13 @@ class EventRegistry(object):
         @param returnInfo: what details about the concept should be included in the returned information
         """
         params = returnInfo.getParams()
-        params.update({"uri": conceptUri, "action": "getInfo" })
-        return self.jsonRequest("/json/concept", params)
-
-
-    def getCustomConceptUri(self, label, lang = "eng"):
-        """
-        return a custom concept uri that is the best match for the given custom concept label
-        note that for the custom concepts we don't have a sensible way of sorting the candidates that match the label
-        if multiple candidates match the label we cannot guarantee which one will be returned
-        @param label: label of the custom concept
-        """
-        matches = self.suggestCustomConcepts(label, lang = lang)
-        if matches != None and isinstance(matches, list) and len(matches) > 0 and "uri" in matches[0]:
-            return matches[0]["uri"]
-        return None
+        params.update({"uri": conceptUri })
+        return self.jsonRequest("/api/v1/concept/getInfo", params)
 
 
     def getAuthorUri(self, authorName):
         """
-        return author uri that that is the best match for the given author name (and potentially source url)
+        return author uri that is the best match for the given author name (and potentially source url)
         if there are multiple matches for the given author name, they are sorted based on the number of articles they have written (from most to least frequent)
         @param authorName: partial or full name of the author, potentially also containing the source url (e.g. "george brown nytimes")
         """
@@ -666,18 +644,18 @@ class EventRegistry(object):
         @returns returns dict where key is article url and value is either None if no match found or a string with article URI.
         """
         assert isinstance(articleUrls, (six.string_types, list)), "Expected a single article url or a list of urls"
-        return self.jsonRequest("/json/articleMapper", { "articleUrl": articleUrls })
+        return self.jsonRequest("/api/v1/articleMapper", { "articleUrl": articleUrls })
 
 
     def getSourceGroups(self):
         """return the list of URIs of all known source groups"""
-        ret = self.jsonRequest("/json/sourceGroup", { "action": "getSourceGroups" })
+        ret = self.jsonRequest("/api/v1/sourceGroup/getSourceGroups", {})
         return ret
 
 
     def getSourceGroup(self, sourceGroupUri):
         """return info about the source group"""
-        ret = self.jsonRequest("/json/sourceGroup", { "action": "getSourceGroupInfo", "uri": sourceGroupUri })
+        ret = self.jsonRequest("/api/v1/sourceGroup/getSourceGroupInfo", { "uri": sourceGroupUri })
         return ret
 
 

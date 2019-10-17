@@ -56,12 +56,13 @@ class TopicPage(QueryParamsBase):
         params = {
             "action": "getTopicPageJson",
             "includeConceptDescription": True,
+            "includeConceptImage": True,
             "includeTopicPageDefinition": True,
             "includeTopicPageOwner": True,
             "uri": uri
         }
         self.topicPage = self._createEmptyTopicPage()
-        self.concept = self.eventRegistry.jsonRequest("/json/topicPage", params)
+        self.concept = self.eventRegistry.jsonRequest("/api/v1/topicPage", params)
         self.topicPage.update(self.concept.get("topicPage", {}))
 
 
@@ -335,7 +336,9 @@ class TopicPage(QueryParamsBase):
                 count=100,
                 sortBy = "rel",
                 sortByAsc = False,
-                returnInfo=ReturnInfo()):
+                dataType = "news",
+                returnInfo=ReturnInfo(),
+                **kwargs):
         """
         return a list of articles that match the topic page
         @param page: which page of the results to return (default: 1)
@@ -353,11 +356,12 @@ class TopicPage(QueryParamsBase):
             "articlesCount": count,
             "articlesSortBy": sortBy,
             "articlesSortByAsc": sortByAsc,
-            "page": page,
+            "articlesPage": page,
             "topicPage": json.dumps(self.topicPage)
         }
         params.update(returnInfo.getParams("articles"))
-        return self.eventRegistry.jsonRequest("/json/article", params)
+        params.update(kwargs)
+        return self.eventRegistry.jsonRequest("/api/v1/article", params)
 
 
     def getEvents(self,
@@ -365,7 +369,8 @@ class TopicPage(QueryParamsBase):
                 count=50,
                 sortBy = "rel",
                 sortByAsc = False,
-                returnInfo=ReturnInfo()):
+                returnInfo=ReturnInfo(),
+                **kwargs):
         """
         return a list of events that match the topic page
         @param page: which page of the results to return (default: 1)
@@ -381,8 +386,9 @@ class TopicPage(QueryParamsBase):
             "resultType": "events",
             "dataType": self.topicPage["dataType"],
             "eventsCount": count,
-            "page": page,
+            "eventsPage": page,
             "topicPage": json.dumps(self.topicPage)
         }
         params.update(returnInfo.getParams("events"))
-        return self.eventRegistry.jsonRequest("/json/event", params)
+        params.update(kwargs)
+        return self.eventRegistry.jsonRequest("/api/v1/event", params)

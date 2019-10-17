@@ -3,7 +3,7 @@ test that setting return flags to false actually returns just the minimum set of
 """
 import unittest
 from eventregistry import *
-from .DataValidator import DataValidator
+from eventregistry.tests.DataValidator import DataValidator
 
 class TestReturnInfo(DataValidator):
 

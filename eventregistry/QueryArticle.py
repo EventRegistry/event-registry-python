@@ -18,7 +18,7 @@ class QueryArticle(Query):
 
 
     def _getPath(self):
-        return "/json/article"
+        return "/api/v1/article"
 
 
     @staticmethod

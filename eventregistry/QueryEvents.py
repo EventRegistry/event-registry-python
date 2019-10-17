@@ -63,13 +63,13 @@ class QueryEvents(Query):
         @param authorUri: find events that contain one or more articles that have been written by a specific author.
             If multiple authors should be considered use QueryItems.OR() or QueryItems.AND() to provide the list of authors.
             Author uri for a given author name can be obtained using EventRegistry.getAuthorUri().
-        @param locationUri: find events that occured at a particular location.
+        @param locationUri: find events that occurred at a particular location.
             If value can be a string or a list of strings provided in QueryItems.OR().
             Location uri can either be a city or a country. Location uri for a given name can be obtained using EventRegistry.getLocationUri().
         @param lang: find events for which we found articles in the specified language.
             If more than one language is specified, resulting events has to be reported in *any* of the languages.
-        @param dateStart: find events that occured on or after dateStart. Date should be provided in YYYY-MM-DD format, datetime.time or datetime.datetime.
-        @param dateEnd: find events that occured before or on dateEnd. Date should be provided in YYYY-MM-DD format, datetime.time or datetime.datetime.
+        @param dateStart: find events that occurred on or after dateStart. Date should be provided in YYYY-MM-DD format, datetime.time or datetime.datetime.
+        @param dateEnd: find events that occurred before or on dateEnd. Date should be provided in YYYY-MM-DD format, datetime.time or datetime.datetime.
         @param minSentiment: minimum value of the sentiment, that the returned events should have. Range [-1, 1]. Note: setting the value will remove all events that don't have
                 a computed value for the sentiment (all events that are not reported in English language)
         @param maxSentiment: maximum value of the sentiment, that the returned events should have. Range [-1, 1]. Note: setting the value will remove all events that don't have
@@ -85,7 +85,7 @@ class QueryEvents(Query):
         @param ignoreSourceLocationUri: ignore events that have articles which been written by sources located at *any* of the specified locations
         @param ignoreSourceGroupUri: ignore events that have articles which have been written by sources in *any* of the specified source groups
         @param ignoreAuthorUri: ignore articles that were written by *any* of the specified authors
-        @param ignoreLocationUri: ignore events that occured in any of the provided locations. A location can be a city or a place
+        @param ignoreLocationUri: ignore events that occurred in any of the provided locations. A location can be a city or a place
         @param ignoreLang: ignore events that are reported in any of the provided languages
         @param keywordsLoc: what data should be used when searching using the keywords provided by "keywords" parameter. "body" (default), "title", or "body,title"
         @param ignoreKeywordsLoc: what data should be used when searching using the keywords provided by "ignoreKeywords" parameter. "body" (default), "title", or "body,title"
@@ -145,7 +145,7 @@ class QueryEvents(Query):
 
 
     def _getPath(self):
-        return "/json/event"
+        return "/api/v1/event"
 
 
     def setRequestedResult(self, requestEvents):

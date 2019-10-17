@@ -10,7 +10,7 @@ from eventregistry.ReturnInfo import *
 
 class TrendsBase(QueryParamsBase):
     def _getPath(self):
-        return "/json/trends"
+        return "/api/v1/trends"
 
 
 class GetTrendingConcepts(TrendsBase):

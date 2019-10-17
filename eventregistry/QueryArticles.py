@@ -69,13 +69,13 @@ class QueryArticles(Query):
         @param authorUri: find articles that were written by a specific author.
             If multiple authors should be considered use QueryItems.OR() to provide the list of authors.
             Author uri for a given author name can be obtained using EventRegistry.getAuthorUri().
-        @param locationUri: find articles that describe something that occured at a particular location.
+        @param locationUri: find articles that describe something that occurred at a particular location.
             If value can be a string or a list of strings provided in QueryItems.OR().
             Location uri can either be a city or a country. Location uri for a given name can be obtained using EventRegistry.getLocationUri().
         @param lang: find articles that are written in the specified language.
             If more than one language is specified, resulting articles has to be written in *any* of the languages.
         @param dateStart: find articles that were written on or after dateStart. Date should be provided in YYYY-MM-DD format, datetime.time or datetime.datetime.
-        @param dateEnd: find articles that occured before or on dateEnd. Date should be provided in YYYY-MM-DD format, datetime.time or datetime.datetime.
+        @param dateEnd: find articles that occurred before or on dateEnd. Date should be provided in YYYY-MM-DD format, datetime.time or datetime.datetime.
         @param dateMentionStart: find articles that explicitly mention a date that is equal or greater than dateMentionStart.
         @param dateMentionEnd: find articles that explicitly mention a date that is lower or equal to dateMentionEnd.
         @param keywordsLoc: where should we look when searching using the keywords provided by "keywords" parameter. "body" (default), "title", or "body,title"
@@ -87,7 +87,7 @@ class QueryArticles(Query):
         @param ignoreSourceLocationUri: ignore articles that have been written by sources located at *any* of the specified locations
         @param ignoreSourceGroupUri: ignore articles that have been written by sources in *any* of the specified source groups
         @param ignoreAuthorUri: ignore articles that were written by *any* of the specified authors
-        @param ignoreLocationUri: ignore articles that occured in any of the provided locations. A location can be a city or a place
+        @param ignoreLocationUri: ignore articles that occurred in any of the provided locations. A location can be a city or a place
         @param ignoreLang: ignore articles that are written in *any* of the provided languages
         @param ignoreKeywordsLoc: where should we look when data should be used when searching using the keywords provided by "ignoreKeywords" parameter. "body" (default), "title", or "body,title"
         @param isDuplicateFilter: some articles can be duplicates of other articles. What should be done with them. Possible values are:
@@ -180,7 +180,7 @@ class QueryArticles(Query):
 
 
     def _getPath(self):
-        return "/json/article"
+        return "/api/v1/article"
 
 
     def setRequestedResult(self, requestArticles):
@@ -287,7 +287,7 @@ class QueryArticlesIter(QueryArticles, six.Iterator):
         @param query: complex query as ComplexArticleQuery instance, string or a python dict
         """
         q = QueryArticlesIter()
-        
+
         # provided an instance of ComplexArticleQuery
         if isinstance(query, ComplexArticleQuery):
             q._setVal("query", json.dumps(query.getQuery()))
