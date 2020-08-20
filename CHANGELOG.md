@@ -1,5 +1,12 @@
 # Change Log
 
+## [v8.8]() (2020-08-20)
+
+**Added**
+
+- added filters `reportingDateStart` and `reportingDateEnd` to `QueryEvents` constructor. You can use these dates to find the events where the average date of reporting matches this date range. Note that `dateStart` and `dateEnd` will return events based on when they (supposedly) happened and it can be quite different than the reporting dates.
+- added parameters `updatesAfterNewsUri`, `updatesafterBlogUri`, `updatesAfterPrUri` to the `RequestArticlesRecentActivity` constructor. Can be used to make sure that absolutely no article is missed when using the `QueryArticles` with `RequestArticlesRecentActivity` requested result. See [this file](https://github.com/EventRegistry/event-registry-python/blob/master/eventregistry/examples/FeedOfNewArticlesExamples.py) for an example of use.
+
 ## [v8.7]() (2019-10-16)
 
 **Added**
