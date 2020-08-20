@@ -3,7 +3,9 @@ examples that illustrate how to query articles using different search options
 """
 from eventregistry import *
 
-er = EventRegistry()
+er = EventRegistry(allowUseOfArchive=False)
+# er = EventRegistry()
+
 
 # search for the phrase "Barack Obama" - both words have to appear together
 q = QueryArticles(keywords = "Barack Obama")
@@ -93,7 +95,10 @@ res = er.execQuery(q)
 q = QueryArticlesIter(
     conceptUri = er.getConceptUri("George Clooney"),
     sourceLocationUri = QueryItems.OR([er.getLocationUri("Spain"), er.getLocationUri("Los Angeles")]))
-for art in q.execQuery(er, sortBy = "sourceAlexaGlobalRank", maxItems = 500):
+for art in q.execQuery(er, sortBy="sourceAlexaGlobalRank",
+        returnInfo = ReturnInfo(
+            articleInfo=ArticleInfoFlags(concepts=True, categories=True, location=True, image=True)),
+        maxItems = 500):
     print(art["uri"])
 
 

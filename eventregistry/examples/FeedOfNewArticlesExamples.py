@@ -5,8 +5,6 @@ er = EventRegistry(logging = True)
 
 #
 # use the code below to obtain from ER the full minute by minute stream of articles added to the system
-# (from the first to the last second of the minute).
-# Note: In order to get all the data you have to make the query each minute
 #
 
 recentQ = GetRecentArticles(er, returnInfo = ReturnInfo(ArticleInfoFlags(bodyLen = -1, concepts = True, categories = True)), recentActivityArticlesMaxArticleCount = 300)
@@ -17,11 +15,14 @@ while True:
 
     # TODO: do here whatever you need to with the articleList
     for article in articleList:
-        print("Added article %s: %s" % (article["uri"], article["title"].encode("ascii", "ignore")))
+        print("Added article %s: %s" % (article["uri"], article["title"]))
+    print("Received %d articles" % len(articleList))
 
-    # wait exactly a minute until next batch of new content is ready
+    # wait a minute until next batch of new content is ready
+    # you can also sleep for longer, but if more than recentActivityArticlesMaxArticleCount articles are collected in that time,
+    # you will only receive the number specified by recentActivityArticlesMaxArticleCount parameter (by default 100)
     print("sleeping for 60 seconds...")
-    time.sleep(60.0 - ((time.time() - starttime) % 60.0))
+    time.sleep(60.0)
 
 
 #
@@ -32,6 +33,9 @@ while True:
 #
 
 starttime = time.time()
+updatesAfterNewsUri = None
+updatesafterBlogUri = None
+updatesAfterPrUri = None
 while True:
     q = QueryArticles(
         keywords="Trump",
@@ -40,24 +44,33 @@ while True:
         RequestArticlesRecentActivity(
             # download at most 2000 articles. if less of matching articles were added in last 10 minutes, less will be returned
             maxArticleCount=2000,
-            # consider articles that were published at most 10 minutes ago
-            updatesAfterMinsAgo = 10
+            # consider articles that were published after the provided uris
+            updatesAfterNewsUri = updatesAfterNewsUri,
+            updatesafterBlogUri = updatesafterBlogUri,
+            updatesAfterPrUri = updatesAfterPrUri
         ))
 
     res = er.execQuery(q)
     for article in res.get("recentActivityArticles", {}).get("activity", []):
-        print("Added article %s: %s" % (article["uri"], article["title"].encode("ascii", "ignore")))
+        print("Added article %s: %s" % (article["uri"], article["title"]))
 
+    # remember what are the latest uris of the individual data items returned
+    updatesAfterNewsUri = res.get("recentActivityArticles", {}).get("newestUri", {}).get("news")
+    updatesafterBlogUri = res.get("recentActivityArticles", {}).get("newestUri", {}).get("blog")
+    updatesAfterPrUri = res.get("recentActivityArticles", {}).get("newestUri", {}).get("pr")
 
-    # wait exactly a minute until next batch of new content is ready
+    # wait for 10 minutes until next batch of new content is ready
     print("sleeping for 10 minutes...")
-    time.sleep(10 * 60.0 - ((time.time() - starttime) % 60.0))
+    time.sleep(10 * 60.0)
 
 
 
 #
-# similar example but uses the updatesAfterTm parameter value provided in the previous calls
+# similar example but uses the updatesAfterTm parameter value provided in the previous calls. This is less
+# ideal than using updatesAfter*Uri parameters since the data could be returned from multiple matchines which
+# might not have perfectly synced clocks.
 #
+
 starttime = time.time()
 updatesAfterTm = None
 while True:

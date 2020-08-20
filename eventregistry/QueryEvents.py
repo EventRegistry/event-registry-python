@@ -17,6 +17,8 @@ class QueryEvents(Query):
                  lang = None,
                  dateStart = None,
                  dateEnd = None,
+                 reportingDateStart = None,
+                 reportingDateEnd = None,
                  minSentiment = -1,
                  maxSentiment = 1,
                  minArticlesInEvent = None,
@@ -70,6 +72,8 @@ class QueryEvents(Query):
             If more than one language is specified, resulting events has to be reported in *any* of the languages.
         @param dateStart: find events that occurred on or after dateStart. Date should be provided in YYYY-MM-DD format, datetime.time or datetime.datetime.
         @param dateEnd: find events that occurred before or on dateEnd. Date should be provided in YYYY-MM-DD format, datetime.time or datetime.datetime.
+        @param reportingDateStart: find events where the average date of the articles about this event is on or after this date. Date should be provided in YYYY-MM-DD format, datetime.time or datetime.datetime.
+        @param reportingDateEnd: find events where the average date of the articles about this event is on or before this date. Date should be provided in YYYY-MM-DD format, datetime.time or datetime.datetime.
         @param minSentiment: minimum value of the sentiment, that the returned events should have. Range [-1, 1]. Note: setting the value will remove all events that don't have
                 a computed value for the sentiment (all events that are not reported in English language)
         @param maxSentiment: maximum value of the sentiment, that the returned events should have. Range [-1, 1]. Note: setting the value will remove all events that don't have
@@ -110,6 +114,10 @@ class QueryEvents(Query):
             self._setDateVal("dateStart", dateStart)        # e.g. 2014-05-02
         if (dateEnd != None):
             self._setDateVal("dateEnd", dateEnd)            # e.g. 2014-05-02
+        if (reportingDateStart != None):
+            self._setDateVal("reportingDateStart", reportingDateStart)        # e.g. 2014-05-02
+        if (reportingDateEnd != None):
+            self._setDateVal("reportingDateEnd", reportingDateEnd)            # e.g. 2014-05-02
         if minSentiment != -1:
             assert minSentiment >= -1 and minSentiment <= 1
             self._setVal("minSentiment", minSentiment)      # e.g. -0.5

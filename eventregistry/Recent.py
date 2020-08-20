@@ -89,6 +89,11 @@ class GetRecentArticles(QueryParamsBase):
         ret = self._er.execQuery(self)
 
         if ret and "recentActivityArticles" in ret:
+            # store the latest seen uris for each requested data type
+            if "newestUri" in ret["recentActivityArticles"]:
+                for key, val in ret["recentActivityArticles"]["newestUri"].items():
+                    self.queryParams["recentActivityArticles" + key[0].upper() + key[1:] + "UpdatesAfterUri"] = val
+
             # return the latest articles
             return ret["recentActivityArticles"]["activity"]
         # or empty

@@ -22,6 +22,7 @@ class EventRegistry(object):
                  repeatFailedRequestCount = -1,
                  allowUseOfArchive = True,
                  verboseOutput = False,
+                 printHostInfo = True,
                  settingsFName = None):
         """
         @param apiKey: API key that should be used to make the requests to the Event Registry. API key is assigned to each user account and can be obtained on this page: http://eventregistry.org/me?tab=settings
@@ -33,6 +34,7 @@ class EventRegistry(object):
         @param allowUseOfArchive: default is True. Determines if the queries made should potentially be executed on the archive data. If False, all queries (regardless how the date conditions are set) will be
                 executed on data from the last 31 days. Queries executed on the archive are more expensive so set it to False if you are just interested in recent data
         @param verboseOutput: if True, additional info about query times etc will be printed to console
+        @param printHostInfo: print which urls are used as the hosts
         @param settingsFName: If provided it should be a full path to 'settings.json' file where apiKey an/or host can be loaded from. If None, we will look for the settings file in the eventregistry module folder
         """
         self._host = host
@@ -58,7 +60,7 @@ class EventRegistry(object):
         # and to read the host name from it (if custom host is not specified)
         currPath = os.path.split(os.path.realpath(__file__))[0]
         settFName = settingsFName or os.path.join(currPath, "settings.json")
-        if apiKey:
+        if apiKey and printHostInfo:
             print("using user provided API key for making requests")
 
         if os.path.exists(settFName):
@@ -67,7 +69,8 @@ class EventRegistry(object):
             self._hostAnalytics = hostAnalytics or settings.get("hostAnalytics", "http://analytics.eventregistry.org")
             # if api key is set, then use it when making the requests
             if "apiKey" in settings and not apiKey:
-                print("found apiKey in settings file which will be used for making requests")
+                if printHostInfo:
+                    print("found apiKey in settings file which will be used for making requests")
                 self._apiKey = settings["apiKey"]
         else:
             self._host = host or "http://eventregistry.org"
@@ -77,8 +80,9 @@ class EventRegistry(object):
             print("No API key was provided. You will be allowed to perform only a very limited number of requests per day.")
         self._requestLogFName = os.path.join(currPath, "requests_log.txt")
 
-        print("Event Registry host: %s" % (self._host))
-        print("Text analytics host: %s" % (self._hostAnalytics))
+        if printHostInfo:
+            print("Event Registry host: %s" % (self._host))
+            print("Text analytics host: %s" % (self._hostAnalytics))
         # check what is the version of your module compared to the latest one
         self.checkVersion()
 
@@ -298,7 +302,7 @@ class EventRegistry(object):
                     print("endpoint: %s\nParams: %s" % (url, json.dumps(paramDict, indent=4)))
                 self.printLastException()
                 # in case of invalid input parameters, don't try to repeat the search
-                if respInfo != None and respInfo.status_code == 530:
+                if respInfo != None and (respInfo.status_code == 400 or respInfo.status_code == 530 or respInfo.status_code == 204):
                     break
                 print("The request will be automatically repeated in 3 seconds...")
                 time.sleep(3)   # sleep for X seconds on error

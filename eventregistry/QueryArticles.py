@@ -172,8 +172,8 @@ class QueryArticles(Query):
         if maxSentiment != 1:
             assert maxSentiment >= -1 and maxSentiment <= 1
             self._setVal("maxSentiment", maxSentiment)
-        # always set the data type
-        self._setVal("dataType", dataType)
+        # if the user provided a custom value, then set the data type. Otherwise don't set it since the user could provide a complex query with data type values and we would
+        self._setValIfNotDefault("dataType", dataType, "news")
 
         # set the information that should be returned
         self.setRequestedResult(requestedResult or RequestArticlesInfo())
@@ -482,13 +482,11 @@ class RequestArticlesCategoryAggr(RequestArticles):
 
 class RequestArticlesSourceAggr(RequestArticles):
     def __init__(self,
-                 articlesSampleSize = 20000,
                  sourceCount = 50,
                  normalizeBySourceArts = False,
                  returnInfo = ReturnInfo()):
         """
         get aggreate of news sources of resulting articles
-        @param articlesSampleSize: on what sample of results should the aggregate be computed (at most 1000000)
         @param sourceCount: the number of top sources to return
         @param normalizeBySourceArts: some sources generate significantly more content than others which is why
             they can appear as top souce for a given query. If you want to normalize and sort the sources by the total number of
@@ -496,10 +494,8 @@ class RequestArticlesSourceAggr(RequestArticles):
             content overall, but their published content is more about the searched query.
         @param returnInfo: what details about the sources should be included in the returned information
         """
-        assert articlesSampleSize <= 1000000
         self.resultType = "sourceAggr"
         self.sourceAggrSourceCount = sourceCount
-        self.sourceAggrSampleSize = articlesSampleSize
         self.__dict__.update(returnInfo.getParams("sourceAggr"))
 
 
@@ -600,7 +596,10 @@ class RequestArticlesDateMentionAggr(RequestArticles):
 
 class RequestArticlesRecentActivity(RequestArticles):
     def __init__(self,
-                 maxArticleCount = 100,
+                 maxArticleCount=100,
+                 updatesAfterNewsUri=None,
+                 updatesafterBlogUri=None,
+                 updatesAfterPrUri=None,
                  updatesAfterTm = None,
                  updatesAfterMinsAgo = None,
                  updatesUntilTm = None,
@@ -618,7 +617,7 @@ class RequestArticlesRecentActivity(RequestArticles):
         @param mandatorySourceLocation: return only articles for which we know the source's geographic location
         @param returnInfo: what details should be included in the returned information
         """
-        assert maxArticleCount <= 1000
+        assert maxArticleCount <= 2000
         assert updatesAfterTm == None or updatesAfterMinsAgo == None, "You should specify either updatesAfterTm or updatesAfterMinsAgo parameter, but not both"
         assert updatesUntilTm == None or updatesUntilMinsAgo == None, "You should specify either updatesUntilTm or updatesUntilMinsAgo parameter, but not both"
         self.resultType = "recentActivityArticles"
@@ -631,6 +630,15 @@ class RequestArticlesRecentActivity(RequestArticles):
             self.recentActivityArticlesUpdatesUntilTm = QueryParamsBase.encodeDateTime(updatesUntilTm)
         if updatesUntilMinsAgo != None:
             self.recentActivityArticlesUpdatesUntilMinsAgo = updatesUntilMinsAgo
+
+        # set the stopping uris, if provided
+        if updatesAfterNewsUri != None:
+            self.recentActivityArticlesNewsUpdatesAfterUri = updatesAfterNewsUri
+        if updatesafterBlogUri != None:
+            self.recentActivityArticlesBlogUpdatesAfterUri = updatesafterBlogUri
+        if updatesAfterPrUri != None:
+            self.recentActivityArticlesPrUpdatesAfterUri = updatesAfterPrUri
+
         self.recentActivityArticlesMaxArticleCount = maxArticleCount
         self.recentActivityArticlesMandatorySourceLocation = mandatorySourceLocation
         if returnInfo != None:

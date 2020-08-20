@@ -120,7 +120,7 @@ class TopicPage(QueryParamsBase):
         self.topicPage["eventTreshWgt"] = value
 
 
-    def articleIsDuplicateFilter(self, value):
+    def setArticleIsDuplicateFilter(self, value):
         """
         @param value: some articles can be duplicates of other articles. What should be done with them. Possible values are:
             "skipDuplicates" (skip the resulting articles that are duplicates of other articles)
@@ -131,7 +131,7 @@ class TopicPage(QueryParamsBase):
         self.topicPage["isDuplicateFilter"] = value
 
 
-    def articleHasEventFilter(self, value):
+    def setArticleHasEventFilter(self, value):
         """
         @param value: some articles describe a known event and some don't. This filter allows you to filter the resulting articles based on this criteria.
             Possible values are:
@@ -143,7 +143,7 @@ class TopicPage(QueryParamsBase):
         self.topicPage["articleHasEvent"] = value
 
 
-    def articleHasDuplicateFilter(self, value):
+    def setArticleHasDuplicateFilter(self, value):
         """
         @param value: some articles are later copied by others. What should be done with such articles. Possible values are:
             "skipHasDuplicates" (skip the articles that have been later copied by others)

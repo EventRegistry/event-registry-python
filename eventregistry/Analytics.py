@@ -58,8 +58,7 @@ class Analytics:
         @returns: dict
         """
         assert method == "vocabulary" or method == "rnn"
-        endpoint = method == "vocabulary" and "sentiment" or "sentimentRNN"
-        return self._er.jsonRequestAnalytics("/api/v1/" + endpoint, { "text": text, "sentences": sentencesToAnalyze, "returnSentences": returnSentences })
+        return self._er.jsonRequestAnalytics("/api/v1/sentiment", { "text": text, "method": method, "sentences": sentencesToAnalyze, "returnSentences": returnSentences })
 
 
     def semanticSimilarity(self, text1, text2, distanceMeasure = "cosine"):

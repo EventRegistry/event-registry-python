@@ -103,7 +103,6 @@ class ArticleInfoFlags(ReturnInfoFlagsBase):
                  socialScore = False,
                  sentiment = True,
                  location = False,
-                 dates = False,
                  extractedDates = False,
                  originalArticle = False,
                  storyUri=False,
@@ -123,7 +122,6 @@ class ArticleInfoFlags(ReturnInfoFlagsBase):
         self._setFlag("includeArticleSocialScore", socialScore, False)
         self._setFlag("includeArticleSentiment", sentiment, True)
         self._setFlag("includeArticleLocation", location, False)
-        self._setFlag("includeArticleDates", dates, False)
         self._setFlag("includeArticleExtractedDates", extractedDates, False)
         self._setFlag("includeArticleOriginalArticle", originalArticle, False)
         self._setFlag("includeArticleStoryUri", storyUri, False)
