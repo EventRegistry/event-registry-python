@@ -209,14 +209,14 @@ class TopicPage(QueryParamsBase):
         self.topicPage["locations"] = []
 
 
-    def addConcept(self, conceptUri, weight, label = None, conceptType = None):
+    def addConcept(self, conceptUri, weight, label = None, conceptType = None, required = False):
         """
         add a relevant concept to the topic page
         @param conceptUri: uri of the concept to be added
         @param weight: importance of the provided concept (typically in range 1 - 50)
         """
         assert isinstance(weight, (float, int)), "weight value has to be a positive or negative integer"
-        concept = {"uri": conceptUri, "wgt": weight}
+        concept = {"uri": conceptUri, "wgt": weight, "required": required}
         if label != None: concept["label"] = label
         if conceptType != None: concept["type"] = conceptType
         self.topicPage["concepts"].append(concept)
