@@ -1,5 +1,13 @@
 # Change Log
 
+## [v8.9]() (2020-10-21)
+
+**Added**
+
+- added `required` and `excluded` optional parameters to the TopicPage class to methods `addConcept`, `addKeyword`, `addCategory`, `addSource`, `addSourceLocation` and `addSourceGroup`.
+- exceptions are now raised by the SDK library in case of status codes 204, 400, 401 and 403. Previously, the requests were repeated if status code was not 200. In  case of these status codes it however doesn't make sense to simply repeat the requests as the query will for sure return the same exception. The meaning of the above status codes is described on the [documentation page](https://eventregistry.org/documentation?tab=introduction).
+
+
 ## [v8.8]() (2020-08-20)
 
 **Added**

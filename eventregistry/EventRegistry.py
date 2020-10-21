@@ -83,6 +83,15 @@ class EventRegistry(object):
         if printHostInfo:
             print("Event Registry host: %s" % (self._host))
             print("Text analytics host: %s" % (self._hostAnalytics))
+
+        # list of status codes - when we get them as a response from the call, we don't want to repeat the query as the response will likely always be the same
+        self._stopStatusCodes = set([
+            204,        # Information not available. Request succeeded, but the requested information is not available.
+            400,        # Bad request. The request was unacceptable, most likely due to invalid or missing parameter.
+            401,        # User's limit reached. The user reached the limit of the tokens in his account. The requests are rejected.
+            403,        # Invalid account. The user's IP or account is disabled, potentially due to misuse.
+        ])
+
         # check what is the version of your module compared to the latest one
         self.checkVersion()
 
@@ -301,9 +310,10 @@ class EventRegistry(object):
                 if self._verboseOutput:
                     print("endpoint: %s\nParams: %s" % (url, json.dumps(paramDict, indent=4)))
                 self.printLastException()
-                # in case of invalid input parameters, don't try to repeat the search
-                if respInfo != None and (respInfo.status_code == 400 or respInfo.status_code == 530 or respInfo.status_code == 204):
-                    break
+                # in case of invalid input parameters, don't try to repeat the search but we simply raise the same exception again
+                if respInfo != None and respInfo.status_code in self._stopStatusCodes:
+                    raise ex
+                # in case of the other exceptions (maybe the service is temporarily unavailable) we try to repeat the query
                 print("The request will be automatically repeated in 3 seconds...")
                 time.sleep(3)   # sleep for X seconds on error
         self._lock.release()

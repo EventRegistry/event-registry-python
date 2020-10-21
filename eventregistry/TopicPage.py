@@ -209,67 +209,79 @@ class TopicPage(QueryParamsBase):
         self.topicPage["locations"] = []
 
 
-    def addConcept(self, conceptUri, weight, label = None, conceptType = None, required = False):
+    def addConcept(self, conceptUri, weight, label = None, conceptType = None, required = False, excluded = False):
         """
         add a relevant concept to the topic page
         @param conceptUri: uri of the concept to be added
         @param weight: importance of the provided concept (typically in range 1 - 50)
+        @param required: if true, then all results will HAVE TO be annotated with this concept
+        @param excluded: if true, then all results annotated with this concept will be ignored
         """
         assert isinstance(weight, (float, int)), "weight value has to be a positive or negative integer"
-        concept = {"uri": conceptUri, "wgt": weight, "required": required}
+        assert not (required == True and excluded == True), "Parameters required and excluded can not be True at the same time"
+        concept = {"uri": conceptUri, "wgt": weight, "required": required, "excluded": excluded }
         if label != None: concept["label"] = label
         if conceptType != None: concept["type"] = conceptType
         self.topicPage["concepts"].append(concept)
 
 
-    def addKeyword(self, keyword, weight):
+    def addKeyword(self, keyword, weight, required = False, excluded = False):
         """
         add a relevant keyword to the topic page
         @param keyword: keyword or phrase to be added
         @param weight: importance of the provided keyword (typically in range 1 - 50)
+        @param required: if true, then all results will HAVE TO mention this keyword to appear in the results
+        @param excluded: if true, then no results that mention this keyword will be returned
         """
         assert isinstance(weight, (float, int)), "weight value has to be a positive or negative integer"
-        self.topicPage["keywords"].append({"keyword": keyword, "wgt": weight})
+        assert not (required == True and excluded == True), "Parameters required and excluded can not be True at the same time"
+        self.topicPage["keywords"].append({"keyword": keyword, "wgt": weight, "required": required, "excluded": excluded })
 
 
-    def addCategory(self, categoryUri, weight):
+    def addCategory(self, categoryUri, weight, required = False, excluded = False):
         """
         add a relevant category to the topic page
         @param categoryUri: uri of the category to be added
         @param weight: importance of the provided category (typically in range 1 - 50)
+        @param required: if true, then all results will HAVE TO be annotated with this category to appear in the results
+        @param excluded: if true, then no results with this category will be returned
         """
         assert isinstance(weight, (float, int)), "weight value has to be a positive or negative integer"
-        self.topicPage["categories"].append({"uri": categoryUri, "wgt": weight})
+        assert not (required == True and excluded == True), "Parameters required and excluded can not be True at the same time"
+        self.topicPage["categories"].append({"uri": categoryUri, "wgt": weight, "required": required, "excluded": excluded })
 
 
-    def addSource(self, sourceUri, weight):
+    def addSource(self, sourceUri, weight, excluded = False):
         """
         add a news source to the topic page
         @param sourceUri: uri of the news source to add to the topic page
         @param weight: importance of the news source (typically in range 1 - 50)
+        @param excluded: if true, then the results from these sources will be ignored
         """
         assert isinstance(weight, (float, int)), "weight value has to be a positive or negative integer"
-        self.topicPage["sources"].append({"uri": sourceUri, "wgt": weight})
+        self.topicPage["sources"].append({"uri": sourceUri, "wgt": weight, "excluded": excluded })
 
 
-    def addSourceLocation(self, sourceLocationUri, weight):
+    def addSourceLocation(self, sourceLocationUri, weight, excluded = False):
         """
         add a list of relevant sources by identifying them by their geographic location
         @param sourceLocationUri: uri of the location where the sources should be geographically located
         @param weight: importance of the provided list of sources (typically in range 1 - 50)
+        @param excluded: if true, then the results from the sources from this location will be ignored
         """
         assert isinstance(weight, (float, int)), "weight value has to be a positive or negative integer"
-        self.topicPage["sourceLocations"].append({"uri": sourceLocationUri, "wgt": weight})
+        self.topicPage["sourceLocations"].append({"uri": sourceLocationUri, "wgt": weight, "excluded": excluded })
 
 
-    def addSourceGroup(self, sourceGroupUri, weight):
+    def addSourceGroup(self, sourceGroupUri, weight, excluded = False):
         """
         add a list of relevant sources by specifying a whole source group to the topic page
         @param sourceGroupUri: uri of the source group to add
         @param weight: importance of the provided list of sources (typically in range 1 - 50)
+        @param excluded: if true, then the results from sources from this group will be ignored
         """
         assert isinstance(weight, (float, int)), "weight value has to be a positive or negative integer"
-        self.topicPage["sourceGroups"].append({"uri": sourceGroupUri, "wgt": weight})
+        self.topicPage["sourceGroups"].append({"uri": sourceGroupUri, "wgt": weight, "excluded": excluded })
 
 
     def addLocation(self, locationUri, weight):

@@ -3,8 +3,7 @@ examples that illustrate how to query articles using different search options
 """
 from eventregistry import *
 
-er = EventRegistry(allowUseOfArchive=False)
-# er = EventRegistry()
+er = EventRegistry(apiKey = "6e8ab56e-b4d8-4032-94cc-db5138e0370c", allowUseOfArchive=False)
 
 
 # search for the phrase "Barack Obama" - both words have to appear together
