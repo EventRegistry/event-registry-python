@@ -74,7 +74,7 @@ print er.execQuery(q)
 
 We've also prepared an interactive Jupyter notebook where we demonstrate how you can use the SDK. You can run it online and modify the individual examples.
 
-**[Run Jupyter notebook with examples](https://mybinder.org/v2/gh/EventRegistry/event-registry-python-intro/master)
+**[Run Jupyter notebook with examples](https://mybinder.org/v2/gh/EventRegistry/event-registry-python-intro/master)**
 
 ## Where to next?
 
