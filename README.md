@@ -1,6 +1,6 @@
-## Accessing Event Registry data through Python
+## Accessing Event Registry's News API through Python
 
-This library contains classes that allow one to obtain from Event Registry (http://eventregistry.org) all available data, such as news articles, events, trends, etc.
+This library contains classes and methods that allow one to obtain from Event Registry (http://eventregistry.org) all available data, such as news articles, events, trends, etc.
 
 The detailed documentation on how to use the library is available at the [project's wiki page](https://github.com/EventRegistry/event-registry-python/wiki). Examples of use are in the [Examples folder in the repository](https://github.com/EventRegistry/event-registry-python/tree/master/eventregistry/examples).
 
