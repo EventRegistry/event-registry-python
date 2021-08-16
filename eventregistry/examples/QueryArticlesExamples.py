@@ -5,9 +5,12 @@ from eventregistry import *
 
 er = EventRegistry(allowUseOfArchive=False)
 
-# search for the phrase "Barack Obama" - both words have to appear together
-q = QueryArticles(keywords = "Barack Obama")
-res = er.execQuery(q)
+MAX_RESULTS = 100
+
+# search for the phrase "Tesla Inc" - both words have to appear together - download at most 100 articles
+q = QueryArticlesIter(keywords = "Tesla Inc")
+for art in q.execQuery(er, maxItems = MAX_RESULTS):
+    print(art)
 
 # search for articles that mention both of the two words - maybe together, maybe apart
 # this form of specifying multiple keywords, concepts, etc is now depricated. When you have a list,

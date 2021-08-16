@@ -25,17 +25,21 @@ class EventRegistry(object):
                  printHostInfo = True,
                  settingsFName = None):
         """
-        @param apiKey: API key that should be used to make the requests to the Event Registry. API key is assigned to each user account and can be obtained on this page: http://eventregistry.org/me?tab=settings
+        @param apiKey: API key that should be used to make the requests to the Event Registry. API key is assigned to each user account and can be obtained on
+            this page: http://eventregistry.org/me?tab=settings
         @param host: host to use to access the Event Registry backend. Use None to use the default host.
         @param hostAnalytics: the host address to use to perform the analytics api calls
         @param logging: log all requests made to a 'requests_log.txt' file
         @param minDelayBetweenRequests: the minimum number of seconds between individual api calls
-        @param repeatFailedRequestCount: if a request fails (for example, because ER is down), what is the max number of times the request should be repeated (-1 for indefinitely)
-        @param allowUseOfArchive: default is True. Determines if the queries made should potentially be executed on the archive data. If False, all queries (regardless how the date conditions are set) will be
-                executed on data from the last 31 days. Queries executed on the archive are more expensive so set it to False if you are just interested in recent data
-        @param verboseOutput: if True, additional info about query times etc will be printed to console
+        @param repeatFailedRequestCount: if a request fails (for example, because ER is down), what is the max number of times the request
+            should be repeated (-1 for indefinitely)
+        @param allowUseOfArchive: default is True. Determines if the queries made should potentially be executed on the archive data.
+            If False, all queries (regardless how the date conditions are set) will be executed on data from the last 31 days.
+            Queries executed on the archive are more expensive so set it to False if you are just interested in recent data
+        @param verboseOutput: if True, additional info about errors etc will be printed to console
         @param printHostInfo: print which urls are used as the hosts
-        @param settingsFName: If provided it should be a full path to 'settings.json' file where apiKey an/or host can be loaded from. If None, we will look for the settings file in the eventregistry module folder
+        @param settingsFName: If provided it should be a full path to 'settings.json' file where apiKey an/or host can be loaded from.
+            If None, we will look for the settings file in the eventregistry module folder
         """
         self._host = host
         self._hostAnalytics = hostAnalytics
@@ -280,11 +284,10 @@ class EventRegistry(object):
         self._headers = {}  # reset any past data
         returnData = None
         respInfo = None
+        url = self._host + methodUrl
         while self._repeatFailedRequestCount < 0 or tryCount < self._repeatFailedRequestCount:
             tryCount += 1
             try:
-                url = self._host + methodUrl
-
                 # make the request
                 respInfo = self._reqSession.post(url, json = paramDict)
                 # remember the returned headers
@@ -298,21 +301,18 @@ class EventRegistry(object):
                 # remember the available requests
                 self._dailyAvailableRequests = tryParseInt(self.getLastHeader("x-ratelimit-limit", ""), val = -1)
                 self._remainingAvailableRequests = tryParseInt(self.getLastHeader("x-ratelimit-remaining", ""), val = -1)
-                try:
-                    returnData = respInfo.json()
-                    break
-                except Exception as ex:
-                    print("EventRegistry.jsonRequest(): Exception while parsing the returned json object. Repeating the query...")
-                    open("invalidJsonResponse.json", "w").write(respInfo.text)
+
+                returnData = respInfo.json()
+                break
             except Exception as ex:
                 self._lastException = ex
-                print("Event Registry exception while executing the request:")
                 if self._verboseOutput:
+                    print("Event Registry exception while executing the request:")
                     print("endpoint: %s\nParams: %s" % (url, json.dumps(paramDict, indent=4)))
-                self.printLastException()
+                    self.printLastException()
                 # in case of invalid input parameters, don't try to repeat the search but we simply raise the same exception again
                 if respInfo != None and respInfo.status_code in self._stopStatusCodes:
-                    raise ex
+                    break
                 # in case of the other exceptions (maybe the service is temporarily unavailable) we try to repeat the query
                 print("The request will be automatically repeated in 3 seconds...")
                 time.sleep(3)   # sleep for X seconds on error
@@ -347,17 +347,17 @@ class EventRegistry(object):
                 # if we got some error codes print the error and repeat the request after a short time period
                 if respInfo.status_code != 200:
                     raise Exception(respInfo.text)
+
                 returnData = respInfo.json()
                 break
             except Exception as ex:
                 self._lastException = ex
-                print("Event Registry Analytics exception while executing the request:")
                 if self._verboseOutput:
+                    print("Event Registry Analytics exception while executing the request:")
                     print("endpoint: %s\nParams: %s" % (url, json.dumps(paramDict, indent=4)))
-                self.printLastException()
-                # in case of invalid input parameters, don't try to repeat the action
-                if respInfo != None and respInfo.status_code == 530:
-                    print("The request will not be repeated since we received a response code 530")
+                    self.printLastException()
+                # in case of invalid input parameters, don't try to repeat the search but we simply raise the same exception again
+                if respInfo != None and respInfo.status_code in self._stopStatusCodes:
                     break
                 print("The request will be automatically repeated in 3 seconds...")
                 time.sleep(3)   # sleep for X seconds on error
@@ -371,9 +371,10 @@ class EventRegistry(object):
 
     def suggestConcepts(self, prefix, sources = ["concepts"], lang = "eng", conceptLang = "eng", page = 1, count = 20, returnInfo = ReturnInfo(), **kwargs):
         """
-        return a list of concepts that contain the given prefix. returned matching concepts are sorted based on their frequency of occurence in news (from most to least frequent)
+        return a list of concepts that contain the given prefix. returned matching concepts are sorted based on their
+            frequency of occurence in news (from most to least frequent)
         @param prefix: input text that should be contained in the concept
-        @param sources: what types of concepts should be returned. valid values are person, loc, org, wiki, entities (== person + loc + org), concepts (== entities + wiki), conceptClass, conceptFolder
+        @param sources: what types of concepts should be returned. valid values are person, loc, org, wiki, entities (== person + loc + org), concepts (== entities + wiki)
         @param lang: language in which the prefix is specified
         @param conceptLang: languages in which the label(s) for the concepts are to be returned
         @param page:  page of the results (1, 2, ...)
@@ -539,7 +540,7 @@ class EventRegistry(object):
         return a concept uri that is the best match for the given concept label
         if there are multiple matches for the given conceptLabel, they are sorted based on their frequency of occurence in news (most to least frequent)
         @param conceptLabel: partial or full name of the concept for which to return the concept uri
-        @param sources: what types of concepts should be returned. valid values are person, loc, org, wiki, entities (== person + loc + org), concepts (== entities + wiki), conceptClass, conceptFolder
+        @param sources: what types of concepts should be returned. valid values are person, loc, org, wiki, entities (== person + loc + org), concepts (== entities + wiki)
         """
         matches = self.suggestConcepts(conceptLabel, lang = lang, sources = sources)
         if matches != None and isinstance(matches, list) and len(matches) > 0 and "uri" in matches[0]:

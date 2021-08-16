@@ -1,5 +1,15 @@
 # Change Log
 
+## [v8.10]() (2021-08-16)
+
+**Added**
+
+- added file `QueryMentions` that can be used to query mentions of specific event types. The class is currently in beta and not available to users unless they have permissions to use this endpoint. The classes `QueryMentions` and `QueryMentionsIter` can be used in the same way as classes for querying articles and events, except that some query parameters are addded and some removed. Examples for the classes were also added.
+
+**Updated**
+- When using method `initWithComplexQuery` we now check if the provided json is valid json object and report error in case it is not
+- some bugs that appeared in edge cases when querying Event Registry using `EventRegistry` class have been fixed.
+
 ## [v8.9]() (2020-10-21)
 
 **Added**

@@ -8,6 +8,7 @@ from eventregistry.QueryEvents import *
 from eventregistry.QueryEvent import *
 from eventregistry.QueryArticles import *
 from eventregistry.QueryArticle import *
+from eventregistry.QueryMentions import *
 from eventregistry.QueryStory import *
 from eventregistry.Counts import *
 from eventregistry.DailyShares import *

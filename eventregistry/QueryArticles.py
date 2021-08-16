@@ -225,7 +225,10 @@ class QueryArticles(Query):
             q._setVal("query", json.dumps(query.getQuery()))
         # provided query as a string containing the json object
         elif isinstance(query, six.string_types):
-            foo = json.loads(query)
+            try:
+                foo = json.loads(query)
+            except:
+                raise Exception("Failed to parse the provided string content as a JSON object. Please check the content provided as a parameter to the initWithComplexQuery() method")
             q._setVal("query", query)
         # provided query as a python dict
         elif isinstance(query, dict):

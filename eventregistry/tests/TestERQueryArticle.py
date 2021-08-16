@@ -6,9 +6,9 @@ class TestQueryArticle(DataValidator):
 
     def createQuery(self):
         q = QueryArticles(conceptUri = self.er.getConceptUri("Obama"))
-        q.setRequestedResult(RequestArticlesUriWgtList(count = 10))
+        q.setRequestedResult(RequestArticlesUriWgtList(count = 100))
         res = self.er.execQuery(q)
-        q = QueryArticle(EventRegistry.getUriFromUriWgt(res["uriWgtList"]["results"]))
+        q = QueryArticle([uri for uri in EventRegistry.getUriFromUriWgt(res["uriWgtList"]["results"]) if uri.endswith("TEMP") == False][:10])
         return q
 
 
