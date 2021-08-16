@@ -1,6 +1,6 @@
-## Accessing Event Registry data through Python
+## Accessing Event Registry's News API through Python
 
-This library contains classes that allow one to obtain from Event Registry (http://eventregistry.org) all available data, such as news articles, events, trends, etc.
+This library contains classes and methods that allow one to obtain from Event Registry (http://eventregistry.org) all available data, such as news articles, events, trends, etc.
 
 The detailed documentation on how to use the library is available at the [project's wiki page](https://github.com/EventRegistry/event-registry-python/wiki). Examples of use are in the [Examples folder in the repository](https://github.com/EventRegistry/event-registry-python/tree/master/eventregistry/examples).
 
@@ -38,6 +38,18 @@ When making queries to Event Registry you will have to use an API key that you c
 
 ## Three simple examples to make you interested
 
+**Find news articles that mention Tesla in the article title**
+
+```python
+from eventregistry import *
+er = EventRegistry(apiKey = YOUR_API_KEY)
+# print at most 500 articles
+MAX_ITEMS = 500
+q = QueryArticlesIter(keywords = "tesla", keywordsLoc="title")
+for art in q.execQuery(er, sortBy = "date", maxItems = MAX_ITEMS):
+    print(art)
+```
+
 **Print a list of recently added articles mentioning George Clooney**
 
 ```python
@@ -58,15 +70,11 @@ q.setRequestedResult(RequestEventsInfo(sortBy = "date", count=10))   # return ev
 print er.execQuery(q)
 ```
 
-**What are the currently trending topics**
+## Run a Jupyter notebook
 
-```python
-from eventregistry import *
-er = EventRegistry(apiKey = YOUR_API_KEY)
-# top 10 trending concepts in the news
-q = GetTrendingConcepts(source = "news", count = 10)
-print er.execQuery(q)
-```
+We've also prepared an interactive Jupyter notebook where we demonstrate how you can use the SDK. You can run it online and modify the individual examples.
+
+**[Run Jupyter notebook with examples](https://mybinder.org/v2/gh/EventRegistry/event-registry-python-intro/master)**
 
 ## Where to next?
 
