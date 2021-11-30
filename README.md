@@ -100,4 +100,4 @@ Depending on your interest and existing knowledge of the `eventregistry` package
 
 ## Data access and usage restrictions
 
-Event Registry is a commercial service but it allows also unsubscribed users to perform a certain number of operations. Free users are not allowed to use the obtained data for any commercial purposes (see the details on our [Terms of Service page](http://eventregistry.org/terms)). In order to avoid these restrictions please contact us about the [available plans](http://eventregistry.org/pricing).
+Event Registry is a commercial service but it allows also unsubscribed users to perform a certain number of operations. Free users are not allowed to use the obtained data for any commercial purposes (see the details on our [Terms of Service page](https://newsapi.ai/terms)). In order to avoid these restrictions please contact us about the [available plans](https://newsapi.ai/plans).
