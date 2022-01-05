@@ -114,7 +114,7 @@ class QueryEventArticlesIter(QueryEvent, six.Iterator):
         self._setQueryArrVal(authorUri, "authorUri", "authorOper", "or")
         self._setQueryArrVal(locationUri, "locationUri", None, "or")        # location such as "http://en.wikipedia.org/wiki/Ljubljana"
 
-        self._setQueryArrVal(lang, "lang", None, "or")                      # a single lang or list (possible: eng, deu, spa, zho, slv)
+        self._setQueryArrVal(lang, "articlesLang", None, "or")                      # a single lang or list
 
         # starting date of the published articles (e.g. 2014-05-02)
         if dateStart != None:

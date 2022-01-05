@@ -1,5 +1,10 @@
 # Change Log
 
+## [v8.11]() (2022-01-05)
+
+**Updated**
+- the `QueryEventArticlesIter` class will be significantly faster in returning the articles when you specify the language filter
+
 ## [v8.10]() (2021-08-16)
 
 **Added**
