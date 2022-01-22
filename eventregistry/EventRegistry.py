@@ -289,7 +289,7 @@ class EventRegistry(object):
             tryCount += 1
             try:
                 # make the request
-                respInfo = self._reqSession.post(url, json = paramDict)
+                respInfo = self._reqSession.post(url, json = paramDict, timeout=60)
                 # remember the returned headers
                 self._headers = respInfo.headers
                 # if we got some error codes print the error and repeat the request after a short time period
@@ -341,7 +341,7 @@ class EventRegistry(object):
             try:
                 url = self._hostAnalytics + methodUrl
                 # make the request
-                respInfo = self._reqSession.post(url, json = paramDict)
+                respInfo = self._reqSession.post(url, json = paramDict, timeout=60)
                 # remember the returned headers
                 self._headers = respInfo.headers
                 # if we got some error codes print the error and repeat the request after a short time period
