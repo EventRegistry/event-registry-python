@@ -3,7 +3,7 @@ utility classes for Event Registry
 """
 
 import six, warnings, os, sys, re, datetime, time
-
+from eventregistry.Logger import logger
 
 mainLangs = ["eng", "deu", "zho", "slv", "spa"]
 allLangs = [ "eng", "deu", "spa", "cat", "por", "ita", "fra", "rus", "ara", "tur", "zho", "slv", "hrv", "srp" ]
@@ -226,7 +226,7 @@ class QueryParamsBase(object):
             if propOperName != None:
                 self.queryParams[propOperName] = defaultOperName
                 if len(value) > 1:
-                    print("Warning: The value of parameter '%s' was provided as a list and '%s' operator was used implicitly between the items. We suggest specifying the list using the QueryItems.AND() or QueryItems.OR() to ensure the appropriate operator is used." % (propName, defaultOperName))
+                    logger.warning("Warning: The value of parameter '%s' was provided as a list and '%s' operator was used implicitly between the items. We suggest specifying the list using the QueryItems.AND() or QueryItems.OR() to ensure the appropriate operator is used." % (propName, defaultOperName))
 
         # there should be no other valid types
         else:

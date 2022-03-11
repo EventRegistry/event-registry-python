@@ -26,7 +26,7 @@ class TestAutoSuggest(DataValidator):
         # self.assertTrue(self.er.getNewsSourceUri("topix.com") == "topix.com")
 
         self.assertTrue(self.er.suggestLocations("Washington")[0].get("wikiUri") == "http://en.wikipedia.org/wiki/Washington_(state)")
-        self.assertTrue(self.er.suggestLocations("London")[0].get("wikiUri") == "http://en.wikipedia.org/wiki/City_of_London")
+        self.assertTrue(self.er.suggestLocations("London")[0].get("wikiUri") == "http://en.wikipedia.org/wiki/London")
 
         srcList = self.er.suggestSourcesAtPlace(self.er.getConceptUri("New York City"))
         self.assertTrue(len(srcList) > 0)

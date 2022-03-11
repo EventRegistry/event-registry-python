@@ -3,7 +3,7 @@ from eventregistry.Base import *
 from eventregistry.ReturnInfo import *
 from eventregistry.QueryArticles import QueryArticles, RequestArticlesInfo
 from eventregistry.Query import *
-
+from eventregistry.Logger import logger
 
 class QueryEvent(Query):
     """
@@ -155,7 +155,7 @@ class QueryEventArticlesIter(QueryEvent, six.Iterator):
         self.setRequestedResult(RequestEventArticles(**self.queryParams))
         res = eventRegistry.execQuery(self)
         if "error" in res:
-            print(res["error"])
+            logger.error(res["error"])
         count = res.get(self.queryParams["eventUri"], {}).get("articles", {}).get("totalResults", 0)
         return count
 
@@ -197,7 +197,7 @@ class QueryEventArticlesIter(QueryEvent, six.Iterator):
         if self._totalPages != None and self._articlePage > self._totalPages:
             return
         if self._er._verboseOutput:
-            print("Downloading article page %d from event %s" % (self._articlePage, eventUri))
+            logger.debug("Downloading article page %d from event %s" % (self._articlePage, eventUri))
 
         self.setRequestedResult(RequestEventArticles(
             page = self._articlePage,
@@ -206,7 +206,7 @@ class QueryEventArticlesIter(QueryEvent, six.Iterator):
             **self.queryParams))
         res = self._er.execQuery(self)
         if "error" in res:
-            print(res["error"])
+            logger.error(res["error"])
         else:
             self._totalPages = res.get(eventUri, {}).get("articles", {}).get("pages", 0)
         arts = res.get(eventUri, {}).get("articles", {}).get("results", [])

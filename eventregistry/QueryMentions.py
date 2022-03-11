@@ -2,7 +2,7 @@
 from eventregistry.Base import *
 from eventregistry.ReturnInfo import *
 from eventregistry.Query import *
-
+from eventregistry.Logger import logger
 
 class QueryMentions(Query):
     def __init__(self,
@@ -216,7 +216,7 @@ class QueryMentionsIter(QueryMentions, six.Iterator):
         self.setRequestedResult(RequestMentionsInfo())
         res = eventRegistry.execQuery(self)
         if "error" in res:
-            print(res["error"])
+            logger.error(res["error"])
         count = res.get("mentions", {}).get("totalResults", 0)
         return count
 
@@ -290,10 +290,10 @@ class QueryMentionsIter(QueryMentions, six.Iterator):
             sortBy=self._sortBy, sortByAsc=self._sortByAsc,
             returnInfo = self._returnInfo))
         if self._er._verboseOutput:
-            print("Downloading mention page %d..." % (self._mentionPage))
+            logger.debug("Downloading mention page %d..." % (self._mentionPage))
         res = self._er.execQuery(self)
         if "error" in res:
-            print("Error while obtaining a list of mentions: " + res["error"])
+            logger.error("Error while obtaining a list of mentions: " + res["error"])
         else:
             self._totalPages = res.get("mentions", {}).get("pages", 0)
         results = res.get("mentions", {}).get("results", [])

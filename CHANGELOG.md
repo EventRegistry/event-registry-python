@@ -1,5 +1,15 @@
 # Change Log
 
+## [v8.12]() (2022-03-11)
+
+**Updated**
+- changed the logger. No longer printing out to console information about the host, etc
+- removed two parameters from `EventRegistry` constructor:
+	- `logging` - if you wish to log requests to file, please call now `EventRegistry.setLogging(True)`
+	- `printHostInfo` - if you wish to see the host info, call `logging.getLogger("eventregistry").setLevel(logging.DEBUG)`
+- `checkVersion()` is no longer automatically called in `EventRegistry` constructor. If you wish to see if there is an updated version of the module, please call the method manually.
+
+
 ## [v8.11]() (2022-01-05)
 
 **Updated**
@@ -271,7 +281,7 @@
 - Changed constructor parameters in `GetRecentEvents` and `GetRecentArticles`.
 
 **Removed**
-- removed `EventRegistry.login()` method to login the user. The user should authenticate using the API key that he can obtain on [his settings page](http://eventregistry.org/me?tab=settings).
+- removed `EventRegistry.login()` method to login the user. The user should authenticate using the API key that he can obtain on [his settings page](https://newsapi.ai/dashboard).
 
 
 

@@ -1,11 +1,11 @@
 ﻿"""
 main class responsible for obtaining results from the Event Registry
 """
-import six, os, sys, traceback, json, re, requests, time
-import threading
+import six, os, sys, traceback, json, re, requests, time, logging, threading
 
 from eventregistry.Base import *
 from eventregistry.ReturnInfo import *
+from eventregistry.Logger import logger
 
 
 class EventRegistry(object):
@@ -17,19 +17,16 @@ class EventRegistry(object):
                  apiKey = None,
                  host = None,
                  hostAnalytics = None,
-                 logging = False,
                  minDelayBetweenRequests = 0.5,
                  repeatFailedRequestCount = -1,
                  allowUseOfArchive = True,
                  verboseOutput = False,
-                 printHostInfo = True,
                  settingsFName = None):
         """
         @param apiKey: API key that should be used to make the requests to the Event Registry. API key is assigned to each user account and can be obtained on
-            this page: http://eventregistry.org/me?tab=settings
+            this page: https://newsapi.ai/dashboard
         @param host: host to use to access the Event Registry backend. Use None to use the default host.
         @param hostAnalytics: the host address to use to perform the analytics api calls
-        @param logging: log all requests made to a 'requests_log.txt' file
         @param minDelayBetweenRequests: the minimum number of seconds between individual api calls
         @param repeatFailedRequestCount: if a request fails (for example, because ER is down), what is the max number of times the request
             should be repeated (-1 for indefinitely)
@@ -37,14 +34,13 @@ class EventRegistry(object):
             If False, all queries (regardless how the date conditions are set) will be executed on data from the last 31 days.
             Queries executed on the archive are more expensive so set it to False if you are just interested in recent data
         @param verboseOutput: if True, additional info about errors etc will be printed to console
-        @param printHostInfo: print which urls are used as the hosts
         @param settingsFName: If provided it should be a full path to 'settings.json' file where apiKey an/or host can be loaded from.
             If None, we will look for the settings file in the eventregistry module folder
         """
         self._host = host
         self._hostAnalytics = hostAnalytics
         self._lastException = None
-        self._logRequests = logging
+        self._logRequests = False
         self._minDelayBetweenRequests = minDelayBetweenRequests
         self._repeatFailedRequestCount = repeatFailedRequestCount
         self._allowUseOfArchive = allowUseOfArchive
@@ -64,8 +60,8 @@ class EventRegistry(object):
         # and to read the host name from it (if custom host is not specified)
         currPath = os.path.split(os.path.realpath(__file__))[0]
         settFName = settingsFName or os.path.join(currPath, "settings.json")
-        if apiKey and printHostInfo:
-            print("using user provided API key for making requests")
+        if apiKey:
+            logger.debug("using user provided API key for making requests")
 
         if os.path.exists(settFName):
             settings = json.load(open(settFName))
@@ -73,8 +69,7 @@ class EventRegistry(object):
             self._hostAnalytics = hostAnalytics or settings.get("hostAnalytics", "http://analytics.eventregistry.org")
             # if api key is set, then use it when making the requests
             if "apiKey" in settings and not apiKey:
-                if printHostInfo:
-                    print("found apiKey in settings file which will be used for making requests")
+                logger.debug("found apiKey in settings file which will be used for making requests")
                 self._apiKey = settings["apiKey"]
         else:
             self._host = host or "http://eventregistry.org"
@@ -84,9 +79,8 @@ class EventRegistry(object):
             print("No API key was provided. You will be allowed to perform only a very limited number of requests per day.")
         self._requestLogFName = os.path.join(currPath, "requests_log.txt")
 
-        if printHostInfo:
-            print("Event Registry host: %s" % (self._host))
-            print("Text analytics host: %s" % (self._hostAnalytics))
+        logger.debug("Event Registry host: %s" % (self._host))
+        logger.debug("Text analytics host: %s" % (self._hostAnalytics))
 
         # list of status codes - when we get them as a response from the call, we don't want to repeat the query as the response will likely always be the same
         self._stopStatusCodes = set([
@@ -95,9 +89,6 @@ class EventRegistry(object):
             401,        # User's limit reached. The user reached the limit of the tokens in his account. The requests are rejected.
             403,        # Invalid account. The user's IP or account is disabled, potentially due to misuse.
         ])
-
-        # check what is the version of your module compared to the latest one
-        self.checkVersion()
 
 
     def checkVersion(self):
@@ -113,9 +104,9 @@ class EventRegistry(object):
             currentVersion = _version.__version__
             for (latest, current) in zip(latestVersion.split("."), currentVersion.split(".")):
                 if int(latest) > int(current):
-                    print("==============\nYour version of the module is outdated, please update to the latest version")
-                    print("Your version is %s while the latest is %s" % (currentVersion, latestVersion))
-                    print("Update by calling: pip install --upgrade eventregistry\n==============")
+                    logger.info("==============\nYour version of the module is outdated, please update to the latest version")
+                    logger.info("Your version is %s while the latest is %s" % (currentVersion, latestVersion))
+                    logger.info("Update by calling: pip install --upgrade eventregistry\n==============")
                     return
                 # in case the server mistakenly has a lower version that the user has, don't report an error
                 elif int(latest) < int(current):
@@ -145,17 +136,12 @@ class EventRegistry(object):
 
 
     def printLastException(self):
-        print(str(self._lastException))
+        logger.error(str(self._lastException))
 
 
     def format(self, obj):
         """return a string containing the object in a pretty formated version"""
         return json.dumps(obj, sort_keys=True, indent=4, separators=(',', ': '))
-
-
-    def printConsole(self, text):
-        """print time prefix + text to console"""
-        print(time.strftime("%H:%M:%S") + " " + str(text))
 
 
     def getRemainingAvailableRequests(self):
@@ -297,7 +283,7 @@ class EventRegistry(object):
                     raise Exception(respInfo.text)
                 # did we get a warning. if yes, print it
                 if self.getLastHeader("warning"):
-                    print("=========== WARNING ===========\n%s\n===============================" % (self.getLastHeader("warning")))
+                    logger.warning("=========== WARNING ===========\n%s\n===============================" % (self.getLastHeader("warning")))
                 # remember the available requests
                 self._dailyAvailableRequests = tryParseInt(self.getLastHeader("x-ratelimit-limit", ""), val = -1)
                 self._remainingAvailableRequests = tryParseInt(self.getLastHeader("x-ratelimit-remaining", ""), val = -1)
@@ -307,15 +293,15 @@ class EventRegistry(object):
             except Exception as ex:
                 self._lastException = ex
                 if self._verboseOutput:
-                    print("Event Registry exception while executing the request:")
-                    print("endpoint: %s\nParams: %s" % (url, json.dumps(paramDict, indent=4)))
+                    logger.error("Event Registry exception while executing the request:")
+                    logger.error("endpoint: %s\nParams: %s" % (url, json.dumps(paramDict, indent=4)))
                     self.printLastException()
                 # in case of invalid input parameters, don't try to repeat the search but we simply raise the same exception again
                 if respInfo != None and respInfo.status_code in self._stopStatusCodes:
                     break
                 # in case of the other exceptions (maybe the service is temporarily unavailable) we try to repeat the query
-                print("The request will be automatically repeated in 3 seconds...")
-                time.sleep(3)   # sleep for X seconds on error
+                logger.info("The request will be automatically repeated in 3 seconds...")
+                time.sleep(5)   # sleep for X seconds on error
         self._lock.release()
         if returnData == None:
             raise self._lastException or Exception("No valid return data provided")
@@ -353,14 +339,14 @@ class EventRegistry(object):
             except Exception as ex:
                 self._lastException = ex
                 if self._verboseOutput:
-                    print("Event Registry Analytics exception while executing the request:")
-                    print("endpoint: %s\nParams: %s" % (url, json.dumps(paramDict, indent=4)))
+                    logger.error("Event Registry Analytics exception while executing the request:")
+                    logger.error("endpoint: %s\nParams: %s" % (url, json.dumps(paramDict, indent=4)))
                     self.printLastException()
                 # in case of invalid input parameters, don't try to repeat the search but we simply raise the same exception again
                 if respInfo != None and respInfo.status_code in self._stopStatusCodes:
                     break
-                print("The request will be automatically repeated in 3 seconds...")
-                time.sleep(3)   # sleep for X seconds on error
+                logger.info("The request will be automatically repeated in 3 seconds...")
+                time.sleep(5)   # sleep for X seconds on error
         self._lock.release()
         if returnData == None:
             raise self._lastException or Exception("No valid return data provided")

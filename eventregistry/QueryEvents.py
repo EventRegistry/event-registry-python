@@ -2,7 +2,7 @@
 from eventregistry.Base import *
 from eventregistry.ReturnInfo import *
 from eventregistry.Query import *
-
+from eventregistry.Logger import logger
 
 class QueryEvents(Query):
     def __init__(self,
@@ -226,7 +226,7 @@ class QueryEventsIter(QueryEvents, six.Iterator):
         self.setRequestedResult(RequestEventsInfo())
         res = eventRegistry.execQuery(self)
         if "error" in res:
-            print(res["error"])
+            logger.error(res["error"])
         count = res.get("events", {}).get("totalResults", 0)
         return count
 
@@ -289,10 +289,10 @@ class QueryEventsIter(QueryEvents, six.Iterator):
             returnInfo = self._returnInfo))
         # download articles and make sure that we set the same archive flag as it was returned when we were processing the uriList request
         if self._er._verboseOutput:
-            print("Downloading event page %d..." % (self._eventPage))
+            logger.debug("Downloading event page %d..." % (self._eventPage))
         res = self._er.execQuery(self)
         if "error" in res:
-            print("Error while obtaining a list of events: " + res["error"])
+            logger.error("Error while obtaining a list of events: " + res["error"])
         else:
             self._totalPages = res.get("events", {}).get("pages", 0)
         results = res.get("events", {}).get("results", [])

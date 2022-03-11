@@ -2,6 +2,7 @@
 from eventregistry.Base import *
 from eventregistry.ReturnInfo import *
 from eventregistry.Query import *
+from eventregistry.Logger import logger
 
 
 class QueryArticles(Query):
@@ -251,7 +252,7 @@ class QueryArticlesIter(QueryArticles, six.Iterator):
         self.setRequestedResult(RequestArticlesInfo())
         res = eventRegistry.execQuery(self)
         if "error" in res:
-            print(res["error"])
+            logger.error(res["error"])
         count = res.get("articles", {}).get("totalResults", 0)
         return count
 
@@ -328,10 +329,10 @@ class QueryArticlesIter(QueryArticles, six.Iterator):
             sortBy=self._sortBy, sortByAsc=self._sortByAsc,
             returnInfo = self._returnInfo))
         if self._er._verboseOutput:
-            print("Downloading article page %d..." % (self._articlePage))
+            logger.debug("Downloading article page %d..." % (self._articlePage))
         res = self._er.execQuery(self)
         if "error" in res:
-            print("Error while obtaining a list of articles: " + res["error"])
+            logger.error("Error while obtaining a list of articles: " + res["error"])
         else:
             self._totalPages = res.get("articles", {}).get("pages", 0)
         results = res.get("articles", {}).get("results", [])
