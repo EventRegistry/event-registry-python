@@ -1,10 +1,4 @@
-## Accessing Event Registry's News API through Python
-
-This library contains classes and methods that allow one to obtain from Event Registry (http://eventregistry.org) all available data, such as news articles, events, trends, etc.
-
-The detailed documentation on how to use the library is available at the [project's wiki page](https://github.com/EventRegistry/event-registry-python/wiki). Examples of use are in the [Examples folder in the repository](https://github.com/EventRegistry/event-registry-python/tree/master/eventregistry/examples).
-
-Changes introduced in the different versions of the module are described in the [CHANGELOG.md](https://github.com/EventRegistry/event-registry-python/blob/master/CHANGELOG.md) as well as on the [Releases](https://github.com/EventRegistry/event-registry-python/releases) page.
+Event Registry is a Python package that can be used to easily access the news data available in [Event Registry](http://eventregistry.org/) through the API. The package can be used to query for articles or events by filtering using a large set of filters, like keywords, concepts, topics, sources, sentiment, date, etc. Details about the News API are available on the [landing page of the product](https://newsapi.ai/).
 
 ## Installation
 
@@ -12,7 +6,7 @@ Event Registry package can be installed using Python's pip installer. In the com
 
     pip install eventregistry
 
-and the package should be installed. Alternatively, you can also clone the package from the GitHub repository at https://github.com/EventRegistry/event-registry-python. After cloning it, open the command line and run:
+and the package should be installed. Alternatively, you can also clone the package from the [GitHub repository](https://github.com/EventRegistry/event-registry-python). After cloning it, open the command line and run:
 
     python setup.py install
 
@@ -24,7 +18,7 @@ To ensure the package has been properly installed run python and type:
 import eventregistry
 ```
 
-If you don't get any error messages then your installation has been successful.
+If you don't get any error messages, then your installation has been successful.
 
 ### Updating the package
 
@@ -34,51 +28,112 @@ As features are added to the package you will need at some point to update it. I
 
 ### Authentication and API key
 
-When making queries to Event Registry you will have to use an API key that you can obtain for free. The details how to obtain and use the key are described in the [Authorization](../../wiki/EventRegistry-class#authorization) section.
+When making queries to Event Registry you will have to use an API key that you can obtain for free. The details on how to obtain and use the key are described in the [Authorization](../../wiki/EventRegistry-class#authorization) section.
 
-## Three simple examples to make you interested
+## Four simple examples to get you interested
 
-**Find news articles that mention Tesla in the article title**
+**Print a list of recently articles or blog posts from *US based sources* *with positive sentiment* mentioning phrases *"George Clooney"* or *"Sandra Bullock"***
 
 ```python
 from eventregistry import *
 er = EventRegistry(apiKey = YOUR_API_KEY)
-# print at most 500 articles
-MAX_ITEMS = 500
-q = QueryArticlesIter(keywords = "tesla", keywordsLoc="title")
-for art in q.execQuery(er, sortBy = "date", maxItems = MAX_ITEMS):
+
+# get the USA URI
+usUri = er.getLocationUri("USA")    # = http://en.wikipedia.org/wiki/United_States
+
+q = QueryArticlesIter(
+    keywords = QueryItems.OR(["George Clooney", "Sandra Bullock"]),
+    minSentiment = 0.4,
+    sourceLocationUri = usUri,
+    dataType = ["news", "blog"])
+
+# obtain at most 500 newest articles or blog posts, remove maxItems to get all
+for art in q.execQuery(er, sortBy = "date", maxItems = 500):
     print(art)
 ```
 
-**Print a list of recently added articles mentioning George Clooney**
+**Print a list of most relevant *business* articles from the last month related to *Microsoft* or *Google*. The articles should be in any language (including Chinese, Arabic, ...)**
 
 ```python
 from eventregistry import *
-er = EventRegistry(apiKey = YOUR_API_KEY)
-q = QueryArticlesIter(conceptUri = er.getConceptUri("George Clooney"))
-for art in q.execQuery(er, sortBy = "date"):
-    print art
+# allowUseOfArchive=False will allow us to search only over the last month of data
+er = EventRegistry(apiKey = YOUR_API_KEY, allowUseOfArchive=False)
+
+# get the URIs for the companies and the category
+microsoftUri = er.getConceptUri("Microsoft")    # = http://en.wikipedia.org/wiki/Microsoft
+googleUri = er.getConceptUri("Google")          # = http://en.wikipedia.org/wiki/Google
+businessUri = er.getCategoryUri("news business")    # = news/Business
+
+q = QueryArticlesIter(
+    conceptUri = QueryItems.OR([microsoftUri, googleUri]),
+    categoryUri = businessUri)
+
+# obtain at most 500 newest articles, remove maxItems to get all
+for art in q.execQuery(er, sortBy = "date", maxItems = 500):
+    print(art)
 ```
+
 
 **Search for latest events related to Star Wars**
 
 ```python
 from eventregistry import *
 er = EventRegistry(apiKey = YOUR_API_KEY)
-q = QueryEvents(conceptUri = er.getConceptUri("Star Wars"))
-q.setRequestedResult(RequestEventsInfo(sortBy = "date", count=10))   # return event details for last 10 events
-print er.execQuery(q)
+
+q = QueryEvents(keywords = "Star Wars")
+q.setRequestedResult(RequestEventsInfo(sortBy = "date", count = 50))   # request event details for latest 50 events
+
+# get the full list of 50 events at once
+print(er.execQuery(q))
 ```
 
-## Run a Jupyter notebook
+**Search for articles that (a) mention immigration, (b) are related to business, and (c) were published by news sources located in New York City**
 
-We've also prepared an interactive Jupyter notebook where we demonstrate how you can use the SDK. You can run it online and modify the individual examples.
+```python
+from eventregistry import *
+er = EventRegistry(apiKey = YOUR_API_KEY)
 
-**[Run Jupyter notebook with examples](https://mybinder.org/v2/gh/EventRegistry/event-registry-python-intro/master)**
+q = QueryArticlesIter(
+    # here we don't use keywords so we will also get articles that mention immigration using various synonyms
+    conceptUri = er.getConceptUri("immigration"),
+    categoryUri = er.getCategoryUri("business"),
+    sourceLocationUri = er.getLocationUri("New York City"))
+
+# obtain 500 articles that have were shared the most on social media
+for art in q.execQuery(er, sortBy = "socialScore", maxItems = 500):
+    print(art)
+```
+
+**What are the currently trending topics**
+
+```python
+from eventregistry import *
+er = EventRegistry(apiKey = YOUR_API_KEY)
+
+# top 10 trending concepts in the news
+q = GetTrendingConcepts(source = "news", count = 10)
+print(er.execQuery(q))
+```
+
+## Learning from examples
+
+We believe that it's easiest to learn how to use our service by looking at examples. For this reason, we have prepared examples of various most used features. View the examples grouped by main search actions:
+
+[View examples of searching for articles](https://github.com/EventRegistry/event-registry-python/blob/master/eventregistry/examples/QueryArticlesExamples.py)
+
+[View examples of searching for events](https://github.com/EventRegistry/event-registry-python/blob/master/eventregistry/examples/QueryEventsExamples.py)
+
+[View examples of obtaining information about an individual event](https://github.com/EventRegistry/event-registry-python/blob/master/eventregistry/examples/QueryEventExamples.py)
+
+[Examples of how to obtain the full feed of articles](https://github.com/EventRegistry/event-registry-python/blob/master/eventregistry/examples/FeedOfNewArticlesExamples.py)
+
+[Examples of how to obtain the full feed of events](https://github.com/EventRegistry/event-registry-python/blob/master/eventregistry/examples/FeedOfNewEventsExamples.py)
+
+## Play with interactive Jupyter notebook
+
+To interactively learn about how to use the SDK, see examples of use, see how to get extra meta-data properties, and more, please open [this Binder](https://mybinder.org/v2/gh/EventRegistry/event-registry-python-intro/master). You'll be able to view and modify the examples.
 
 ## Where to next?
-
-Depending on your interest and existing knowledge of the `eventregistry` package you can check different things:
 
 **[Terminology](../../wiki/Terminology)**. There are numerous terms in the Event Registry that you will constantly see. If you don't know what we mean by an *event*, *story*, *concept* or *category*, you should definitely check this page first.
 
@@ -94,10 +149,6 @@ Depending on your interest and existing knowledge of the `eventregistry` package
 
 **[Articles and events shared the most on social media](../../wiki/Social-shares)**. Do you want to get the list of articles that have been shared the most on Facebook and Twitter on a particular date? What about the most relevant event based on shares on social media?
 
-**[Daily mentions and sentiment of concepts and categories](../../wiki/Number-of-mentions-in-news-or-social-media)**. Are you interested in knowing how often was a particular concept or category mentioned in the news in the previous two years? How about the sentiment expressed on social media about your favorite politician?
-
-**[Correlations of concepts](../../wiki/Correlations)**. Do you have some time series of daily measurements? Why not find the concepts that correlate the most with it based on the number of mentions in the news.
-
 ## Data access and usage restrictions
 
-Event Registry is a commercial service but it allows also unsubscribed users to perform a certain number of operations. Free users are not allowed to use the obtained data for any commercial purposes (see the details on our [Terms of Service page](https://newsapi.ai/terms)). In order to avoid these restrictions please contact us about the [available plans](https://newsapi.ai/plans).
+Event Registry is a commercial service but it allows also unsubscribed users to perform a certain number of operations. Non-paying users are not allowed to use the obtained data for any commercial purposes (see the details on our [Terms of Service page](http://newsapi.ai/terms)) and have access to only last 30 days of content. In order to avoid these restrictions please contact us about the [available plans](http://newsapi.ai/plans).

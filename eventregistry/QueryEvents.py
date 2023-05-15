@@ -3,40 +3,42 @@ from eventregistry.Base import *
 from eventregistry.ReturnInfo import *
 from eventregistry.Query import *
 from eventregistry.Logger import logger
+from eventregistry.EventRegistry import EventRegistry
+from typing import Union, List
 
 class QueryEvents(Query):
     def __init__(self,
-                 keywords = None,
-                 conceptUri = None,
-                 categoryUri = None,
-                 sourceUri = None,
-                 sourceLocationUri = None,
-                 sourceGroupUri = None,
-                 authorUri = None,
-                 locationUri = None,
-                 lang = None,
-                 dateStart = None,
-                 dateEnd = None,
-                 reportingDateStart = None,
-                 reportingDateEnd = None,
-                 minSentiment = -1,
-                 maxSentiment = 1,
-                 minArticlesInEvent = None,
-                 maxArticlesInEvent = None,
-                 dateMentionStart = None,
-                 dateMentionEnd = None,
-                 ignoreKeywords = None,
-                 ignoreConceptUri = None,
-                 ignoreCategoryUri = None,
-                 ignoreSourceUri = None,
-                 ignoreSourceLocationUri = None,
-                 ignoreSourceGroupUri = None,
-                 ignoreAuthorUri = None,
-                 ignoreLocationUri = None,
-                 ignoreLang = None,
-                 keywordsLoc = "body",
-                 ignoreKeywordsLoc = "body",
-                 requestedResult = None):
+                 keywords: Union[str, QueryItems] = None,
+                 conceptUri: Union[str, QueryItems] = None,
+                 categoryUri: Union[str, QueryItems] = None,
+                 sourceUri: Union[str, QueryItems] = None,
+                 sourceLocationUri: Union[str, QueryItems] = None,
+                 sourceGroupUri: Union[str, QueryItems] = None,
+                 authorUri: Union[str, QueryItems] = None,
+                 locationUri: Union[str, QueryItems] = None,
+                 lang: Union[str, QueryItems] = None,
+                 dateStart: Union[datetime.datetime, datetime.date, str] = None,
+                 dateEnd: Union[datetime.datetime, datetime.date, str] = None,
+                 reportingDateStart: Union[datetime.datetime, datetime.date, str] = None,
+                 reportingDateEnd: Union[datetime.datetime, datetime.date, str] = None,
+                 minSentiment: float = -1,
+                 maxSentiment: float = 1,
+                 minArticlesInEvent: int = None,
+                 maxArticlesInEvent: int = None,
+                 dateMentionStart: Union[datetime.datetime, datetime.date, str] = None,
+                 dateMentionEnd: Union[datetime.datetime, datetime.date, str] = None,
+                 ignoreKeywords: Union[str, QueryItems] = None,
+                 ignoreConceptUri: Union[str, QueryItems] = None,
+                 ignoreCategoryUri: Union[str, QueryItems] = None,
+                 ignoreSourceUri: Union[str, QueryItems] = None,
+                 ignoreSourceLocationUri: Union[str, QueryItems] = None,
+                 ignoreSourceGroupUri: Union[str, QueryItems] = None,
+                 ignoreAuthorUri: Union[str, QueryItems] = None,
+                 ignoreLocationUri: Union[str, QueryItems] = None,
+                 ignoreLang: Union[str, QueryItems] = None,
+                 keywordsLoc: str = "body",
+                 ignoreKeywordsLoc: str = "body",
+                 requestedResult: "RequestEvents" = None):
         """
         Query class for searching for events in the Event Registry.
         The resulting events have to match all specified conditions. If a parameter value equals "" or [], then it is ignored.
@@ -156,7 +158,7 @@ class QueryEvents(Query):
         return "/api/v1/event"
 
 
-    def setRequestedResult(self, requestEvents):
+    def setRequestedResult(self, requestEvents: "RequestEvents"):
         """
         Set the single result type that you would like to be returned. Any previously set result types will be overwritten.
         Result types can be the classes that extend RequestEvents base class (see classes below).
@@ -171,7 +173,7 @@ class QueryEvents(Query):
         Set a custom list of event uris. The results will be then computed on this list - no query will be done (all conditions will be ignored).
         """
         q = QueryEvents()
-        assert isinstance(uriList, list), "uriList has to be a list of strings that represent event uris"
+        assert isinstance(uriList, str) or isinstance(uriList, list), "uriList has to be a list of strings or a string that represent event uris"
         q.queryParams = { "action": "getEvents", "eventUriList": ",".join(uriList) }
         return q
 
@@ -182,13 +184,17 @@ class QueryEvents(Query):
         Set a custom list of event uris. The results will be then computed on this list - no query will be done (all conditions will be ignored).
         """
         q = QueryEvents()
-        assert isinstance(uriWgtList, list), "uriWgtList has to be a list of strings that represent event uris with their weights"
-        q.queryParams = { "action": "getEvents", "eventUriWgtList": ",".join(uriWgtList) }
+        if isinstance(uriWgtList, list):
+            q.queryParams = { "action": "getEvents", "eventUriWgtList": ",".join(uriWgtList) }
+        elif isinstance(uriWgtList, str):
+            q.queryParams = { "action": "getEvents", "eventUriWgtList": uriWgtList }
+        else:
+            assert False, "uriWgtList parameter did not contain a list or a string"
         return q
 
 
     @staticmethod
-    def initWithComplexQuery(query):
+    def initWithComplexQuery(query: Union[ComplexEventQuery, str, dict]):
         """
         create a query using a complex event query
         """
@@ -219,7 +225,7 @@ class QueryEventsIter(QueryEvents, six.Iterator):
     over the list of events that match the specified conditions
     """
 
-    def count(self, eventRegistry):
+    def count(self, eventRegistry: EventRegistry):
         """
         return the number of events that match the criteria
         """
@@ -231,11 +237,11 @@ class QueryEventsIter(QueryEvents, six.Iterator):
         return count
 
 
-    def execQuery(self, eventRegistry,
-                  sortBy = "rel",
-                  sortByAsc = False,
-                  returnInfo = None,
-                  maxItems = -1,
+    def execQuery(self, eventRegistry: EventRegistry,
+                  sortBy: str = "rel",
+                  sortByAsc: bool = False,
+                  returnInfo: ReturnInfo = None,
+                  maxItems: int = -1,
                   **kwargs):
         """
         @param eventRegistry: instance of EventRegistry class. used to query new event list and uris
@@ -328,10 +334,10 @@ class RequestEvents:
 
 
 class RequestEventsInfo(RequestEvents):
-    def __init__(self, page = 1,
-                 count = 50,
-                 sortBy = "rel", sortByAsc = False,
-                 returnInfo = None):
+    def __init__(self, page: int = 1,
+                 count: int = 50,
+                 sortBy: str = "rel", sortByAsc: bool = False,
+                 returnInfo: ReturnInfo = None):
         """
         return event details for resulting events
         @param page: page of the results to return (1, 2, ...)
@@ -352,21 +358,21 @@ class RequestEventsInfo(RequestEvents):
             self.__dict__.update(returnInfo.getParams("events"))
 
 
-    def setPage(self, page):
+    def setPage(self, page: int):
         assert page >= 1, "page has to be >= 1"
         self.eventsPage = page
 
 
-    def setCount(self, count):
+    def setCount(self, count: int):
         self.eventsCount = count
 
 
 
 class RequestEventsUriWgtList(RequestEvents):
     def __init__(self,
-                 page = 1,
-                 count = 50000,
-                 sortBy = "rel", sortByAsc = False):
+                 page: int = 1,
+                 count: int = 50000,
+                 sortBy: str = "rel", sortByAsc: bool = False):
         """
         return a simple list of event uris together with the scores for resulting events
         @param page: page of the results (1, 2, ...)
@@ -399,7 +405,7 @@ class RequestEventsTimeAggr(RequestEvents):
 
 
 class RequestEventsKeywordAggr(RequestEvents):
-    def __init__(self, lang = None):
+    def __init__(self, lang: str = None):
         """
         return keyword aggregate (tag cloud) on words in articles in resulting events
         @param lang: in which language to produce the list of top keywords. If None, then compute on all articles
@@ -412,8 +418,8 @@ class RequestEventsKeywordAggr(RequestEvents):
 
 class RequestEventsLocAggr(RequestEvents):
     def __init__(self,
-                 eventsSampleSize = 100000,
-                 returnInfo = ReturnInfo()):
+                 eventsSampleSize: int = 100000,
+                 returnInfo: ReturnInfo = ReturnInfo()):
         """
         return aggreate of locations of resulting events
         @param eventsSampleSize: sample of events to use to compute the location aggregate (at most 100000)
@@ -429,8 +435,8 @@ class RequestEventsLocAggr(RequestEvents):
 class RequestEventsLocTimeAggr(RequestEvents):
 
     def __init__(self,
-                 eventsSampleSize = 100000,
-                 returnInfo = ReturnInfo()):
+                 eventsSampleSize: int = 100000,
+                 returnInfo: ReturnInfo = ReturnInfo()):
         """
         return aggreate of locations and times of resulting events
         @param eventsSampleSize: sample of events to use to compute the location aggregate (at most 100000)
@@ -445,9 +451,9 @@ class RequestEventsLocTimeAggr(RequestEvents):
 
 class RequestEventsConceptAggr(RequestEvents):
     def __init__(self,
-                 conceptCount = 20,
-                 eventsSampleSize = 100000,
-                 returnInfo = ReturnInfo()):
+                 conceptCount: int = 20,
+                 eventsSampleSize: int = 100000,
+                 returnInfo: ReturnInfo = ReturnInfo()):
         """
         compute which concept are the most frequently occuring in the list of resulting events
         @param conceptCount: number of top concepts to return (at most 200)
@@ -465,10 +471,10 @@ class RequestEventsConceptAggr(RequestEvents):
 
 class RequestEventsConceptGraph(RequestEvents):
     def __init__(self,
-                 conceptCount = 50,
-                 linkCount = 150,
-                 eventsSampleSize = 50000,
-                 returnInfo = ReturnInfo()):
+                 conceptCount: int = 50,
+                 linkCount: int = 150,
+                 eventsSampleSize: int = 50000,
+                 returnInfo: ReturnInfo = ReturnInfo()):
         """
         compute which concept pairs frequently co-occur together in the resulting events
         @param conceptCount: number of top concepts to return (at most 1,000)
@@ -489,10 +495,10 @@ class RequestEventsConceptGraph(RequestEvents):
 
 class RequestEventsConceptMatrix(RequestEvents):
     def __init__(self,
-                 conceptCount = 25,
-                 measure = "pmi",
-                 eventsSampleSize = 100000,
-                 returnInfo = ReturnInfo()):
+                 conceptCount: int = 25,
+                 measure: str = "pmi",
+                 eventsSampleSize: int = 100000,
+                 returnInfo: ReturnInfo = ReturnInfo()):
         """
         get a matrix of concepts and their dependencies. For individual concept pairs
         return how frequently they co-occur in the resulting events and
@@ -514,9 +520,9 @@ class RequestEventsConceptMatrix(RequestEvents):
 
 class RequestEventsConceptTrends(RequestEvents):
     def __init__(self,
-                 conceptUris = None,
-                 conceptCount = 10,
-                 returnInfo = ReturnInfo()):
+                 conceptUris: Union[str, List[str]] = None,
+                 conceptCount: int = 10,
+                 returnInfo: ReturnInfo = ReturnInfo()):
         """
         return a list of top trending concepts and their daily trending info over time
         @param conceptUris: list of concept URIs for which to return trending information. If None, then top concepts will be automatically computed
@@ -534,9 +540,9 @@ class RequestEventsConceptTrends(RequestEvents):
 
 class RequestEventsSourceAggr(RequestEvents):
     def __init__(self,
-                 sourceCount = 30,
-                 eventsSampleSize = 50000,
-                 returnInfo = ReturnInfo()):
+                 sourceCount: int = 30,
+                 eventsSampleSize: int = 50000,
+                 returnInfo : ReturnInfo = ReturnInfo()):
         """
         return top news sources that report about the events that match the search conditions
         @param sourceCount: number of top sources to return (at most 200)
@@ -554,9 +560,9 @@ class RequestEventsSourceAggr(RequestEvents):
 
 class RequestEventsDateMentionAggr(RequestEvents):
     def __init__(self,
-                 minDaysApart = 0,
-                 minDateMentionCount = 5,
-                 eventsSampleSize = 100000):
+                 minDaysApart: int = 0,
+                 minDateMentionCount: int = 5,
+                 eventsSampleSize: int = 100000):
         """
         return events and the dates that are mentioned in articles about these events
         @param minDaysApart: ignore events that don't have a date that is more than this number of days apart from the tested event
@@ -573,9 +579,9 @@ class RequestEventsDateMentionAggr(RequestEvents):
 
 class RequestEventsEventClusters(RequestEvents):
     def __init__(self,
-                 keywordCount = 30,
-                 maxEventsToCluster = 10000,
-                 returnInfo = ReturnInfo()):
+                 keywordCount: int = 30,
+                 maxEventsToCluster: int = 10000,
+                 returnInfo: ReturnInfo = ReturnInfo()):
         """
         return hierarchical clustering of events into smaller clusters. 2-means clustering is applied on each node in the tree
         @param keywordCount: number of keywords to report in each of the clusters (at most 100)
@@ -593,7 +599,7 @@ class RequestEventsEventClusters(RequestEvents):
 
 class RequestEventsCategoryAggr(RequestEvents):
     def __init__(self,
-                 returnInfo = ReturnInfo()):
+                 returnInfo: ReturnInfo = ReturnInfo()):
         """
         return distribution of events into dmoz categories
         @param returnInfo: what details about the categories should be included in the returned information
@@ -605,12 +611,12 @@ class RequestEventsCategoryAggr(RequestEvents):
 
 class RequestEventsRecentActivity(RequestEvents):
     def __init__(self,
-                 maxEventCount = 50,
-                 updatesAfterTm = None,
-                 updatesAfterMinsAgo = None,
-                 mandatoryLocation = True,
-                 minAvgCosSim = 0,
-                 returnInfo = None):
+                 maxEventCount: int = 50,
+                 updatesAfterTm: Union[datetime.datetime, datetime.date, str] = None,
+                 updatesAfterMinsAgo: int = None,
+                 mandatoryLocation: bool = True,
+                 minAvgCosSim: float = 0,
+                 returnInfo: ReturnInfo = None):
         """
         return a list of recently changed events that match search conditions
         @param maxEventCount: max events to return (at most 200)
@@ -632,5 +638,28 @@ class RequestEventsRecentActivity(RequestEvents):
         self.recentActivityEventsMinAvgCosSim = minAvgCosSim
         if returnInfo != None:
             self.__dict__.update(returnInfo.getParams("recentActivityEvents"))
+
+
+class RequestEventsBreakingEvents(RequestEvents):
+    def __init__(self,
+                 page: int = 1,
+                 count: int = 50,
+                 minBreakingScore: float = 0.2,
+                 returnInfo: ReturnInfo = None):
+        """
+        return a list of events that are currently breaking
+        @param page: max events to return (at most 50)
+        @param count: max events to return (at most 50)
+        @param minBreakingScore: the minimum score of "breakingness" of the events to be returned
+        @param returnInfo: what details should be included in the returned information
+        """
+        assert page >= 1
+        assert count <= 50
+        self.resultType = "breakingEvents"
+        self.breakingEventsPage = page
+        self.breakingEventsCount = count
+        self.breakingEventsMinBreakingScore = minBreakingScore
+        if returnInfo != None:
+            self.__dict__.update(returnInfo.getParams("breakingEvents"))
 
 

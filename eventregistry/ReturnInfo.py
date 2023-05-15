@@ -27,7 +27,7 @@ class ReturnInfoFlagsBase(object):
         return self.flags
 
 
-    def _setVal(self, name, val, defVal = None):
+    def _setVal(self, name: str, val, defVal = None):
         """set value of name to val in case the val != defVal"""
         if val == defVal:
             return
@@ -36,7 +36,7 @@ class ReturnInfoFlagsBase(object):
         self.vals[name] = val
 
 
-    def _getVals(self, prefix = ""):
+    def _getVals(self, prefix: str = ""):
         """
         return the values in the vals dict
         in case prefix is "", change the first letter of the name to lowercase, otherwise use prefix+name as the new name
@@ -88,24 +88,24 @@ class ArticleInfoFlags(ReturnInfoFlagsBase):
     @param storyUri: uri of the story (cluster) to which the article belongs
     """
     def __init__(self,
-                 bodyLen = -1,
-                 basicInfo = True,
-                 title = True,
-                 body = True,
-                 url = True,
-                 eventUri = True,
-                 authors = True,
-                 concepts = False,
-                 categories = False,
-                 links = False,
-                 videos = False,
-                 image = True,
-                 socialScore = False,
-                 sentiment = True,
-                 location = False,
-                 extractedDates = False,
-                 originalArticle = False,
-                 storyUri=False,
+                 bodyLen: int = -1,
+                 basicInfo: bool = True,
+                 title: bool = True,
+                 body: bool = True,
+                 url: bool = True,
+                 eventUri: bool = True,
+                 authors: bool = True,
+                 concepts: bool = False,
+                 categories: bool = False,
+                 links: bool = False,
+                 videos: bool = False,
+                 image: bool = True,
+                 socialScore: bool = False,
+                 sentiment: bool = True,
+                 location: bool = False,
+                 extractedDates: bool = False,
+                 originalArticle: bool = False,
+                 storyUri: bool = False,
                  **kwdArgs):
         self._setVal("articleBodyLen", bodyLen, -1)
         self._setFlag("includeArticleBasicInfo", basicInfo, True)
@@ -147,18 +147,18 @@ class StoryInfoFlags(ReturnInfoFlagsBase):
     @param imageCount: number of images to be returned for a story
     """
     def __init__(self,
-                basicStats = True,
-                location = True,
-                date = False,
-                title = False,
-                summary = False,
-                concepts = False,
-                categories = False,
-                medoidArticle = False,
-                infoArticle = False,
-                commonDates = False,
-                socialScore = False,
-                imageCount = 0,
+                basicStats: bool = True,
+                location: bool = True,
+                date: bool = False,
+                title: bool = False,
+                summary: bool = False,
+                concepts: bool = False,
+                categories: bool = False,
+                medoidArticle: bool = False,
+                infoArticle: bool = False,
+                commonDates: bool = False,
+                socialScore: bool = False,
+                imageCount: int = 0,
                 **kwdArgs):
         self._setFlag("includeStoryBasicStats", basicStats, True)
         self._setFlag("includeStoryLocation", location, True)
@@ -194,18 +194,18 @@ class EventInfoFlags(ReturnInfoFlagsBase):
     @param imageCount: number of images to be returned for an event
     """
     def __init__(self,
-                title = True,
-                summary = True,
-                articleCounts = True,
-                concepts = True,
-                categories = True,
-                location = True,
-                date = True,
-                commonDates = False,
-                infoArticle = False,
-                stories = False,
-                socialScore = False,
-                imageCount = 0,
+                title: bool = True,
+                summary: bool = True,
+                articleCounts: bool = True,
+                concepts: bool = True,
+                categories: bool = True,
+                location: bool = True,
+                date: bool = True,
+                commonDates: bool = False,
+                infoArticle: bool = False,
+                stories: bool = False,
+                socialScore: bool = False,
+                imageCount: int = 0,
                 **kwdArgs):
         self._setFlag("includeEventTitle", title, True)
         self._setFlag("includeEventSummary", summary, True)
@@ -224,6 +224,29 @@ class EventInfoFlags(ReturnInfoFlagsBase):
 
 
 
+class MentionInfoFlags(ReturnInfoFlagsBase):
+    """
+    What information about a mention should be returned by the API call
+
+    @param basicInfo: return basic information about the mention
+    @param slots: return the list of slots (concepts) related to the mention
+    @param categories: return the list of categories associated with the article that contains the sentence from the mention
+    @param frameworks: return list of frameworks to which the event type of the mention belongs
+    """
+    def __init__(self,
+                basicInfo: bool = True,
+                slots: bool = True,
+                categories: bool = False,
+                frameworks: bool = True,
+                **kwdArgs):
+        self._setFlag("includeMentionBasicInfo", basicInfo, True)
+        self._setFlag("includeMentionSlots", slots, True)
+        self._setFlag("includeMentionCategories", categories, False)
+        self._setFlag("includeMentionFrameworks", frameworks, True)
+        self._addKwdArgs(kwdArgs)
+
+
+
 class SourceInfoFlags(ReturnInfoFlagsBase):
     """
     What information about a news source should be returned by the API call
@@ -236,12 +259,12 @@ class SourceInfoFlags(ReturnInfoFlagsBase):
     @param socialMedia: different social media accounts used by the news source
     """
     def __init__(self,
-                title = True,
-                description = False,
-                location = False,
-                ranking = False,
-                image = False,
-                socialMedia = False,
+                title: bool = True,
+                description: bool = False,
+                location: bool = False,
+                ranking: bool = False,
+                image: bool = False,
+                socialMedia: bool = False,
                 **kwdArgs):
         self._setFlag("includeSourceTitle", title, True)
         self._setFlag("includeSourceDescription", description, False)
@@ -260,7 +283,7 @@ class CategoryInfoFlags(ReturnInfoFlagsBase):
     @param trendingScore: information about how the category is currently trending. The score is computed as Pearson residual by comparing the trending of the category in last 2 days compared to last 14 days
     """
     def __init__(self,
-                trendingScore = False,
+                trendingScore: bool = False,
                 **kwdArgs):
         self._setFlag("includeCategoryTrendingScore", trendingScore, False)
         self._addKwdArgs(kwdArgs)
@@ -282,14 +305,14 @@ class ConceptInfoFlags(ReturnInfoFlagsBase):
     @type lang: str | list
     """
     def __init__(self,
-                type = "concepts",
-                lang = "eng",
-                label = True,
-                synonyms = False,
-                image = False,
-                description = False,
-                trendingScore = False,
-                maxConceptsPerType = 20,
+                type: str = "concepts",
+                lang: str = "eng",
+                label: bool = True,
+                synonyms: bool = False,
+                image: bool = False,
+                description: bool = False,
+                trendingScore: bool = False,
+                maxConceptsPerType: int = 20,
                 **kwdArgs):
         self._setVal("conceptType", type, "concepts")
         self._setVal("conceptLang", lang, "eng")
@@ -322,18 +345,18 @@ class LocationInfoFlags(ReturnInfoFlagsBase):
     @param placeCountry: return information about the country where the place is located
     """
     def __init__(self,
-                label = True,
-                wikiUri = False,
-                geoNamesId = False,
-                population = False,
-                geoLocation = False,
+                label: bool = True,
+                wikiUri: bool = False,
+                geoNamesId: bool = False,
+                population: bool = False,
+                geoLocation: bool = False,
 
-                countryArea = False,
-                countryDetails = False,
-                countryContinent = False,
+                countryArea: bool = False,
+                countryDetails: bool = False,
+                countryContinent: bool = False,
 
-                placeFeatureCode = False,
-                placeCountry = True,
+                placeFeatureCode: bool = False,
+                placeCountry: bool = True,
                 **kwdArgs):
         self._setFlag("includeLocationLabel", label, True)
         self._setFlag("includeLocationWikiUri", wikiUri, False)
@@ -359,8 +382,8 @@ class ConceptClassInfoFlags(ReturnInfoFlagsBase):
     @param concepts: return the list of concepts assigned to the concept class
     """
     def __init__(self,
-                parentLabels = True,
-                concepts = False,
+                parentLabels: bool = True,
+                concepts: bool = False,
                 **kwdArgs):
         self._setFlag("includeConceptClassParentLabels", parentLabels, True)
         self._setFlag("includeConceptClassConcepts", concepts, False)
@@ -376,8 +399,8 @@ class ConceptFolderInfoFlags(ReturnInfoFlagsBase):
     @param owner: return information about the owner of the concept folder
     """
     def __init__(self,
-                definition = False,
-                owner = False,
+                definition: bool = False,
+                owner: bool = False,
                 **kwdArgs):
         self._setFlag("includeConceptFolderDefinition", definition, False)
         self._setFlag("includeConceptFolderOwner", owner, False)
@@ -396,29 +419,19 @@ class ReturnInfo:
     @param categoryInfo: what details about the categories should be returned
     @param conceptInfo: what details about the concepts should be returned
     @param locationInfo: what details about the locations should be returned (locations are sub-types of concepts so their information will be a property inside the concept information)
-    @param conceptClassInfo: what details about the concept classes should be returned (concept classes are sub-types of concepts so their information will be a property inside the concept information)
+    @param mentionInfo: what details about the mention should be returned
     @param conceptFolderInfo: what details about the concept folders should be returned (concept folders are sub-types of concepts so their information will be a property inside the concept information)
-
-    @type articleInfo: ArticleInfoFlags
-    @type eventInfo: EventInfoFlags
-    @type sourceInfo: SourceInfoFlags
-    @type storyInfo: StoryInfoFlags
-    @type categoryInfo: CategoryInfoFlags
-    @type conceptInfo: ConceptInfoFlags
-    @type locationInfo: LocationInfoFlags
-    @type conceptClassInfo: ConceptClassInfoFlags
-    @type conceptFolderInfo: ConceptFolderInfoFlags
     """
     def __init__(self,
-                 articleInfo = ArticleInfoFlags(),
-                 eventInfo = EventInfoFlags(),
-                 sourceInfo = SourceInfoFlags(),
-                 categoryInfo = CategoryInfoFlags(),
-                 conceptInfo = ConceptInfoFlags(),
-                 locationInfo = LocationInfoFlags(),
-                 storyInfo = StoryInfoFlags(),
-                 conceptClassInfo = ConceptClassInfoFlags(),
-                 conceptFolderInfo = ConceptFolderInfoFlags()):
+                 articleInfo : ArticleInfoFlags = ArticleInfoFlags(),
+                 eventInfo : EventInfoFlags = EventInfoFlags(),
+                 sourceInfo : SourceInfoFlags = SourceInfoFlags(),
+                 categoryInfo : CategoryInfoFlags = CategoryInfoFlags(),
+                 conceptInfo : ConceptInfoFlags = ConceptInfoFlags(),
+                 locationInfo : LocationInfoFlags = LocationInfoFlags(),
+                 storyInfo : StoryInfoFlags = StoryInfoFlags(),
+                 mentionInfo : MentionInfoFlags = MentionInfoFlags(),
+                 conceptFolderInfo : ConceptFolderInfoFlags= ConceptFolderInfoFlags()):
         assert isinstance(articleInfo, ArticleInfoFlags)
         assert isinstance(eventInfo, EventInfoFlags)
         assert isinstance(sourceInfo, SourceInfoFlags)
@@ -426,7 +439,7 @@ class ReturnInfo:
         assert isinstance(conceptInfo, ConceptInfoFlags)
         assert isinstance(locationInfo, LocationInfoFlags)
         assert isinstance(storyInfo, StoryInfoFlags)
-        assert isinstance(conceptClassInfo, ConceptClassInfoFlags)
+        assert isinstance(mentionInfo, MentionInfoFlags)
         assert isinstance(conceptFolderInfo, ConceptFolderInfoFlags)
         self.articleInfo = articleInfo
         self.eventInfo = eventInfo
@@ -435,12 +448,12 @@ class ReturnInfo:
         self.conceptInfo = conceptInfo
         self.locationInfo = locationInfo
         self.storyInfo = storyInfo
-        self.conceptClassInfo = conceptClassInfo
+        self.mentionInfo = mentionInfo
         self.conceptFolderInfo = conceptFolderInfo
 
 
     @staticmethod
-    def loadFromFile(fileName):
+    def loadFromFile(fileName: str):
         """
         load the configuration for the ReturnInfo from a fileName
         @param fileName: filename that contains the json configuration to use in the ReturnInfo
@@ -455,7 +468,7 @@ class ReturnInfo:
             conceptInfo=ConceptInfoFlags(**conf.get("conceptInfo", {})),
             locationInfo=LocationInfoFlags(**conf.get("locationInfo", {})),
             storyInfo=StoryInfoFlags(**conf.get("storyInfo", {})),
-            conceptClassInfo=ConceptClassInfoFlags(**conf.get("conceptClassInfo", {})),
+            mentionInfo=MentionInfoFlags(**conf.get("mentionInfo", {})),
             conceptFolderInfo=ConceptFolderInfoFlags(**conf.get("conceptFolderInfo", {}))
         )
 
@@ -472,7 +485,7 @@ class ReturnInfo:
             "conceptInfo": self.conceptInfo._getFlags().copy(),
             "locationInfo": self.locationInfo._getFlags().copy(),
             "storyInfo": self.storyInfo._getFlags().copy(),
-            "conceptClassInfo": self.articleInfo._getFlags().copy(),
+            "mentionInfo": self.mentionInfo._getFlags().copy(),
             "conceptFolderInfo": self.articleInfo._getFlags().copy()
         }
         conf["articleInfo"].update(self.articleInfo._getVals())
@@ -482,7 +495,7 @@ class ReturnInfo:
         conf["conceptInfo"].update(self.conceptInfo._getVals())
         conf["locationInfo"].update(self.locationInfo._getVals())
         conf["storyInfo"].update(self.storyInfo._getVals())
-        conf["conceptClassInfo"].update(self.conceptClassInfo._getVals())
+        conf["mentionInfo"].update(self.mentionInfo._getVals())
         conf["conceptFolderInfo"].update(self.conceptFolderInfo._getVals())
         return conf
 
@@ -496,7 +509,7 @@ class ReturnInfo:
         dict.update(self.categoryInfo._getFlags())
         dict.update(self.locationInfo._getFlags())
         dict.update(self.storyInfo._getFlags())
-        dict.update(self.conceptClassInfo._getFlags())
+        dict.update(self.mentionInfo._getFlags())
         dict.update(self.conceptFolderInfo._getFlags())
 
         dict.update(self.articleInfo._getVals())
@@ -506,7 +519,7 @@ class ReturnInfo:
         dict.update(self.categoryInfo._getVals())
         dict.update(self.locationInfo._getVals())
         dict.update(self.storyInfo._getVals())
-        dict.update(self.conceptClassInfo._getVals())
+        dict.update(self.mentionInfo._getVals())
         dict.update(self.conceptFolderInfo._getVals())
         return dict
 

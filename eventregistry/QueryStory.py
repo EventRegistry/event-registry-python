@@ -1,5 +1,8 @@
 ﻿from eventregistry.Base import *
 from eventregistry.ReturnInfo import *
+from eventregistry.EventRegistry import EventRegistry
+from typing import Union, List
+
 
 class QueryStory(Query):
     """
@@ -9,7 +12,7 @@ class QueryStory(Query):
 
     @param storyUriOrList: a single story uri or a list of story uris
     """
-    def __init__(self, storyUriOrList = None):
+    def __init__(self, storyUriOrList: Union[str, List[str]] = None):
         super(QueryStory, self).__init__()
         self._setVal("action", "getStory")
         if storyUriOrList != None:
@@ -20,12 +23,12 @@ class QueryStory(Query):
         return "/api/v1/story"
 
 
-    def queryByUri(self, uriOrUriList):
+    def queryByUri(self, uriOrUriList: Union[str, List[str]]):
         """search stories by their uri(s)"""
         self._setVal("storyUri", uriOrUriList)
 
 
-    def setRequestedResult(self, requestStory):
+    def setRequestedResult(self, requestStory: "RequestStory"):
         """
         Set the single result type that you would like to be returned. If some other request type was previously set, it will be overwritten.
         Result types can be the classes that extend RequestStory base class (see classes below).
@@ -49,7 +52,7 @@ class RequestStoryInfo(RequestStory):
     """
     return details about a story
     """
-    def __init__(self, returnInfo = ReturnInfo()):
+    def __init__(self, returnInfo: ReturnInfo = ReturnInfo()):
         self.resultType = "info"
         self.__dict__.update(returnInfo.getParams("info"))
 
@@ -60,10 +63,10 @@ class RequestStoryArticles(RequestStory):
     return articles about the story
     """
     def __init__(self,
-                 page = 1,
-                 count = 100,
-                 sortBy = "cosSim", sortByAsc = False,
-                 returnInfo = ReturnInfo(articleInfo = ArticleInfoFlags(bodyLen = 200))):
+                 page: int = 1,
+                 count: int = 100,
+                 sortBy: str = "cosSim", sortByAsc: bool = False,
+                 returnInfo: ReturnInfo = ReturnInfo(articleInfo = ArticleInfoFlags(bodyLen = 200))):
         """
         return articles in the story (cluster)
         @param page: page of the articles to return (1, 2, ...)
@@ -88,7 +91,7 @@ class RequestStoryArticleUris(RequestStory):
     return a list of article uris
     """
     def __init__(self,
-                 sortBy = "cosSim", sortByAsc = False  # order in which story articles are sorted. Options: id (internal id), date (published date), cosSim (closeness to story centroid), socialScore (total shares in social media), facebookShares (shares on fb), twitterShares (shares on twitter)
+                 sortBy: str = "cosSim", sortByAsc: bool = False  # order in which story articles are sorted. Options: id (internal id), date (published date), cosSim (closeness to story centroid), socialScore (total shares in social media), facebookShares (shares on fb), twitterShares (shares on twitter)
                  ):
         """
         return articles in the story (cluster)
@@ -106,9 +109,9 @@ class RequestStoryArticleTrend(RequestStory):
     return trending information for the articles about the story
     """
     def __init__(self,
-                 lang = mainLangs,
-                 minArticleCosSim = -1,
-                 returnInfo = ReturnInfo(articleInfo = ArticleInfoFlags(bodyLen = 0))):
+                 lang: Union[str, List[str]] = mainLangs,
+                 minArticleCosSim: float = -1,
+                 returnInfo: ReturnInfo = ReturnInfo(articleInfo = ArticleInfoFlags(bodyLen = 0))):
         self.resultType = "articleTrend"
         self.articleTrendLang = lang
         self.articleTrendMinArticleCosSim = minArticleCosSim
@@ -128,12 +131,12 @@ class RequestStorySimilarStories(RequestStory):
         @param returnInfo: what details should be included in the returned information
         """
     def __init__(self,
-                conceptInfoList,
-                count=50,                   # number of similar stories to return
-                dateStart = None,           # what can be the oldest date of the similar stories
-                dateEnd = None,             # what can be the newest date of the similar stories
-                lang = [],
-                returnInfo = ReturnInfo()):
+                conceptInfoList: Union[str, List[str]],
+                count: int = 50,                                    # number of similar stories to return
+                dateStart: Union[datetime.date, str] = None,        # what can be the oldest date of the similar stories
+                dateEnd: Union[datetime.date, str] = None,          # what can be the newest date of the similar stories
+                lang: Union[str, List[str]] = [],
+                returnInfo: ReturnInfo = ReturnInfo()):
         assert count <= 50
         assert isinstance(conceptInfoList, list)
         self.action = "getSimilarStories"

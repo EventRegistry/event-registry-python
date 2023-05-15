@@ -1,11 +1,11 @@
 ﻿from eventregistry.Base import *
 from eventregistry.ReturnInfo import *
-
+from typing import List, Union
 
 class QueryArticle(Query):
     def __init__(self,
-                 articleUriOrUriList,
-                 requestedResult = None):
+                 articleUriOrUriList: Union[str, List[str]],
+                 requestedResult: "RequestArticle" = None):
         """
         Class for obtaining available info for one or more articles in the Event Registry
         @param articleUriOrUriList: a single article uri or a list of article uris
@@ -22,7 +22,7 @@ class QueryArticle(Query):
 
 
     @staticmethod
-    def queryByUri(articleUriOrUriList):
+    def queryByUri(articleUriOrUriList: Union[str, List[str]]):
         """
         obtain information about one or more articles by providing their article uris (newsfeed ids, such as "284017606")
         @param articleUriOrUriList: single article uri or a list of article uris to query
@@ -32,7 +32,7 @@ class QueryArticle(Query):
         return q
 
 
-    def setRequestedResult(self, requestArticle):
+    def setRequestedResult(self, requestArticle: "RequestArticle"):
         """
         Set the single result type that you would like to be returned. If some other request type was previously set, it will be overwritten.
         Result types can be the classes that extend RequestArticle base class (see classes below).
@@ -53,7 +53,7 @@ class RequestArticle:
 
 
 class RequestArticleInfo(RequestArticle):
-    def __init__(self, returnInfo = ReturnInfo(articleInfo = ArticleInfoFlags(bodyLen = -1))):
+    def __init__(self, returnInfo: ReturnInfo = ReturnInfo(articleInfo = ArticleInfoFlags(bodyLen = -1))):
         """
         return details about the article
         @param returnInfo: what details should be included in the returned information
@@ -65,11 +65,11 @@ class RequestArticleInfo(RequestArticle):
 
 class RequestArticleSimilarArticles(RequestArticle):
     def __init__(self,
-                 page = 1,
-                 count = 20,
-                 lang = ["eng"],
-                 limitPerLang = -1,
-                 returnInfo = ReturnInfo(articleInfo = ArticleInfoFlags(bodyLen = -1))):
+                 page: int = 1,
+                 count: int = 20,
+                 lang: Union[str, List[str]] = ["eng"],
+                 limitPerLang: int = -1,
+                 returnInfo: ReturnInfo = ReturnInfo(articleInfo = ArticleInfoFlags(bodyLen = -1))):
         """
         return a list of similar articles based on the CCA
         @param page: page of the articles
@@ -91,10 +91,10 @@ class RequestArticleSimilarArticles(RequestArticle):
 
 class RequestArticleDuplicatedArticles(RequestArticle):
     def __init__(self,
-                 page = 1,
-                 count = 20,
-                 sortBy = "cosSim", sortByAsc = False,
-                 returnInfo = ReturnInfo(articleInfo = ArticleInfoFlags(bodyLen = -1))):
+                 page: int = 1,
+                 count: int = 20,
+                 sortBy: str = "cosSim", sortByAsc: bool = False,
+                 returnInfo: ReturnInfo = ReturnInfo(articleInfo = ArticleInfoFlags(bodyLen = -1))):
         """
         return a list of duplicated articles of the current article
         @param page: page of the articles
@@ -116,7 +116,7 @@ class RequestArticleDuplicatedArticles(RequestArticle):
 
 class RequestArticleOriginalArticle(RequestArticle):
     def __init__(self,
-                 returnInfo = ReturnInfo(articleInfo = ArticleInfoFlags(bodyLen = -1))):
+                 returnInfo: ReturnInfo = ReturnInfo(articleInfo = ArticleInfoFlags(bodyLen = -1))):
         """
         return the article that is the original of the given article (the current article is a duplicate)
         @param returnInfo: what details should be included in the returned information

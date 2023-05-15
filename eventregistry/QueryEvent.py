@@ -4,14 +4,17 @@ from eventregistry.ReturnInfo import *
 from eventregistry.QueryArticles import QueryArticles, RequestArticlesInfo
 from eventregistry.Query import *
 from eventregistry.Logger import logger
+from eventregistry.EventRegistry import EventRegistry
+from typing import Union, List
+
 
 class QueryEvent(Query):
     """
     Class for obtaining available info for one or more events in the Event Registry
     """
     def __init__(self,
-                 eventUriOrList,
-                 requestedResult = None):
+                 eventUriOrList: Union[str, List[str]],
+                 requestedResult: "RequestEvent" = None):
         """
         @param eventUriOrUriList: a single event uri or a list of event uris (max 50)
         @param requestedResult: the information to return as the result of the query. By default return the details of the event
@@ -26,7 +29,7 @@ class QueryEvent(Query):
         return "/api/v1/event"
 
 
-    def setRequestedResult(self, requestEvent):
+    def setRequestedResult(self, requestEvent: "RequestEvent"):
         """
         Set the single result type that you would like to be returned. Any previously set result types will be overwritten.
         Result types can be the classes that extend RequestEvent base class (see classes below).
@@ -40,26 +43,26 @@ class QueryEventArticlesIter(QueryEvent, six.Iterator):
     """
     Class for obtaining an iterator over all articles in the event
     """
-    def __init__(self, eventUri,
-                lang = None,
-                keywords = None,
-                conceptUri = None,
-                categoryUri = None,
-                sourceUri = None,
-                sourceLocationUri = None,
-                sourceGroupUri = None,
-                authorUri = None,
-                locationUri = None,
-                dateStart = None,
-                dateEnd = None,
-                dateMentionStart = None,
-                dateMentionEnd=None,
-                keywordsLoc="body",
+    def __init__(self, eventUri: str,
+                lang: Union[str, QueryItems] = None,
+                keywords: Union[str, QueryItems] = None,
+                conceptUri: Union[str, QueryItems] = None,
+                categoryUri: Union[str, QueryItems] = None,
+                sourceUri: Union[str, QueryItems] = None,
+                sourceLocationUri: Union[str, QueryItems] = None,
+                sourceGroupUri: Union[str, QueryItems] = None,
+                authorUri: Union[str, QueryItems] = None,
+                locationUri: Union[str, QueryItems] = None,
+                dateStart: Union[datetime.datetime, datetime.date, str] = None,
+                dateEnd: Union[datetime.datetime, datetime.date, str] = None,
+                dateMentionStart: Union[datetime.datetime, datetime.date, str] = None,
+                dateMentionEnd: Union[datetime.datetime, datetime.date, str] = None,
+                keywordsLoc: str = "body",
 
-                startSourceRankPercentile = 0,
-                endSourceRankPercentile=100,
-                minSentiment = -1,
-                maxSentiment = 1):
+                startSourceRankPercentile: int = 0,
+                endSourceRankPercentile: int = 100,
+                minSentiment: float = -1,
+                maxSentiment: float = 1):
         """
         @param eventUri: a single event for which we want to obtain the list of articles in it
         @param lang: find articles that are written in the specified language.
@@ -147,7 +150,7 @@ class QueryEventArticlesIter(QueryEvent, six.Iterator):
             self._setVal("maxSentiment", maxSentiment)      # e.g. 0.5
 
 
-    def count(self, eventRegistry):
+    def count(self, eventRegistry: EventRegistry):
         """
         return the number of articles that match the criteria
         @param eventRegistry: instance of EventRegistry class. used to obtain the necessary data
@@ -160,10 +163,10 @@ class QueryEventArticlesIter(QueryEvent, six.Iterator):
         return count
 
 
-    def execQuery(self, eventRegistry,
-            sortBy = "cosSim", sortByAsc = False,
-            returnInfo = None,
-            maxItems = -1):
+    def execQuery(self, eventRegistry: EventRegistry,
+            sortBy: str = "cosSim", sortByAsc: bool = False,
+            returnInfo: ReturnInfo = None,
+            maxItems: int = -1):
         """
         @param eventRegistry: instance of EventRegistry class. used to obtain the necessary data
 
@@ -243,7 +246,7 @@ class RequestEvent:
 
 
 class RequestEventInfo(RequestEvent):
-    def __init__(self, returnInfo = ReturnInfo()):
+    def __init__(self, returnInfo: ReturnInfo = ReturnInfo()):
         """
         return details about an event
         """
@@ -257,26 +260,26 @@ class RequestEventArticles(RequestEvent, QueryParamsBase):
                 page = 1,
                 count = 100,
 
-                lang = None,
-                keywords = None,
-                conceptUri = None,
-                categoryUri = None,
-                sourceUri = None,
-                sourceLocationUri = None,
-                sourceGroupUri = None,
-                authorUri = None,
-                locationUri = None,
-                dateStart = None,
-                dateEnd = None,
-                dateMentionStart = None,
-                dateMentionEnd=None,
-                keywordsLoc="body",
+                lang: Union[str, QueryItems] = None,
+                keywords: Union[str, QueryItems] = None,
+                conceptUri: Union[str, QueryItems] = None,
+                categoryUri: Union[str, QueryItems] = None,
+                sourceUri: Union[str, QueryItems] = None,
+                sourceLocationUri: Union[str, QueryItems] = None,
+                sourceGroupUri: Union[str, QueryItems] = None,
+                authorUri: Union[str, QueryItems] = None,
+                locationUri: Union[str, QueryItems] = None,
+                dateStart: Union[datetime.datetime, datetime.date, str] = None,
+                dateEnd: Union[datetime.datetime, datetime.date, str] = None,
+                dateMentionStart: Union[datetime.datetime, datetime.date, str] = None,
+                dateMentionEnd: Union[datetime.datetime, datetime.date, str] = None,
+                keywordsLoc: str = "body",
 
-                startSourceRankPercentile = 0,
-                endSourceRankPercentile = 100,
+                startSourceRankPercentile: int = 0,
+                endSourceRankPercentile: int = 100,
 
-                sortBy = "cosSim", sortByAsc = False,
-                returnInfo = None,
+                sortBy: str = "cosSim", sortByAsc: bool = False,
+                returnInfo: ReturnInfo = None,
                 **kwds):
         """
         return articles about the event
@@ -380,8 +383,8 @@ class RequestEventArticles(RequestEvent, QueryParamsBase):
 
 class RequestEventArticleUriWgts(RequestEvent):
     def __init__(self,
-                 lang = None,
-                 sortBy="cosSim", sortByAsc=False,
+                 lang: Union[str, List[str]] = None,
+                 sortBy: str = "cosSim", sortByAsc: bool = False,
                  **kwds):
         """
         return just a list of article uris and their associated weights
@@ -400,7 +403,7 @@ class RequestEventArticleUriWgts(RequestEvent):
 
 
 class RequestEventKeywordAggr(RequestEvent):
-    def __init__(self, lang=None,
+    def __init__(self, lang: Union[str, List[str]] = None,
                 **kwds):
         """
         return keyword aggregate (tag-cloud) from articles in the event
@@ -434,10 +437,10 @@ class RequestEventDateMentionAggr(RequestEvent):
 
 class RequestEventArticleTrend(RequestEvent):
     def __init__(self,
-                 lang = None,
-                 page = 1, count = 100,
-                 minArticleCosSim = -1,
-                 returnInfo = ReturnInfo(articleInfo = ArticleInfoFlags(bodyLen = 0))):
+                 lang: str = None,
+                 page: int = 1, count: int = 100,
+                 minArticleCosSim: int = -1,
+                 returnInfo: ReturnInfo = ReturnInfo(articleInfo = ArticleInfoFlags(bodyLen = 0))):
         """
         return trending information for the articles about the event
         @param lang: languages for which to compute the trends. If None, then compute trends for all articles
@@ -459,13 +462,13 @@ class RequestEventArticleTrend(RequestEvent):
 
 class RequestEventSimilarEvents(RequestEvent):
     def __init__(self,
-                conceptInfoList,
-                count = 50,                    # number of similar events to return
-                dateStart = None,              # what can be the oldest date of the similar events
-                dateEnd = None,                # what can be the newest date of the similar events
-                addArticleTrendInfo = False,   # add info how the articles in the similar events are distributed over time
-                aggrHours = 6,                 # if similarEventsAddArticleTrendInfo == True then this is the aggregating window
-                returnInfo = ReturnInfo()):
+                conceptInfoList: List[dict],
+                count: int = 50,                    # number of similar events to return
+                dateStart: Union[datetime.datetime, datetime.date, str] = None,              # what can be the oldest date of the similar events
+                dateEnd: Union[datetime.datetime, datetime.date, str] = None,                # what can be the newest date of the similar events
+                addArticleTrendInfo: bool = False,   # add info how the articles in the similar events are distributed over time
+                aggrHours: int = 6,                 # if similarEventsAddArticleTrendInfo == True then this is the aggregating window
+                returnInfo: ReturnInfo = ReturnInfo()):
         """
         compute and return a list of similar events
         @param conceptInfoList: array of concepts and their importance, e.g. [{ "uri": "http://en.wikipedia.org/wiki/Barack_Obama", "wgt": 100 }, ...]

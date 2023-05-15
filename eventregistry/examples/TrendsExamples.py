@@ -11,7 +11,7 @@ er = EventRegistry()
 #
 q = GetTrendingConcepts(source = "news", count = 10,
     returnInfo = ReturnInfo(
-        conceptInfo = ConceptInfoFlags(trendingHistory = True)))
+        conceptInfo = ConceptInfoFlags(includeConceptTrendingHistory = True)))
 ret = er.execQuery(q)
 print(er.format(ret))
 

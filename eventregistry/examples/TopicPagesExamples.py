@@ -1,7 +1,17 @@
 from eventregistry import *
 
-# er = EventRegistry(host = "http://eventregistry.org", logging = True)
-er = EventRegistry(host = "http://babaji.ijs.si:8090", logging = True)
+er = EventRegistry(host = "http://eventregistry.org")
+
+def getMyTopicPages():
+    """
+    simple call that just retrieves the list of the topics that the user has generated and are owned by him
+    For each topic it also prints the uri of the topic and it's label
+    """
+    topicPages = TopicPages(er)
+    topics = topicPages.getMyTopicPages()
+    for topic in topics:
+        print("%s\t%s" % (topic.get("uri"), topic.get("label", {}).get("eng")))
+
 
 def createTopicPage1():
     """
@@ -14,9 +24,9 @@ def createTopicPage1():
     topic.addCategory(er.getCategoryUri("renewable"), 50)
 
     # skip articles that are duplicates of other articles
-    topic.articleHasDuplicateFilter("skipHasDuplicates")
+    topic.setArticleHasDuplicateFilter("skipHasDuplicates")
     # return only articles that are about some event that we have detected
-    topic.articleHasEventFilter("skipArticlesWithoutEvent")
+    topic.setArticleHasEventFilter("skipArticlesWithoutEvent")
 
     # get first 2 pages of articles sorted by relevance to the topic page
     arts1 = topic.getArticles(page=1, sortBy="rel")
@@ -71,7 +81,8 @@ def loadERTopicPage():
     # load some topic page that I have created using the web interface
     topic.loadTopicPageFromER("31470f07-0e70-41e6-ba3d-22e92a12b58b")
 
-    arts1 = topic.getArticles(page=1, sortBy = "date")
+    arts = topic.getArticles(page=1, sortBy = "date")
+    events = topic.getEvents(page=1, count = 50)
 
 
 def saveAndLoadTopicPage():
@@ -99,7 +110,7 @@ def saveAndLoadTopicPageFromFile():
     arts1 = topic.getArticles(page=1)
 
     # save the definition to a file and later load it
-    definition = topic.saveTopicPageDefinitionToFile("topic.json")
+    topic.saveTopicPageDefinitionToFile("topic.json")
 
     topic2 = TopicPage(er)
     topic2.loadTopicPageFromFile("topic.json")
@@ -109,6 +120,8 @@ def saveAndLoadTopicPageFromFile():
     # arts1 and arts2 should be (almost) the same
 
 
+
+getMyTopicPages()
 # createTopicPage1()
 createTopicPage2()
 loadERTopicPage()

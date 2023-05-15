@@ -2,13 +2,15 @@
 examples of how to search for events using different search criteria
 """
 from eventregistry import *
-import json
+import json, datetime
 
 er = EventRegistry()
 
 # get the concept URI that matches label "Barack Obama"
 obamaUri = er.getConceptUri("Obama")
 print("Concept uri for 'Obama' is " + obamaUri)
+
+someDaysAgo = datetime.datetime.now() - datetime.timedelta(days=20)
 
 #
 # USE OF ITERATOR
@@ -43,6 +45,7 @@ res = er.execQuery(q)
 # * contain at least one article from a news source that is located in Italy
 q = QueryEvents(
     keywords=QueryItems.AND(["Apple", "Google", "Samsung"]),
+    dateStart = someDaysAgo,
     sourceLocationUri=er.getLocationUri("Italy"))
 res = er.execQuery(q)
 
@@ -56,7 +59,7 @@ res = er.execQuery(q)
 
 # use the previous query, but this time compute most relevant concepts of type organization or location extracted from events matching the search
 q.setRequestedResult(RequestEventsConceptAggr(conceptCount = 20,
-    returnInfo = ReturnInfo(conceptInfo = ConceptInfoFlags(type = ["org", "loc"]))))
+    returnInfo = ReturnInfo(eventInfo=EventInfoFlags(imageCount=5))))
 res = er.execQuery(q)
 
 

@@ -19,7 +19,7 @@ q = QueryArticles(keywords = ["Barack", "Obama"])
 # set some custom information that should be returned as a result of the query
 q.setRequestedResult(RequestArticlesInfo(count = 30,
     returnInfo = ReturnInfo(
-        articleInfo = ArticleInfoFlags(duplicateList = True, concepts = True, categories = True, location = True, image = True))))
+        articleInfo = ArticleInfoFlags(links=True))))
 res = er.execQuery(q)
 
 

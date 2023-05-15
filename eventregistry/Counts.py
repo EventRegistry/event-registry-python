@@ -5,6 +5,7 @@ have been mentioned in news articles (if source == "news") of in social media (i
 
 from eventregistry.Base import *
 from eventregistry.ReturnInfo import *
+from typing import Union, List
 
 
 class CountsBase(QueryParamsBase):
@@ -15,16 +16,12 @@ class CountsBase(QueryParamsBase):
 
 class GetCounts(CountsBase):
     def __init__(self,
-                 uriOrUriList,
-                 source = "news",
-                 type = "concept",
-                 dateStart = None,
-                 dateEnd = None,
-                 returnInfo = ReturnInfo()):
+                 uriOrUriList: Union[str, List[str]],
+                 type: Union[str, List[str]] = "concept",
+                 returnInfo: ReturnInfo = ReturnInfo()):
         """
         obtain information about how frequently a concept or category is mentioned in the articles on particular dates
-        by specifying source="custom" one can obtain counts for custom concepts, such as stocks, macroeconomic indicators, etc. The uri
-        for these can be found using EventRegistry.getCustomConceptUri() method.
+        The uri for these can be found using EventRegistry.getCustomConceptUri() method.
         Usage example:
             q = GetCounts([er.getConceptUri("Obama"), er.getConceptUri("ebola")])
             ret = er.execQuery(q)
@@ -51,39 +48,27 @@ class GetCounts(CountsBase):
             }
 
         @param uriOrUriList: concept/category uri or a list of uris
-        @param source: input source information from which to compute top trends. Options: "news", "social", "custom", "geo" or "sentiment"
         @param type: what do the uris represent? "concept" or "category"
-        @param dateStart: starting date from which to provide counts onwards (either None, datetime.date or "YYYY-MM-DD")
-        @param dateEnd: ending date until which to provide counts (either None, datetime.date or "YYYY-MM-DD")
         @param returnInfo: what details should be included in the returned information
         """
         CountsBase.__init__(self)
         self._setVal("action", "getCounts")
-        self._setVal("source", source)
         self._setVal("type", type)
         self._update(returnInfo.getParams())
         self._setVal("uri", uriOrUriList)
-        if dateStart != None:
-            self._setDateVal("dateStart", dateStart)
-        if dateEnd != None:
-            self._setDateVal("dateEnd", dateEnd)
 
 
 
 class GetCountsEx(CountsBase):
     def __init__(self,
-                 uriOrUriList,
-                 source = "news",
-                 type = "concept",
-                 dateStart = None,
-                 dateEnd = None,
-                 returnInfo = ReturnInfo()):
+                 uriOrUriList: Union[str, List[str]],
+                 type: str = "concept",
+                 returnInfo: ReturnInfo = ReturnInfo()):
         """
         obtain information about how frequently a concept or category is mentioned in the articles on particular dates
         Similar to GetCounts, but the output is more friendly for a larger set of provided uris/ids at once
         Usage example:
             q = GetCountsEx(type = "category")
-            q.queryById(range(10))  # return trends of first 10 categories
             ret = er.execQuery(q)
         Return object:
             {
@@ -112,17 +97,10 @@ class GetCountsEx(CountsBase):
         @param uriOrUriList: concept/category uri or a list of uris
         @param source: input source information from which to compute top trends. Options: "news", "social"
         @param type: what do the uris represent? "concept" or "category"
-        @param dateStart: starting date from which to provide counts onwards (either None, datetime.date or "YYYY-MM-DD")
-        @param dateEnd: ending date until which to provide counts (either None, datetime.date or "YYYY-MM-DD")
         @param returnInfo: what details should be included in the returned information
         """
         CountsBase.__init__(self)
         self._setVal("action", "getCountsEx")
-        self._setVal("source", source)
         self._setVal("type", type)
         self._update(returnInfo.getParams())
         self._setVal("uri", uriOrUriList)
-        if dateStart != None:
-            self._setDateVal("dateStart", dateStart)
-        if dateEnd != None:
-            self._setDateVal("dateEnd", dateEnd)

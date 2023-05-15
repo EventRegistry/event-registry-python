@@ -14,8 +14,7 @@ class TestReturnInfo(DataValidator):
             sourceInfo = SourceInfoFlags(title = False, description = False,location = False,ranking = False,image = False,articleCount = False,socialMedia = False,sourceGroups = False),
             conceptInfo=ConceptInfoFlags(type="concepts", lang="slv", label=False, synonyms=False, image=False, description=False, conceptClassMembership=False, conceptClassMembershipFull=False, totalCount=False, trendingSource="news", maxConceptsPerType=20),
             locationInfo=LocationInfoFlags(label=False, wikiUri=False, geoNamesId=False, population=False, geoLocation=False, countryArea=False, countryDetails=False, countryContinent=False, placeFeatureCode=False, placeCountry=False),
-            storyInfo = StoryInfoFlags(basicStats = False,location = False,date = False,title = False,summary = False,concepts = False,categories = False,medoidArticle = False,infoArticle = False,commonDates = False,socialScore = False,imageCount = 0),
-            conceptClassInfo = ConceptClassInfoFlags(parentLabels = False))
+            storyInfo = StoryInfoFlags(basicStats = False,location = False,date = False,title = False,summary = False,concepts = False,categories = False,medoidArticle = False,infoArticle = False,commonDates = False,socialScore = False,imageCount = 0))
 
     def ensureValidConcept(self, concept, testName):
         for prop in ["label", "synonyms", "image"]:

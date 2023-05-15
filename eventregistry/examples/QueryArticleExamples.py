@@ -3,7 +3,7 @@ examples that download information about the individual news articles
 """
 from eventregistry import *
 
-er = EventRegistry()
+er = EventRegistry(host = "https://eventregistry.org")
 
 #
 # search article by uri
@@ -16,8 +16,7 @@ res = er.execQuery(q)
 
 # use ArticleMapper to map article URL to the URI (id) that is used by ER internally
 artMapper = ArticleMapper(er)
-#artUri = artMapper.getArticleUri("http://www.bbc.co.uk/news/world-europe-31763789#sa-ns_mchannel%3Drss%26ns_source%3DPublicRSS20-sa")
-artUri = artMapper.getArticleUri("http://www.mynet.com/haber/guncel/share-2058597-1")
+artUri = artMapper.getArticleUri("http://www.bbc.co.uk/news/world-europe-31763789#sa-ns_mchannel%3Drss%26ns_source%3DPublicRSS20-sa")
 q = QueryArticle.queryByUri(artUri)
 # get all info about the specified article
 q.setRequestedResult(RequestArticleInfo())

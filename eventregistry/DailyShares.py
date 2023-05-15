@@ -13,9 +13,9 @@ from eventregistry.ReturnInfo import *
 # get top shared articles for today or any other day
 class GetTopSharedArticles(QueryParamsBase):
     def __init__(self,
-                 date = None,     # specify the date (either in YYYY-MM-DD or datetime.date format) for which to return top shared articles. If None then today is used
-                 count = 20,      # number of top shared articles to return
-                 returnInfo = ReturnInfo()):
+                 date: str = None,     # specify the date (either in YYYY-MM-DD or datetime.date format) for which to return top shared articles. If None then today is used
+                 count: int = 20,      # number of top shared articles to return
+                 returnInfo: ReturnInfo = ReturnInfo()):
         QueryParamsBase.__init__(self)
         self._setVal("action", "getArticles")
         self._setVal("resultType", "articles")
@@ -36,9 +36,9 @@ class GetTopSharedArticles(QueryParamsBase):
 # get top shared events for today or any other day
 class GetTopSharedEvents(QueryParamsBase):
     def __init__(self,
-                 date = None,     # specify the date (either in YYYY-MM-DD or datetime.date format) for which to return top shared articles. If None then today is used
-                 count = 20,      # number of top shared articles to return
-                 returnInfo = ReturnInfo()):
+                 date: str = None,     # specify the date (either in YYYY-MM-DD or datetime.date format) for which to return top shared articles. If None then today is used
+                 count: int = 20,      # number of top shared articles to return
+                 returnInfo: ReturnInfo = ReturnInfo()):
         QueryParamsBase.__init__(self)
         self._setVal("action", "getEvents")
         self._setVal("resultType", "events")

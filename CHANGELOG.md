@@ -1,5 +1,18 @@
 # Change Log
 
+## [v9.0]() (2023-05-15)
+
+**Added**
+- added use of the typing module. All parameters in the method calls use typing support to make it easier to understand what type is expected.
+- added autosuggest methods `suggestEventTypes`, `suggestIndustries`, `getSdgUris`, `getSasbUris` - all to be used only when querying mentions
+- 
+
+**Updated**
+- `QueryArticles` class. Added filters `authorsFilter`, `videosFilter`, `linksFilter`
+- `QueryMentions` class. Added several filters: `industryUri`, `sdgUri`, `sasbUri`, `esgUri`, `minSentenceIndex`, `maxSentenceIndex`, `showDuplicates`
+- updated several code example files
+
+
 ## [v8.12]() (2022-03-11)
 
 **Updated**

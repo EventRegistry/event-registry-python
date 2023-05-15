@@ -23,7 +23,7 @@ while True:
         # about it was recently written about it
         for eventUri in activity:
             event = ret["eventInfo"][eventUri]
-            print("Event %s ('%s') was changed" % (eventUri, event["title"][list(event["title"].keys())[0]].encode("ascii", "ignore")))
+            print("Event %s ('%s') was changed" % (eventUri, event["title"][list(event["title"].keys())[0]]))
             # event["concepts"] contains the list of relevant concepts for the event
             # event["categories"] contains the list of categories for the event
 
@@ -62,7 +62,7 @@ while True:
     eventInfoObj = ret.get("recentActivityEvents", {}).get("eventInfo", {})
     for eventUri in activity:
         event = eventInfoObj[eventUri]
-        print("Event %s ('%s') was changed" % (eventUri, event["title"][list(event["title"].keys())[0]].encode("ascii", "ignore")))
+        print("Event %s ('%s') was changed" % (eventUri, event["title"][list(event["title"].keys())[0]]))
         # event["concepts"] contains the list of relevant concepts for the event
         # event["categories"] contains the list of categories for the event
 

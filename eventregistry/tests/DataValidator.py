@@ -12,7 +12,7 @@ class DataValidator(unittest.TestCase):
 
         # load settings from the current folder. use different instance than for regular ER requests
         currPath = os.path.split(os.path.realpath(__file__))[0]
-        settPath = os.path.join(currPath, "settings.json")
+        settPath = os.path.join(currPath, "settings-test.json")
         self.er = EventRegistry(verboseOutput = True, settingsFName = settPath, allowUseOfArchive = False, minDelayBetweenRequests=0)
 
         self.articleInfo = ArticleInfoFlags(bodyLen = -1, concepts = True, storyUri = True, originalArticle = True, categories = True,

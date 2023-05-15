@@ -3,45 +3,50 @@ from eventregistry.Base import *
 from eventregistry.ReturnInfo import *
 from eventregistry.Query import *
 from eventregistry.Logger import logger
+from eventregistry.EventRegistry import EventRegistry
+from typing import Union, List
 
 
 class QueryArticles(Query):
     def __init__(self,
-                keywords = None,
-                conceptUri = None,
-                categoryUri = None,
-                sourceUri = None,
-                sourceLocationUri = None,
-                sourceGroupUri = None,
-                authorUri = None,
-                locationUri = None,
-                lang = None,
-                dateStart = None,
-                dateEnd = None,
-                dateMentionStart = None,
-                dateMentionEnd=None,
-                keywordsLoc="body",
+                keywords: Union[str, QueryItems] = None,
+                conceptUri: Union[str, QueryItems] = None,
+                categoryUri: Union[str, QueryItems] = None,
+                sourceUri: Union[str, QueryItems] = None,
+                sourceLocationUri: Union[str, QueryItems] = None,
+                sourceGroupUri: Union[str, QueryItems] = None,
+                authorUri: Union[str, QueryItems] = None,
+                locationUri: Union[str, QueryItems] = None,
+                lang: Union[str, QueryItems] = None,
+                dateStart: Union[datetime.datetime, datetime.date, str] = None,
+                dateEnd: Union[datetime.datetime, datetime.date, str] = None,
+                dateMentionStart: Union[datetime.datetime, datetime.date, str] = None,
+                dateMentionEnd: Union[datetime.datetime, datetime.date, str] = None,
+                keywordsLoc: str = "body",
 
-                ignoreKeywords = None,
-                ignoreConceptUri = None,
-                ignoreCategoryUri = None,
-                ignoreSourceUri = None,
-                ignoreSourceLocationUri = None,
-                ignoreSourceGroupUri = None,
-                ignoreAuthorUri = None,
-                ignoreLocationUri = None,
-                ignoreLang = None,
-                ignoreKeywordsLoc = "body",
+                ignoreKeywords: Union[str, QueryItems] = None,
+                ignoreConceptUri: Union[str, QueryItems] = None,
+                ignoreCategoryUri: Union[str, QueryItems] = None,
+                ignoreSourceUri: Union[str, QueryItems] = None,
+                ignoreSourceLocationUri: Union[str, QueryItems] = None,
+                ignoreSourceGroupUri: Union[str, QueryItems] = None,
+                ignoreAuthorUri: Union[str, QueryItems] = None,
+                ignoreLocationUri: Union[str, QueryItems] = None,
+                ignoreLang: Union[str, QueryItems] = None,
+                ignoreKeywordsLoc: str = "body",
 
-                isDuplicateFilter = "keepAll",
-                hasDuplicateFilter = "keepAll",
-                eventFilter = "keepAll",
-                startSourceRankPercentile = 0,
-                endSourceRankPercentile = 100,
-                minSentiment = -1,
-                maxSentiment = 1,
-                dataType = "news",
-                requestedResult = None):
+                isDuplicateFilter: str = "keepAll",
+                hasDuplicateFilter: str = "keepAll",
+                eventFilter: str = "keepAll",
+                authorsFilter: str = "keepAll",
+                videosFilter: str = "keepAll",
+                linksFilter: str = "keepAll",
+                startSourceRankPercentile: int = 0,
+                endSourceRankPercentile: int = 100,
+                minSentiment: float = -1,
+                maxSentiment: float = 1,
+                dataType: Union[str, List[str]] = "news",
+                requestedResult: "RequestArticles" = None):
         """
         Query class for searching for individual articles in the Event Registry.
         The resulting articles have to match all specified conditions. If a parameter value equals "" or [], then it is ignored.
@@ -104,6 +109,21 @@ class QueryArticles(Query):
                 "skipArticlesWithoutEvent" (skip articles that are not describing any known event in ER)
                 "keepOnlyArticlesWithoutEvent" (return only the articles that are not describing any known event in ER)
                 "keepAll" (no filtering, default)
+        @param authorsFilter: for some articles we are able to extract who their author is and for some we cannot. This filter allows you to filter the resulting articles based on this criteria.
+                Possible values are:
+                "skipIfHasAuthors" (skip articles for which we have identified who their author is)
+                "keepOnlyIfHasAuthors" (return only the articles for which we have extracted their author)
+                "keepAll" (no filtering, default)
+        @param videosFilter: some articles contain a link to a video and some don't. This filter allows you to filter the resulting articles based on this criteria.
+                Possible values are:
+                "skipIfHasVideos" (skip articles that don't contain any link to a video)
+                "keepOnlyIfHasVideos" (return only the articles that contain a link to a video)
+                "keepAll" (no filtering, default)
+        @param linksFilter: some articles contain some links to other urls (potentially other articles) and some don't. This filter allows you to filter the resulting articles based on this criteria.
+                Possible values are:
+                "skipIfHasLinks" (skip articles that contain one or more links to other urls)
+                "keepOnlyIfHasLinks" (return only the articles that contain a link to other urls)
+                "keepAll" (no filtering, default)
         @param startSourceRankPercentile: starting percentile of the sources to consider in the results (default: 0). Value should be in range 0-90 and divisible by 10.
         @param endSourceRankPercentile: ending percentile of the sources to consider in the results (default: 100). Value should be in range 10-100 and divisible by 10.
         @param minSentiment: minimum value of the sentiment, that the returned articles should have. Range [-1, 1]. Note: setting the value will remove all articles that don't have
@@ -160,6 +180,9 @@ class QueryArticles(Query):
         self._setValIfNotDefault("isDuplicateFilter", isDuplicateFilter, "keepAll")
         self._setValIfNotDefault("hasDuplicateFilter", hasDuplicateFilter, "keepAll")
         self._setValIfNotDefault("eventFilter", eventFilter, "keepAll")
+        self._setValIfNotDefault("hasAuthorsFilter", authorsFilter, "keepAll")
+        self._setValIfNotDefault("hasLinksFilter", linksFilter, "keepAll")
+        self._setValIfNotDefault("hasVideosFilter", videosFilter, "keepAll")
         assert startSourceRankPercentile >= 0 and startSourceRankPercentile % 10 == 0 and startSourceRankPercentile <= 100
         assert endSourceRankPercentile >= 0 and endSourceRankPercentile % 10 == 0 and endSourceRankPercentile <= 100
         assert startSourceRankPercentile < endSourceRankPercentile
@@ -184,7 +207,7 @@ class QueryArticles(Query):
         return "/api/v1/article"
 
 
-    def setRequestedResult(self, requestArticles):
+    def setRequestedResult(self, requestArticles: "RequestArticles"):
         """
         Set the single result type that you would like to be returned. Any previously set result types will be overwritten.
         Result types can be the classes that extend RequestArticles base class (see classes below).
@@ -194,29 +217,35 @@ class QueryArticles(Query):
 
 
     @staticmethod
-    def initWithArticleUriList(uriList):
+    def initWithArticleUriList(uriList: Union[str, List[str]], returnInfo: ReturnInfo = None):
         """
         instead of making a query, provide a list of article URIs manually, and then produce the desired results on top of them
         """
-        q = QueryArticles()
-        assert isinstance(uriList, list), "uriList has to be a list of strings that represent article uris"
-        q.queryParams = { "action": "getArticles", "articleUri": uriList }
+        # we need to set the dataType parameter here, otherwise users cannot ask for blog or pr articles using this way
+        q = QueryArticles(requestedResult=RequestArticlesInfo(returnInfo=returnInfo))
+        assert isinstance(uriList, str) or isinstance(uriList, list), "uriList has to be a list of strings or a string that represent article uris"
+        q.queryParams = { "action": "getArticles", "articleUri": uriList, "dataType": ["news", "blog", "pr"] }
         return q
 
 
     @staticmethod
-    def initWithArticleUriWgtList(uriWgtList):
+    def initWithArticleUriWgtList(uriWgtList: Union[str, List[str]], returnInfo: ReturnInfo = None):
         """
         instead of making a query, provide a list of article URIs manually, and then produce the desired results on top of them
         """
-        q = QueryArticles()
-        assert isinstance(uriWgtList, list), "uriList has to be a list of strings that represent article uris"
-        q.queryParams = { "action": "getArticles", "articleUriWgtList": ",".join(uriWgtList) }
+        # we need to set the dataType parameter here, otherwise users cannot ask for blog or pr articles using this way
+        q = QueryArticles(requestedResult=RequestArticlesInfo(returnInfo=returnInfo))
+        if isinstance(uriWgtList, list):
+            q.queryParams = { "action": "getArticles", "articleUriWgtList": ",".join(uriWgtList) }
+        elif isinstance(uriWgtList, str):
+            q.queryParams = { "action": "getArticles", "articleUriWgtList": uriWgtList, "dataType": ["news", "blog", "pr"] }
+        else:
+            assert False, "uriWgtList parameter did not contain a list or a string"
         return q
 
 
     @staticmethod
-    def initWithComplexQuery(query):
+    def initWithComplexQuery(query: Union[ComplexArticleQuery, str, dict]):
         """
         create a query using a complex article query
         """
@@ -245,7 +274,7 @@ class QueryArticlesIter(QueryArticles, six.Iterator):
     class that simplifies and combines functionality from QueryArticles and RequestArticlesInfo. It provides an iterator
     over the list of articles that match the specified conditions
     """
-    def count(self, eventRegistry):
+    def count(self, eventRegistry: EventRegistry):
         """
         return the number of articles that match the criteria
         """
@@ -257,11 +286,11 @@ class QueryArticlesIter(QueryArticles, six.Iterator):
         return count
 
 
-    def execQuery(self, eventRegistry,
-                  sortBy = "rel",
-                  sortByAsc = False,
-                  returnInfo = None,
-                  maxItems = -1,
+    def execQuery(self, eventRegistry: EventRegistry,
+                  sortBy: str = "rel",
+                  sortByAsc: bool = False,
+                  returnInfo: ReturnInfo = None,
+                  maxItems: int = -1,
                   **kwargs):
         """
         @param eventRegistry: instance of EventRegistry class. used to query new article list and uris
@@ -286,7 +315,7 @@ class QueryArticlesIter(QueryArticles, six.Iterator):
 
 
     @staticmethod
-    def initWithComplexQuery(query):
+    def initWithComplexQuery(query: Union[ComplexArticleQuery, str, dict]):
         """
         @param query: complex query as ComplexArticleQuery instance, string or a python dict
         """
@@ -308,13 +337,16 @@ class QueryArticlesIter(QueryArticles, six.Iterator):
 
 
     @staticmethod
-    def initWithArticleUriList(uriList):
+    def initWithArticleUriList(uriList: Union[str, List[str]]):
         """
         instead of making a query, provide a list of article URIs manually, and then produce the desired results on top of them
         """
+        # we need to set the dataType parameter here, otherwise users cannot ask for blog or pr articles using this way
         q = QueryArticlesIter()
-        assert isinstance(uriList, list), "uriList has to be a list of strings that represent article uris"
-        q.queryParams = { "action": "getArticles", "articleUri": uriList }
+        if isinstance(uriList, list) or isinstance(uriList, str):
+            q.queryParams = { "action": "getArticles", "articleUri": uriList, "dataType": ["news", "blog", "pr"] }
+        else:
+            assert False, "uriList parameter did not contain a list or a string"
         return q
 
 
@@ -369,10 +401,10 @@ class RequestArticles:
 
 class RequestArticlesInfo(RequestArticles):
     def __init__(self,
-                 page = 1,
-                 count = 100,
-                 sortBy = "date", sortByAsc = False,
-                 returnInfo = None):
+                 page: int = 1,
+                 count: int = 100,
+                 sortBy: str = "date", sortByAsc: bool = False,
+                 returnInfo : ReturnInfo = None):
         """
         return article details for resulting articles
         @param page: page of the articles to return
@@ -392,7 +424,7 @@ class RequestArticlesInfo(RequestArticles):
             self.__dict__.update(returnInfo.getParams("articles"))
 
 
-    def setPage(self, page):
+    def setPage(self, page: int):
         """
         set the page of results to obtain
         """
@@ -403,9 +435,9 @@ class RequestArticlesInfo(RequestArticles):
 
 class RequestArticlesUriWgtList(RequestArticles):
     def __init__(self,
-                 page = 1,
-                 count = 10000,
-                 sortBy = "fq", sortByAsc = False):
+                 page: int = 1,
+                 count: int = 10000,
+                 sortBy: str = "fq", sortByAsc: bool = False):
         """
         return a list of article uris together with the scores
         @param page: page of the results (1, 2, ...)
@@ -422,7 +454,7 @@ class RequestArticlesUriWgtList(RequestArticles):
         self.uriWgtListSortByAsc = sortByAsc
 
 
-    def setPage(self, page):
+    def setPage(self, page: int):
         assert page >= 1, "page has to be >= 1"
         self.uriWgtListPage = page
 
@@ -439,11 +471,11 @@ class RequestArticlesTimeAggr(RequestArticles):
 
 class RequestArticlesConceptAggr(RequestArticles):
     def __init__(self,
-                 conceptCount=25,
-                 conceptCountPerType = None,
-                 conceptScoring = "importance",
-                 articlesSampleSize = 10000,
-                 returnInfo = ReturnInfo()):
+                 conceptCount: int = 25,
+                 conceptCountPerType: int = None,
+                 conceptScoring: str = "importance",
+                 articlesSampleSize: str = 10000,
+                 returnInfo: ReturnInfo = ReturnInfo()):
         """
         get aggreate of concepts of resulting articles
         @param conceptCount: number of top concepts to return (at most 500)
@@ -470,8 +502,8 @@ class RequestArticlesConceptAggr(RequestArticles):
 
 class RequestArticlesCategoryAggr(RequestArticles):
     def __init__(self,
-                 articlesSampleSize = 20000,
-                 returnInfo = ReturnInfo()):
+                 articlesSampleSize: int = 20000,
+                 returnInfo: ReturnInfo = ReturnInfo()):
         """
         return aggreate of categories of resulting articles
         @param articlesSampleSize: on what sample of results should the aggregate be computed (at most 50000)
@@ -486,9 +518,9 @@ class RequestArticlesCategoryAggr(RequestArticles):
 
 class RequestArticlesSourceAggr(RequestArticles):
     def __init__(self,
-                 sourceCount = 50,
-                 normalizeBySourceArts = False,
-                 returnInfo = ReturnInfo()):
+                 sourceCount: int = 50,
+                 normalizeBySourceArts: bool = False,
+                 returnInfo: ReturnInfo = ReturnInfo()):
         """
         get aggreate of news sources of resulting articles
         @param sourceCount: the number of top sources to return
@@ -500,12 +532,13 @@ class RequestArticlesSourceAggr(RequestArticles):
         """
         self.resultType = "sourceAggr"
         self.sourceAggrSourceCount = sourceCount
+        self.sourceAggrNormalizeBySourceArts = normalizeBySourceArts
         self.__dict__.update(returnInfo.getParams("sourceAggr"))
 
 
 class RequestArticlesKeywordAggr(RequestArticles):
     def __init__(self,
-                 articlesSampleSize = 2000):
+                 articlesSampleSize: int = 2000):
         """
         get top keywords in the resulting articles
         @param articlesSampleSize: on what sample of results should the aggregate be computed (at most 20000)
@@ -518,11 +551,11 @@ class RequestArticlesKeywordAggr(RequestArticles):
 
 class RequestArticlesConceptGraph(RequestArticles):
     def __init__(self,
-                 conceptCount = 25,
-                 linkCount = 50,
-                 articlesSampleSize = 10000,
-                 skipQueryConcepts = True,
-                 returnInfo = ReturnInfo()):
+                 conceptCount: int = 25,
+                 linkCount: int = 50,
+                 articlesSampleSize: int = 10000,
+                 skipQueryConcepts: bool = True,
+                 returnInfo: ReturnInfo = ReturnInfo()):
         """
         get concept graph of resulting articles. Identify concepts that frequently co-occur with other concepts
         @param conceptCount: how many concepts should be returned (at most 1000)
@@ -544,10 +577,10 @@ class RequestArticlesConceptGraph(RequestArticles):
 
 class RequestArticlesConceptMatrix(RequestArticles):
     def __init__(self,
-                 conceptCount = 25,
-                 measure = "pmi",
-                 articlesSampleSize = 10000,
-                 returnInfo = ReturnInfo()):
+                 conceptCount: int = 25,
+                 measure: str = "pmi",
+                 articlesSampleSize: int = 10000,
+                 returnInfo: ReturnInfo = ReturnInfo()):
         """
         get aggreate of concept co-occurences of resulting articles
         @param conceptCount: how many concepts should be returned (at most 200)
@@ -567,10 +600,10 @@ class RequestArticlesConceptMatrix(RequestArticles):
 
 class RequestArticlesConceptTrends(RequestArticles):
     def __init__(self,
-                 conceptUris = None,
-                 conceptCount = 25,
-                 articlesSampleSize=10000,
-                 returnInfo = ReturnInfo()):
+                 conceptUris: Union[str, List[str]] = None,
+                 conceptCount: int = 25,
+                 articlesSampleSize: int = 10000,
+                 returnInfo: ReturnInfo = ReturnInfo()):
         """
         get trending of concepts in the resulting articles
         @param conceptUris: list of concept URIs for which to return trending information. If None, then top concepts will be automatically computed
@@ -600,16 +633,16 @@ class RequestArticlesDateMentionAggr(RequestArticles):
 
 class RequestArticlesRecentActivity(RequestArticles):
     def __init__(self,
-                 maxArticleCount=100,
-                 updatesAfterNewsUri=None,
-                 updatesafterBlogUri=None,
-                 updatesAfterPrUri=None,
-                 updatesAfterTm = None,
-                 updatesAfterMinsAgo = None,
-                 updatesUntilTm = None,
-                 updatesUntilMinsAgo = None,
-                 mandatorySourceLocation = False,
-                 returnInfo = None):
+                 maxArticleCount: int = 100,
+                 updatesAfterNewsUri: str = None,
+                 updatesafterBlogUri: str = None,
+                 updatesAfterPrUri: str = None,
+                 updatesAfterTm: Union[datetime.datetime, datetime.date, str] = None,
+                 updatesAfterMinsAgo: int = None,
+                 updatesUntilTm: Union[datetime.datetime, datetime.date, str] = None,
+                 updatesUntilMinsAgo: int = None,
+                 mandatorySourceLocation: bool = False,
+                 returnInfo: ReturnInfo = None):
         """
         get the list of articles that were recently added to the Event Registry and match the selected criteria
         @param maxArticleCount: the maximum number of articles to return in the call (the number can be even higher than 100 but in case more articles

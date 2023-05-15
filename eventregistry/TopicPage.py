@@ -6,9 +6,33 @@ through the API
 import six, json
 from eventregistry.Base import *
 from eventregistry.ReturnInfo import *
+from eventregistry.EventRegistry import EventRegistry
+from typing import Union, List
+
+
+class TopicPages(QueryParamsBase):
+    """
+    get the list of user owned topic pages
+    """
+    def __init__(self, eventRegistry: EventRegistry):
+        """
+        create an instance of a topic page
+
+        @param eventRegistry: instance of class EventRegistry
+        """
+        self.eventRegistry = eventRegistry
+
+    def getMyTopicPages(self):
+        """
+        get the list of topic pages owned by me
+        """
+        userProfile = self.eventRegistry.jsonRequest("/api/v1/user/getUserProfile", {})
+        return userProfile.get("ownedTopicPages", [])
+
+
 
 class TopicPage(QueryParamsBase):
-    def __init__(self, eventRegistry):
+    def __init__(self, eventRegistry: EventRegistry):
         """
         create an instance of a topic page
 
@@ -48,7 +72,7 @@ class TopicPage(QueryParamsBase):
         }
 
 
-    def loadTopicPageFromER(self, uri):
+    def loadTopicPageFromER(self, uri: str):
         """
         load an existing topic page from Event Registry based on the topic page URI
         @param uri: uri of the topic page saved in your Event Registry account
@@ -66,7 +90,7 @@ class TopicPage(QueryParamsBase):
         self.topicPage.update(self.concept.get("topicPage", {}))
 
 
-    def loadTopicPageFromDefinition(self, definitionDict):
+    def loadTopicPageFromDefinition(self, definitionDict: dict):
         """
         load the topic page definition from a python dictionary
         """
@@ -74,7 +98,7 @@ class TopicPage(QueryParamsBase):
         self.topicPage = definitionDict
 
 
-    def loadTopicPageFromFile(self, fname):
+    def loadTopicPageFromFile(self, fname: str):
         """
         load topic page from an existing file
         """
@@ -90,7 +114,7 @@ class TopicPage(QueryParamsBase):
         return self.topicPage
 
 
-    def saveTopicPageDefinitionToFile(self, fname):
+    def saveTopicPageDefinitionToFile(self, fname: str):
         """
         save the topic page definition to a file
         """
@@ -100,7 +124,7 @@ class TopicPage(QueryParamsBase):
     # methods for adding filters to the topic
     #
 
-    def setArticleThreshold(self, value):
+    def setArticleThreshold(self, value: int):
         """
         what is the minimum total weight that an article has to have in order to get it among the results?
         @param value: threshold to use
@@ -110,7 +134,7 @@ class TopicPage(QueryParamsBase):
         self.topicPage["articleTreshWgt"] = value
 
 
-    def setEventThreshold(self, value):
+    def setEventThreshold(self, value: int):
         """
         what is the minimum total weight that an event has to have in order to get it among the results?
         @param value: threshold to use
@@ -120,7 +144,7 @@ class TopicPage(QueryParamsBase):
         self.topicPage["eventTreshWgt"] = value
 
 
-    def setArticleIsDuplicateFilter(self, value):
+    def setArticleIsDuplicateFilter(self, value: str):
         """
         @param value: some articles can be duplicates of other articles. What should be done with them. Possible values are:
             "skipDuplicates" (skip the resulting articles that are duplicates of other articles)
@@ -131,7 +155,7 @@ class TopicPage(QueryParamsBase):
         self.topicPage["isDuplicateFilter"] = value
 
 
-    def setArticleHasEventFilter(self, value):
+    def setArticleHasEventFilter(self, value: str):
         """
         @param value: some articles describe a known event and some don't. This filter allows you to filter the resulting articles based on this criteria.
             Possible values are:
@@ -143,7 +167,7 @@ class TopicPage(QueryParamsBase):
         self.topicPage["articleHasEvent"] = value
 
 
-    def setArticleHasDuplicateFilter(self, value):
+    def setArticleHasDuplicateFilter(self, value: str):
         """
         @param value: some articles are later copied by others. What should be done with such articles. Possible values are:
             "skipHasDuplicates" (skip the articles that have been later copied by others)
@@ -154,7 +178,7 @@ class TopicPage(QueryParamsBase):
         self.topicPage["articleHasDuplicate"] = value
 
 
-    def setDataTypes(self, dataTypes):
+    def setDataTypes(self, dataTypes: Union[str, List[str]]):
         """
         what data types should we search? "news" (news content, default), "pr" (press releases), or "blog".
             If you want to use multiple data types, put them in an array (e.g. ["news", "pr"])
@@ -162,7 +186,7 @@ class TopicPage(QueryParamsBase):
         self.topicPage["dataType"] = dataTypes
 
 
-    def setMaxDaysBack(self, maxDaysBack):
+    def setMaxDaysBack(self, maxDaysBack: int):
         """
         what is the maximum allowed age of the results?
         """
@@ -171,7 +195,7 @@ class TopicPage(QueryParamsBase):
         self.topicPage["maxDaysBack"] = maxDaysBack
 
 
-    def setSourceRankPercentile(self, startPercentile=0, endPercentile=100):
+    def setSourceRankPercentile(self, startPercentile: int = 0, endPercentile: int = 100):
         assert startPercentile >= 0 and startPercentile <= 90, "startPercentile is out of valid values (0 - 90)"
         assert endPercentile >= 10 and endPercentile <= 100, "endPercentile is out of valid values (10 - 100)"
         assert startPercentile < endPercentile, "startPercentile has to be smaller than endPercentile"
@@ -179,6 +203,16 @@ class TopicPage(QueryParamsBase):
         assert endPercentile % 10 == 0, "endPercentile has to be a multiple of 10"
         self.topicPage["startSourceRankPercentile"] = startPercentile
         self.topicPage["endSourceRankPercentile"] = endPercentile
+
+
+    def setSentiment(self, minSentiment: float = -1, maxSentiment: float = 1):
+        """
+        what should be the sentiment of the returned articles and events?
+        """
+        assert minSentiment >= -1, "minSentiment has to be >= -1"
+        assert maxSentiment <= 1, "maxSentiment has to be <= 1"
+        self.topicPage["minSentiment"] = minSentiment
+        self.topicPage["maxSentiment"] = maxSentiment
 
 
     def clearConcepts(self):
@@ -209,7 +243,7 @@ class TopicPage(QueryParamsBase):
         self.topicPage["locations"] = []
 
 
-    def addConcept(self, conceptUri, weight, label = None, conceptType = None, required = False, excluded = False):
+    def addConcept(self, conceptUri: str, weight: float, label: str = None, conceptType: str = None, required: bool = False, excluded: bool = False):
         """
         add a relevant concept to the topic page
         @param conceptUri: uri of the concept to be added
@@ -220,12 +254,14 @@ class TopicPage(QueryParamsBase):
         assert isinstance(weight, (float, int)), "weight value has to be a positive or negative integer"
         assert not (required == True and excluded == True), "Parameters required and excluded can not be True at the same time"
         concept = {"uri": conceptUri, "wgt": weight, "required": required, "excluded": excluded }
-        if label != None: concept["label"] = label
-        if conceptType != None: concept["type"] = conceptType
+        if label != None:
+            concept["label"] = label
+        if conceptType != None:
+            concept["type"] = conceptType
         self.topicPage["concepts"].append(concept)
 
 
-    def addKeyword(self, keyword, weight, required = False, excluded = False):
+    def addKeyword(self, keyword: str, weight: float, required: bool = False, excluded: bool = False):
         """
         add a relevant keyword to the topic page
         @param keyword: keyword or phrase to be added
@@ -238,7 +274,7 @@ class TopicPage(QueryParamsBase):
         self.topicPage["keywords"].append({"keyword": keyword, "wgt": weight, "required": required, "excluded": excluded })
 
 
-    def addCategory(self, categoryUri, weight, required = False, excluded = False):
+    def addCategory(self, categoryUri: str, weight: float, required: bool = False, excluded: bool = False):
         """
         add a relevant category to the topic page
         @param categoryUri: uri of the category to be added
@@ -251,7 +287,7 @@ class TopicPage(QueryParamsBase):
         self.topicPage["categories"].append({"uri": categoryUri, "wgt": weight, "required": required, "excluded": excluded })
 
 
-    def addSource(self, sourceUri, weight, excluded = False):
+    def addSource(self, sourceUri: str, weight: float, excluded: bool = False):
         """
         add a news source to the topic page
         @param sourceUri: uri of the news source to add to the topic page
@@ -262,7 +298,7 @@ class TopicPage(QueryParamsBase):
         self.topicPage["sources"].append({"uri": sourceUri, "wgt": weight, "excluded": excluded })
 
 
-    def addSourceLocation(self, sourceLocationUri, weight, excluded = False):
+    def addSourceLocation(self, sourceLocationUri: str, weight: float, excluded: bool = False):
         """
         add a list of relevant sources by identifying them by their geographic location
         @param sourceLocationUri: uri of the location where the sources should be geographically located
@@ -273,7 +309,7 @@ class TopicPage(QueryParamsBase):
         self.topicPage["sourceLocations"].append({"uri": sourceLocationUri, "wgt": weight, "excluded": excluded })
 
 
-    def addSourceGroup(self, sourceGroupUri, weight, excluded = False):
+    def addSourceGroup(self, sourceGroupUri: str, weight: float, excluded: bool = False):
         """
         add a list of relevant sources by specifying a whole source group to the topic page
         @param sourceGroupUri: uri of the source group to add
@@ -284,7 +320,7 @@ class TopicPage(QueryParamsBase):
         self.topicPage["sourceGroups"].append({"uri": sourceGroupUri, "wgt": weight, "excluded": excluded })
 
 
-    def addLocation(self, locationUri, weight):
+    def addLocation(self, locationUri: str, weight: float):
         """
         add relevant location to the topic page
         @param locationUri: uri of the location to add
@@ -294,7 +330,7 @@ class TopicPage(QueryParamsBase):
         self.topicPage["locations"].append({"uri": locationUri, "wgt": weight})
 
 
-    def setLanguages(self, languages):
+    def setLanguages(self, languages: Union[str, List[str]]):
         """
         restrict the results to the list of specified languages
         """
@@ -305,7 +341,7 @@ class TopicPage(QueryParamsBase):
         self.topicPage["langs"] = languages
 
 
-    def restrictToSetConceptsAndKeywords(self, restrict):
+    def restrictToSetConceptsAndKeywords(self, restrict: bool):
         """
         if true then the results have to mention at least one of the specified concepts or keywords
         """
@@ -313,7 +349,7 @@ class TopicPage(QueryParamsBase):
         self.topicPage["restrictToSetConcepts"] = restrict
 
 
-    def restrictToSetCategories(self, restrict):
+    def restrictToSetCategories(self, restrict: bool):
         """
         if set to true then return only results that are assigned to one of the specified categories
         """
@@ -321,7 +357,7 @@ class TopicPage(QueryParamsBase):
         self.topicPage["restrictToSetCategories"] = restrict
 
 
-    def restrictToSetSources(self, restrict):
+    def restrictToSetSources(self, restrict: bool):
         """
         if set to true then return only results from one of the specified news sources
         this includes also sources set by source groups or by source locations
@@ -330,7 +366,7 @@ class TopicPage(QueryParamsBase):
         self.topicPage["restrictToSetSources"] = restrict
 
 
-    def restrictToSetLocations(self, restrict):
+    def restrictToSetLocations(self, restrict: bool):
         """
         if set to true, then return only results that are located at one of the specified locations
         """
@@ -344,12 +380,11 @@ class TopicPage(QueryParamsBase):
 
 
     def getArticles(self,
-                page=1,
-                count=100,
-                sortBy = "rel",
-                sortByAsc = False,
-                dataType = "news",
-                returnInfo=ReturnInfo(),
+                page: int = 1,
+                count: int = 100,
+                sortBy: str = "rel",
+                sortByAsc: bool = False,
+                returnInfo: ReturnInfo = ReturnInfo(),
                 **kwargs):
         """
         return a list of articles that match the topic page
@@ -377,11 +412,11 @@ class TopicPage(QueryParamsBase):
 
 
     def getEvents(self,
-                page=1,
-                count=50,
-                sortBy = "rel",
-                sortByAsc = False,
-                returnInfo=ReturnInfo(),
+                page: int = 1,
+                count: int = 50,
+                sortBy: str = "rel",
+                sortByAsc: bool = False,
+                returnInfo: ReturnInfo = ReturnInfo(),
                 **kwargs):
         """
         return a list of events that match the topic page
@@ -399,6 +434,8 @@ class TopicPage(QueryParamsBase):
             "dataType": self.topicPage["dataType"],
             "eventsCount": count,
             "eventsPage": page,
+            "eventsSortBy": sortBy,
+            "eventsSortByAsc": sortByAsc,
             "topicPage": json.dumps(self.topicPage)
         }
         params.update(returnInfo.getParams("events"))

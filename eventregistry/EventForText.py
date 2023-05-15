@@ -29,21 +29,22 @@ You can use QueryEvent or QueryStory to obtain more information about these even
 
 from eventregistry.Base import *
 from eventregistry.ReturnInfo import *
+from eventregistry.EventRegistry import EventRegistry
 
 class GetEventForText(QueryParamsBase):
     def __init__(self,
-                 eventRegistry,             # instance of EventRegistry class
-                 nrOfEventsToReturn = 5):   # number of events to return for the given text
+                 eventRegistry: EventRegistry,             # instance of EventRegistry class
+                 nrOfEventsToReturn: int = 5):   # number of events to return for the given text
         QueryParamsBase.__init__(self)
         self._er = eventRegistry
         self._nrOfEventsToReturn = nrOfEventsToReturn
 
 
-    def compute(self,
-                text,           # text for which to find the most similar event
-                lang = "eng"):  # language in which the text is written
+    def compute(self, text: str, lang: str = "eng"):
         """
         compute the list of most similar events for the given text
+        @param text: text for which to find the most similar event
+        @param lang: language in which the text is written
         """
         params = { "lang": lang, "text": text, "topClustersCount": self._nrOfEventsToReturn }
         res = self._er.jsonRequest("/api/v1/getEventForText/getEventForText", params)

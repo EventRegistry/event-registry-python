@@ -6,7 +6,7 @@ the news articles, or an article is about a particular category
 
 from eventregistry import *
 
-er = EventRegistry()
+er = EventRegistry(host = "https://eventregistry.org")
 
 obamaUri = er.getConceptUri("Trump")
 ebolaUri = er.getConceptUri("ebola")
@@ -30,9 +30,4 @@ ret = er.execQuery(q)
 
 # get the sentiment expressed about Obama
 q = GetCounts(obamaUri, source="sentiment")
-ret = er.execQuery(q)
-
-# get the stock prices for Apple
-apple = er.getCustomConceptUri("apple")
-q = GetCounts(apple, source="custom")
 ret = er.execQuery(q)

@@ -15,10 +15,10 @@ class TrendsBase(QueryParamsBase):
 
 class GetTrendingConcepts(TrendsBase):
     def __init__(self,
-                 source = "news",
-                 count = 20,
-                 conceptType = ["person", "org", "loc"],
-                 returnInfo = ReturnInfo()):
+                 source: str = "news",
+                 count: int = 20,
+                 conceptType: Union[str, List[str]] = ["person", "org", "loc"],
+                 returnInfo: ReturnInfo = ReturnInfo()):
         """
         get currently top trending concepts
         @param source: source information from which to compute top trends. Options: "news", "social", "pr", "blogs"
@@ -39,9 +39,9 @@ class GetTrendingConcepts(TrendsBase):
 
 class GetTrendingCategories(TrendsBase):
     def __init__(self,
-                 source = "news",
-                 count = 20,
-                 returnInfo = ReturnInfo()):
+                 source: str = "news",
+                 count: int = 20,
+                 returnInfo: ReturnInfo = ReturnInfo()):
         """
         get currently top trending categories
         @param source: source information from which to compute top trends. Options: "news", "social", "pr", "blogs"
@@ -60,8 +60,8 @@ class GetTrendingCategories(TrendsBase):
 
 class GetTrendingCustomItems(TrendsBase):
     def __init__(self,
-                 count = 20,
-                 returnInfo = ReturnInfo()):
+                 count: int = 20,
+                 returnInfo: ReturnInfo = ReturnInfo()):
         """
         get currently top trending items for which the users provided the data
         this data can be stock prices, energy prices, etc...
@@ -77,9 +77,9 @@ class GetTrendingCustomItems(TrendsBase):
 
 class GetTrendingConceptGroups(TrendsBase):
     def __init__(self,
-                 source = "news",
-                 count = 20,
-                 returnInfo = ReturnInfo()):
+                 source: str = "news",
+                 count: int = 20,
+                 returnInfo: ReturnInfo = ReturnInfo()):
         """
         get currently top trending groups of concepts
         a group can be identified by the concept type or by a concept class uri
@@ -94,12 +94,12 @@ class GetTrendingConceptGroups(TrendsBase):
         self._update(returnInfo.getParams())
 
 
-    def getConceptTypeGroups(self, types = ["person", "org", "loc"]):
+    def getConceptTypeGroups(self, types: Union[str, List[str]] = ["person", "org", "loc"]):
         """request trending of concepts of specified types"""
         self._setVal("conceptType", types)
 
 
-    def getConceptClassUris(self, conceptClassUris):
+    def getConceptClassUris(self, conceptClassUris: Union[str, List[str]]):
         """request trending of concepts assigned to the specified concept classes"""
         self._setVal("conceptClassUri", conceptClassUris)
 

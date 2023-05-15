@@ -1,11 +1,12 @@
 ﻿from eventregistry.Base import *
 from eventregistry.ReturnInfo import *
+from typing import Union, List
 
 
 class GetSourceInfo(QueryParamsBase):
     def __init__(self,
-                 uriOrUriList = None,
-                 returnInfo = ReturnInfo()):
+                 uriOrUriList: Union[str, List[str]] = None,
+                 returnInfo: ReturnInfo = ReturnInfo()):
         """
         obtain desired information about one or more news sources
         @param uriOrUriList: single source uri or a list of source uris for which to return information
@@ -18,12 +19,12 @@ class GetSourceInfo(QueryParamsBase):
         self._update(returnInfo.getParams())
 
 
-    def queryByUri(self, uriOrUriList):
+    def queryByUri(self, uriOrUriList: Union[str, List[str]]):
         """search sources by uri(s)"""
         self._setVal("uri", uriOrUriList)
 
 
-    def queryById(self, idOrIdList):
+    def queryById(self, idOrIdList: Union[str, List[str]]):
         """search concepts by id(s)"""
         self._setVal("id", idOrIdList)
 
@@ -35,8 +36,8 @@ class GetSourceInfo(QueryParamsBase):
 
 class GetConceptInfo(QueryParamsBase):
     def __init__(self,
-                 uriOrUriList = None,
-                 returnInfo = ReturnInfo()):
+                 uriOrUriList: Union[str, List[str]] = None,
+                 returnInfo: ReturnInfo = ReturnInfo()):
         """
         obtain information about concepts
         @param uriOrUriList: single concept uri or a list of concept uris for which to return information
@@ -56,8 +57,8 @@ class GetConceptInfo(QueryParamsBase):
 
 class GetCategoryInfo(QueryParamsBase):
     def __init__(self,
-                 uriOrUriList = None,
-                 returnInfo = ReturnInfo()):
+                 uriOrUriList: Union[str, List[str]] = None,
+                 returnInfo: ReturnInfo = ReturnInfo()):
         """
         obtain information about categories
         @param uriOrUriList: single category uri or a list of category uris for which to return information
@@ -70,7 +71,7 @@ class GetCategoryInfo(QueryParamsBase):
         self._update(returnInfo.getParams())
 
 
-    def queryByUri(self, uriOrUriList):
+    def queryByUri(self, uriOrUriList: Union[str, List[str]]):
         """search categories by their uri(s)"""
         self._setVal("uri", uriOrUriList)
 
@@ -81,7 +82,7 @@ class GetCategoryInfo(QueryParamsBase):
 
 
 class GetSourceStats(QueryParamsBase):
-    def __init__(self, sourceUri = None):
+    def __init__(self, sourceUri: Union[str, List[str]] = None):
         """
         get stats about one or more sources - return json object will include:
          "uri"
@@ -103,6 +104,6 @@ class GetSourceStats(QueryParamsBase):
         return "/api/v1/source"
 
 
-    def queryByUri(self, uriOrUriList):
+    def queryByUri(self, uriOrUriList: Union[str, List[str]]):
         """ get stats about one or more sources specified by their uris """
         self.queryParams["uri"] = uriOrUriList

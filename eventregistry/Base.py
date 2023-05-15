@@ -4,6 +4,7 @@ utility classes for Event Registry
 
 import six, warnings, os, sys, re, datetime, time
 from eventregistry.Logger import logger
+from typing import Union, List
 
 mainLangs = ["eng", "deu", "zho", "slv", "spa"]
 allLangs = [ "eng", "deu", "spa", "cat", "por", "ita", "fra", "rus", "ara", "tur", "zho", "slv", "hrv", "srp" ]
@@ -45,7 +46,7 @@ class Struct(object):
     helper class for converting dict to a native python object
     instead of a["b"]["c"] we can write a.b.c
     """
-    def __init__(self, data):
+    def __init__(self, data: dict):
         for name, value in data.items():
             setattr(self, name, self._wrap(value))
 
@@ -103,11 +104,11 @@ class QueryParamsBase(object):
     calls to _addArrayVal() method)
     """
     def __init__(self):
-        self.queryParams = {}
+        self.queryParams: dict = {}
 
 
     @staticmethod
-    def copy(obj):
+    def copy(obj: "QueryParamsBase"):
         assert isinstance(obj, QueryParamsBase)
         ret = QueryParamsBase()
         ret.queryParams = dict(obj.queryParams)
@@ -115,7 +116,7 @@ class QueryParamsBase(object):
 
 
     @staticmethod
-    def encodeDate(val):
+    def encodeDate(val: Union[datetime.datetime, datetime.date, str]):
         """encode val that can be a date in different forms as a date that can be sent to Er"""
         if isinstance(val, datetime.datetime):
             return val.date().isoformat()
@@ -128,7 +129,7 @@ class QueryParamsBase(object):
 
 
     @staticmethod
-    def encodeDateTime(val):
+    def encodeDateTime(val: Union[datetime.datetime, str]):
         """encode datetime into UTC ISO format which can be sent to ER"""
         if isinstance(val, datetime.datetime):
             # if we have a datetime in some tz, we convert it first to UTC
@@ -142,18 +143,18 @@ class QueryParamsBase(object):
         raise AssertionError("datetime was not in the recognizable data type. Use datetime or string in ISO format")
 
 
-    def _clearVal(self, propName):
+    def _clearVal(self, propName: str):
         """remove the value of a property propName (if existing)"""
         if propName in self.queryParams:
             del self.queryParams[propName]
 
 
-    def _hasVal(self, propName):
+    def _hasVal(self, propName: str):
         """do we have in the query property named propName"""
         return propName in self.queryParams
 
 
-    def _setVal(self, propName, val):
+    def _setVal(self, propName: str, val):
         """set a value of a property in the query"""
         if isinstance(val, six.string_types):
             # in python 2 we need to first encode, before removing the invalid characters
@@ -163,19 +164,19 @@ class QueryParamsBase(object):
         self.queryParams[propName] = val
 
 
-    def _setValIfNotDefault(self, propName, val, defVal):
+    def _setValIfNotDefault(self, propName: str, val, defVal):
         """set to queryParams property propName to val if val != defVal"""
         if val != defVal:
             self._setVal(propName, val)
 
 
-    def _setDateVal(self, propName, val):
+    def _setDateVal(self, propName: str, val):
         """set a property value that represents date. Value can be string in YYYY-MM-DD format, datetime.date or datetime.datetime"""
         encodedVal = self.encodeDate(val)
         self._setVal(propName, encodedVal)
 
 
-    def _addArrayVal(self, propName, val):
+    def _addArrayVal(self, propName: str, val):
         """add a value to an array of values for a property"""
         if isinstance(val, six.string_types):
             # in python 2 we need to first encode, before removing the invalid characters
@@ -187,7 +188,7 @@ class QueryParamsBase(object):
         self.queryParams[propName].append(val)
 
 
-    def _update(self, object):
+    def _update(self, object: dict):
         self.queryParams.update(object)
 
 
@@ -196,7 +197,7 @@ class QueryParamsBase(object):
         return dict(self.queryParams)
 
 
-    def _setQueryArrVal(self, value, propName, propOperName, defaultOperName):
+    def _setQueryArrVal(self, value: Union[str, QueryItems, list], propName: str, propOperName: str, defaultOperName: str):
         """
         parse the value "value" and use it to set the property propName and the operator with name propOperName
         @param value: None, string, QueryItems or list. Values to be set using property name propName

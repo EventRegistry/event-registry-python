@@ -3,6 +3,7 @@ main class responsible for obtaining results from the Event Registry
 """
 import six, os, sys, traceback, json, re, requests, time, logging, threading
 
+from typing import Union, List
 from eventregistry.Base import *
 from eventregistry.ReturnInfo import *
 from eventregistry.Logger import logger
@@ -14,14 +15,14 @@ class EventRegistry(object):
     it is used to send all the requests and queries
     """
     def __init__(self,
-                 apiKey = None,
-                 host = None,
-                 hostAnalytics = None,
-                 minDelayBetweenRequests = 0.5,
-                 repeatFailedRequestCount = -1,
-                 allowUseOfArchive = True,
-                 verboseOutput = False,
-                 settingsFName = None):
+                 apiKey: str = None,
+                 host: str = None,
+                 hostAnalytics: str = None,
+                 minDelayBetweenRequests: float = 0.5,
+                 repeatFailedRequestCount: int = -1,
+                 allowUseOfArchive: bool = True,
+                 verboseOutput: bool = False,
+                 settingsFName: str = None):
         """
         @param apiKey: API key that should be used to make the requests to the Event Registry. API key is assigned to each user account and can be obtained on
             this page: https://newsapi.ai/dashboard
@@ -115,12 +116,12 @@ class EventRegistry(object):
             pass
 
 
-    def setLogging(self, val):
+    def setLogging(self, val: bool):
         """should all requests be logged to a file or not?"""
         self._logRequests = val
 
 
-    def setExtraParams(self, params):
+    def setExtraParams(self, params: dict):
         if params != None:
             assert(isinstance(params, dict))
         self._extraParams = params
@@ -164,7 +165,7 @@ class EventRegistry(object):
         return self.jsonRequest("/api/v1/getServiceStatus", {"apiKey": self._apiKey})
 
 
-    def getUrl(self, query):
+    def getUrl(self, query: QueryParamsBase):
         """
         return the url that can be used to get the content that matches the query
         @param query: instance of Query class
@@ -188,7 +189,7 @@ class EventRegistry(object):
         return self._headers
 
 
-    def getLastHeader(self, headerName, default = None):
+    def getLastHeader(self, headerName: str, default = None):
         """
         get a value of the header headerName that was set in the headers in the last response object
         """
@@ -211,7 +212,7 @@ class EventRegistry(object):
         return self.getLastHeader("req-archive", "0") == "1"
 
 
-    def execQuery(self, query, allowUseOfArchive = None):
+    def execQuery(self, query:QueryParamsBase, allowUseOfArchive: bool = None):
         """
         main method for executing the search queries.
         @param query: instance of Query class
@@ -227,7 +228,7 @@ class EventRegistry(object):
         return respInfo
 
 
-    def jsonRequest(self, methodUrl, paramDict, customLogFName = None, allowUseOfArchive = None):
+    def jsonRequest(self, methodUrl: str, paramDict: dict, customLogFName: str = None, allowUseOfArchive: bool = None):
         """
         make a request for json data. repeat it _repeatFailedRequestCount times, if they fail (indefinitely if _repeatFailedRequestCount = -1)
         @param methodUrl: url on er (e.g. "/api/v1/article")
@@ -271,7 +272,7 @@ class EventRegistry(object):
         returnData = None
         respInfo = None
         url = self._host + methodUrl
-        while self._repeatFailedRequestCount < 0 or tryCount < self._repeatFailedRequestCount:
+        while self._repeatFailedRequestCount < 0 or tryCount <= self._repeatFailedRequestCount:
             tryCount += 1
             try:
                 # make the request
@@ -308,7 +309,7 @@ class EventRegistry(object):
         return returnData
 
 
-    def jsonRequestAnalytics(self, methodUrl, paramDict):
+    def jsonRequestAnalytics(self, methodUrl: str, paramDict: dict):
         """
         call the analytics service to execute a method like annotation, categorization, etc.
         @param methodUrl: api endpoint url to call
@@ -322,7 +323,7 @@ class EventRegistry(object):
         self._lastException = None
         self._headers = {}  # reset any past data
         tryCount = 0
-        while self._repeatFailedRequestCount < 0 or tryCount < self._repeatFailedRequestCount:
+        while self._repeatFailedRequestCount < 0 or tryCount <= self._repeatFailedRequestCount:
             tryCount += 1
             try:
                 url = self._hostAnalytics + methodUrl
@@ -355,7 +356,7 @@ class EventRegistry(object):
     #
     # suggestion methods - return type is a list of matching items
 
-    def suggestConcepts(self, prefix, sources = ["concepts"], lang = "eng", conceptLang = "eng", page = 1, count = 20, returnInfo = ReturnInfo(), **kwargs):
+    def suggestConcepts(self, prefix: str, sources: Union[str, list] = ["concepts"], lang: str = "eng", conceptLang: str = "eng", page: int = 1, count: int = 20, returnInfo: ReturnInfo = ReturnInfo(), **kwargs):
         """
         return a list of concepts that contain the given prefix. returned matching concepts are sorted based on their
             frequency of occurence in news (from most to least frequent)
@@ -374,7 +375,7 @@ class EventRegistry(object):
         return self.jsonRequest("/api/v1/suggestConceptsFast", params)
 
 
-    def suggestCategories(self, prefix, page = 1, count = 20, returnInfo = ReturnInfo(), **kwargs):
+    def suggestCategories(self, prefix: str, page: int = 1, count: int = 20, returnInfo: ReturnInfo = ReturnInfo(), **kwargs):
         """
         return a list of dmoz categories that contain the prefix
         @param prefix: input text that should be contained in the category name
@@ -389,7 +390,7 @@ class EventRegistry(object):
         return self.jsonRequest("/api/v1/suggestCategoriesFast", params)
 
 
-    def suggestNewsSources(self, prefix, dataType = ["news", "pr", "blog"], page = 1, count = 20, **kwargs):
+    def suggestNewsSources(self, prefix: str, dataType: Union[str, list] = ["news", "pr", "blog"], page: int = 1, count: int = 20, **kwargs):
         """
         return a list of news sources that match the prefix
         @param prefix: input text that should be contained in the source name or uri
@@ -403,7 +404,7 @@ class EventRegistry(object):
         return self.jsonRequest("/api/v1/suggestSourcesFast", params)
 
 
-    def suggestSourceGroups(self, prefix, page = 1, count = 20, **kwargs):
+    def suggestSourceGroups(self, prefix: str, page: int = 1, count: int = 20, **kwargs):
         """
         return a list of news source groups that match the prefix
         @param prefix: input text that should be contained in the source group name or uri
@@ -416,7 +417,7 @@ class EventRegistry(object):
         return self.jsonRequest("/api/v1/suggestSourceGroups", params)
 
 
-    def suggestLocations(self, prefix, sources = ["place", "country"], lang = "eng", count = 20, countryUri = None, sortByDistanceTo = None, returnInfo = ReturnInfo(), **kwargs):
+    def suggestLocations(self, prefix: str, sources: Union[str, list] = ["place", "country"], lang: str = "eng", count: int = 20, countryUri: str = None, sortByDistanceTo: bool = None, returnInfo: ReturnInfo = ReturnInfo(), **kwargs):
         """
         return a list of geo locations (cities or countries) that contain the prefix
         @param prefix: input text that should be contained in the location name
@@ -438,7 +439,7 @@ class EventRegistry(object):
         return self.jsonRequest("/api/v1/suggestLocationsFast", params)
 
 
-    def suggestLocationsAtCoordinate(self, latitude, longitude, radiusKm, limitToCities = False, lang = "eng", count = 20, ignoreNonWiki = True, returnInfo = ReturnInfo(), **kwargs):
+    def suggestLocationsAtCoordinate(self, latitude: Union[int, float], longitude: Union[int, float], radiusKm: Union[int, float], limitToCities: bool = False, lang: str = "eng", count: int = 20, ignoreNonWiki: bool = True, returnInfo: ReturnInfo = ReturnInfo(), **kwargs):
         """
         return a list of geo locations (cities or places) that are close to the provided (lat, long) values
         @param latitude: latitude part of the coordinate
@@ -458,7 +459,7 @@ class EventRegistry(object):
         return self.jsonRequest("/api/v1/suggestLocationsFast", params)
 
 
-    def suggestSourcesAtCoordinate(self, latitude, longitude, radiusKm, count = 20, **kwargs):
+    def suggestSourcesAtCoordinate(self, latitude: Union[int, float], longitude: Union[int, float], radiusKm: Union[int, float], count: int = 20, **kwargs):
         """
         return a list of news sources that are close to the provided (lat, long) values
         @param latitude: latitude part of the coordinate
@@ -473,7 +474,7 @@ class EventRegistry(object):
         return self.jsonRequest("/api/v1/suggestSourcesFast", params)
 
 
-    def suggestSourcesAtPlace(self, conceptUri, dataType = "news", page = 1, count = 20, **kwargs):
+    def suggestSourcesAtPlace(self, conceptUri: str, dataType: Union[str, List[str]] = "news", page = 1, count = 20, **kwargs):
         """
         return a list of news sources that are close to the provided (lat, long) values
         @param conceptUri: concept that represents a geographic location for which we would like to obtain a list of sources located at the place
@@ -486,7 +487,7 @@ class EventRegistry(object):
         return self.jsonRequest("/api/v1/suggestSourcesFast", params)
 
 
-    def suggestAuthors(self, prefix, page = 1, count = 20, **kwargs):
+    def suggestAuthors(self, prefix: str, page: int = 1, count: int = 20, **kwargs):
         """
         return a list of news sources that match the prefix
         @param prefix: input text that should be contained in the author name and source url
@@ -499,8 +500,47 @@ class EventRegistry(object):
         return self.jsonRequest("/api/v1/suggestAuthorsFast", params)
 
 
+    def suggestEventTypes(self, prefix: str, page: int = 1, count: int = 20, **kwargs):
+        """
+        return a list of event types that match the prefix
+        @param prefix: input text that should be contained in the industry name
+        @param page: page of results
+        @param count: number of returned suggestions
+        """
+        assert page > 0, "page parameter should be above 0"
+        params = {"prefix": prefix, "page": page, "count": count}
+        params.update(kwargs)
+        return self.jsonRequest("/api/v1/eventType/suggestEventTypes", params)
 
-    def suggestConceptClasses(self, prefix, lang = "eng", conceptLang = "eng", source = ["dbpedia", "custom"], page = 1, count = 20, returnInfo = ReturnInfo(), **kwargs):
+
+    def suggestIndustries(self, prefix: str, page: int = 1, count: int = 20, **kwargs):
+        """
+        return a list of industries that match the prefix. Note: Industries can only be used when querying mentions (QueryMentions, QueryMentionsIter)
+        @param prefix: input text that should be contained in the industry name
+        @param page: page of results
+        @param count: number of returned suggestions
+        """
+        assert page > 0, "page parameter should be above 0"
+        params = {"prefix": prefix, "page": page, "count": count}
+        params.update(kwargs)
+        return self.jsonRequest("/api/v1/eventType/suggestIndustries", params)
+
+
+    def getSdgUris(self):
+        """
+        return a list of SDG uris. Note: Industries can only be used when querying mentions (QueryMentions, QueryMentionsIter)
+        """
+        return self.jsonRequest("/api/v1/eventType/sdg/getItems", {})
+
+
+    def getSasbUris(self):
+        """
+        return a list of SASB uris. Note: SASB uris can only be used when querying mentions (QueryMentions, QueryMentionsIter)
+        """
+        return self.jsonRequest("/api/v1/eventType/sasb/getItems", {})
+
+
+    def suggestConceptClasses(self, prefix: str, lang: str = "eng", conceptLang: str = "eng", source: Union[str, List[str]] = ["dbpedia", "custom"], page: int = 1, count: int = 20, returnInfo: ReturnInfo = ReturnInfo(), **kwargs):
         """
         return a list of concept classes that match the given prefix
         @param prefix: input text that should be contained in the category name
@@ -521,7 +561,7 @@ class EventRegistry(object):
     #
     # get info methods - return type is a single item that is the best match to the given input
 
-    def getConceptUri(self, conceptLabel, lang = "eng", sources = ["concepts"]):
+    def getConceptUri(self, conceptLabel: str, lang: str = "eng", sources: Union[str, List[str]] = ["concepts"]):
         """
         return a concept uri that is the best match for the given concept label
         if there are multiple matches for the given conceptLabel, they are sorted based on their frequency of occurence in news (most to least frequent)
@@ -534,7 +574,7 @@ class EventRegistry(object):
         return None
 
 
-    def getLocationUri(self, locationLabel, lang = "eng", sources = ["place", "country"], countryUri = None, sortByDistanceTo = None):
+    def getLocationUri(self, locationLabel: str, lang: str = "eng", sources: Union[str, List[str]] = ["place", "country"], countryUri: str = None, sortByDistanceTo: str = None):
         """
         return a location uri that is the best match for the given location label
         @param locationLabel: partial or full location name for which to return the location uri
@@ -548,7 +588,7 @@ class EventRegistry(object):
         return None
 
 
-    def getCategoryUri(self, categoryLabel):
+    def getCategoryUri(self, categoryLabel: str):
         """
         return a category uri that is the best match for the given label
         @param categoryLabel: partial or full name of the category for which to return category uri
@@ -559,7 +599,7 @@ class EventRegistry(object):
         return None
 
 
-    def getNewsSourceUri(self, sourceName, dataType = ["news", "pr", "blog"]):
+    def getNewsSourceUri(self, sourceName: str, dataType: Union[str, List[str]] = ["news", "pr", "blog"]):
         """
         return the news source that best matches the source name
         @param sourceName: partial or full name of the source or source uri for which to return source uri
@@ -571,14 +611,14 @@ class EventRegistry(object):
         return None
 
 
-    def getSourceUri(self, sourceName, dataType=["news", "pr", "blog"]):
+    def getSourceUri(self, sourceName: str, dataType: Union[str, List[str]] = ["news", "pr", "blog"]):
         """
         alternative (shorter) name for the method getNewsSourceUri()
         """
         return self.getNewsSourceUri(sourceName, dataType)
 
 
-    def getSourceGroupUri(self, sourceGroupName):
+    def getSourceGroupUri(self, sourceGroupName: str):
         """
         return the URI of the source group that best matches the name
         @param sourceGroupName: partial or full name of the source group
@@ -589,7 +629,7 @@ class EventRegistry(object):
         return None
 
 
-    def getConceptClassUri(self, classLabel, lang = "eng"):
+    def getConceptClassUri(self, classLabel: str, lang: str = "eng"):
         """
         return a uri of the concept class that is the best match for the given label
         @param classLabel: partial or full name of the concept class for which to return class uri
@@ -600,9 +640,8 @@ class EventRegistry(object):
         return None
 
 
-    def getConceptInfo(self, conceptUri,
-                       returnInfo = ReturnInfo(conceptInfo = ConceptInfoFlags(
-                           synonyms = True, image = True, description = True))):
+    def getConceptInfo(self, conceptUri: str,
+                       returnInfo: ReturnInfo = ReturnInfo(conceptInfo = ConceptInfoFlags(synonyms = True, image = True, description = True))):
         """
         return detailed information about a particular concept
         @param conceptUri: uri of the concept
@@ -613,7 +652,7 @@ class EventRegistry(object):
         return self.jsonRequest("/api/v1/concept/getInfo", params)
 
 
-    def getAuthorUri(self, authorName):
+    def getAuthorUri(self, authorName: str):
         """
         return author uri that is the best match for the given author name (and potentially source url)
         if there are multiple matches for the given author name, they are sorted based on the number of articles they have written (from most to least frequent)
@@ -625,8 +664,19 @@ class EventRegistry(object):
         return None
 
 
+    def getEventTypeUri(self, eventTypeLabel: str):
+        """
+        return event type uri that is the best match for the given label
+        @param eventTypeLabel: partial or full name of the event type for which we want to retrieve uri
+        """
+        matches = self.suggestEventTypes(eventTypeLabel)
+        if matches != None and isinstance(matches, list) and len(matches) > 0 and "uri" in matches[0]:
+            return matches[0]["uri"]
+        return None
+
+
     @staticmethod
-    def getUriFromUriWgt(uriWgtList):
+    def getUriFromUriWgt(uriWgtList: List[str]):
         """
         convert an array of items that contain uri:wgt to a list of items with uri only. Used for QueryArticle and QueryEvent classes
         """
@@ -638,7 +688,7 @@ class EventRegistry(object):
     #
     # additional utility methods
 
-    def getArticleUris(self, articleUrls):
+    def getArticleUris(self, articleUrls: Union[str, List[str]]):
         """
         if you have article urls and you want to query them in ER you first have to obtain their uris in the ER.
         @param articleUrls a single article url or a list of article urls
@@ -654,7 +704,7 @@ class EventRegistry(object):
         return ret
 
 
-    def getSourceGroup(self, sourceGroupUri):
+    def getSourceGroup(self, sourceGroupUri: str):
         """return info about the source group"""
         ret = self.jsonRequest("/api/v1/sourceGroup/getSourceGroupInfo", { "uri": sourceGroupUri })
         return ret
@@ -673,7 +723,7 @@ class EventRegistry(object):
 
 
 class ArticleMapper:
-    def __init__(self, er, rememberMappings = True):
+    def __init__(self, er: EventRegistry, rememberMappings: bool = True):
         """
         create instance of article mapper
         it will map from article urls to article uris
@@ -684,7 +734,7 @@ class ArticleMapper:
         self._rememberMappings = rememberMappings
 
 
-    def getArticleUri(self, articleUrl):
+    def getArticleUri(self, articleUrl: str):
         """
         given the article url, return an array with 0, 1 or more article uris. Not all returned article uris are necessarily valid anymore. For news sources
         of lower importance we remove the duplicated articles and just keep the latest content

@@ -11,18 +11,20 @@ NOTE: the functionality is currently in BETA. The API calls or the provided outp
 """
 
 import json
+from typing import Union, List
+from eventregistry.EventRegistry import EventRegistry
 from eventregistry.Base import *
 from eventregistry.ReturnInfo import *
 
 class Analytics:
-    def __init__(self, eventRegistry):
+    def __init__(self, eventRegistry: EventRegistry):
         """
         @param eventRegistry: instance of EventRegistry class
         """
         self._er = eventRegistry
 
 
-    def annotate(self, text, lang = None, customParams = None):
+    def annotate(self, text: str, lang: str = None, customParams: dict = None):
         """
         identify the list of entities and nonentities mentioned in the text
         @param text: input text to annotate
@@ -36,7 +38,7 @@ class Analytics:
         return self._er.jsonRequestAnalytics("/api/v1/annotate", params)
 
 
-    def categorize(self, text, taxonomy = "dmoz"):
+    def categorize(self, text: str, taxonomy: str = "dmoz", concepts: List[str] = None):
         """
         determine the set of up to 5 categories the text is about. Currently, only English text can be categorized!
         @param text: input text to categorize
@@ -44,10 +46,13 @@ class Analytics:
             or "news" (general news categorization, 9 categories, any langauge)
         @returns: dict
         """
-        return self._er.jsonRequestAnalytics("/api/v1/categorize", { "text": text, "taxonomy": taxonomy })
+        params = { "text": text, "taxonomy": taxonomy }
+        if isinstance(concepts, list) and len(concepts) > 0:
+            params["concepts"] = concepts
+        return self._er.jsonRequestAnalytics("/api/v1/categorize", params)
 
 
-    def sentiment(self, text, method = "vocabulary", sentencesToAnalyze = 10, returnSentences = True):
+    def sentiment(self, text: str, method: str = "vocabulary", sentencesToAnalyze: int = 10, returnSentences: bool = True):
         """
         determine the sentiment of the provided text in English language
         @param text: input text to categorize
@@ -61,7 +66,7 @@ class Analytics:
         return self._er.jsonRequestAnalytics("/api/v1/sentiment", { "text": text, "method": method, "sentences": sentencesToAnalyze, "returnSentences": returnSentences })
 
 
-    def semanticSimilarity(self, text1, text2, distanceMeasure = "cosine"):
+    def semanticSimilarity(self, text1: str, text2: str, distanceMeasure: str = "cosine"):
         """
         determine the semantic similarity of the two provided documents
         @param text1: first document to analyze
@@ -72,7 +77,7 @@ class Analytics:
         return self._er.jsonRequestAnalytics("/api/v1/semanticSimilarity", { "text1": text1, "text2": text2, "distanceMeasure": distanceMeasure })
 
 
-    def detectLanguage(self, text):
+    def detectLanguage(self, text: str):
         """
         determine the language of the given text
         @param text: input text to analyze
@@ -81,7 +86,7 @@ class Analytics:
         return self._er.jsonRequestAnalytics("/api/v1/detectLanguage", { "text": text })
 
 
-    def extractArticleInfo(self, url, proxyUrl = None, headers = None, cookies = None):
+    def extractArticleInfo(self, url: str, proxyUrl: str = None, headers: Union[str, dict] = None, cookies: Union[dict, str] = None):
         """
         extract all available information about an article available at url `url`. Returned information will include
         article title, body, authors, links in the articles, ...
@@ -105,7 +110,7 @@ class Analytics:
         return self._er.jsonRequestAnalytics("/api/v1/extractArticleInfo", params)
 
 
-    def ner(self, text):
+    def ner(self, text: str):
         """
         extract named entities from the provided text. Supported languages are English, German, Spanish and Chinese.
         @param text: text on wich to extract named entities
@@ -114,9 +119,9 @@ class Analytics:
         return self._er.jsonRequestAnalytics("/api/v1/ner", {"text": text})
 
 
-    def trainTopicOnTweets(self, twitterQuery, useTweetText=True, useIdfNormalization=True,
-            normalization="linear", maxTweets=2000, maxUsedLinks=500, ignoreConceptTypes=[],
-            maxConcepts = 20, maxCategories = 10, notifyEmailAddress = None):
+    def trainTopicOnTweets(self, twitterQuery: str, useTweetText: bool = True, useIdfNormalization: bool = True,
+            normalization: bool = "linear", maxTweets: int = 2000, maxUsedLinks: int = 500, ignoreConceptTypes: Union[str, List[str]] = [],
+            maxConcepts: int = 20, maxCategories: int = 10, notifyEmailAddress: str = None):
         """
         create a new topic and train it using the tweets that match the twitterQuery
         @param twitterQuery: string containing the content to search for. It can be a Twitter user account (using "@" prefix or user's Twitter url),
@@ -145,7 +150,7 @@ class Analytics:
         return self._er.jsonRequestAnalytics("/api/v1/trainTopicOnTwitter", params)
 
 
-    def trainTopicCreateTopic(self, name):
+    def trainTopicCreateTopic(self, name: str):
         """
         create a new topic to train. The user should remember the "uri" parameter returned in the result
         @returns object containing the "uri" property that should be used in the follow-up call to trainTopic* methods
@@ -153,7 +158,7 @@ class Analytics:
         return self._er.jsonRequestAnalytics("/api/v1/trainTopic", { "action": "createTopic", "name": name})
 
 
-    def trainTopicClearTopic(self, uri):
+    def trainTopicClearTopic(self, uri: str):
         """
         if the topic is already existing, clear the definition of the topic. Use this if you want to retrain an existing topic
         @param uri: uri of the topic (obtained by calling trainTopicCreateTopic method) to clear
@@ -161,7 +166,7 @@ class Analytics:
         return self._er.jsonRequestAnalytics("/api/v1/trainTopic", { "action": "clearTopic", "uri": uri })
 
 
-    def trainTopicAddDocument(self, uri, text):
+    def trainTopicAddDocument(self, uri: str, text: str):
         """
         add the information extracted from the provided "text" to the topic with uri "uri"
         @param uri: uri of the topic (obtained by calling trainTopicCreateTopic method)
@@ -170,8 +175,8 @@ class Analytics:
         return self._er.jsonRequestAnalytics("/api/v1/trainTopic", { "action": "addDocument", "uri": uri, "text": text})
 
 
-    def trainTopicGetTrainedTopic(self, uri, maxConcepts = 20, maxCategories = 10,
-            ignoreConceptTypes=[], idfNormalization = True):
+    def trainTopicGetTrainedTopic(self, uri: str, maxConcepts: int = 20, maxCategories: int = 10,
+            ignoreConceptTypes: Union[str, List[str]] = [], idfNormalization: bool = True):
         """
         retrieve topic for the topic for which you have already finished training
         @param uri: uri of the topic (obtained by calling trainTopicCreateTopic method)

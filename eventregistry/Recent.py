@@ -4,13 +4,15 @@ provides classes for getting new/updated events and articles
 
 from eventregistry.Base import *
 from eventregistry.ReturnInfo import *
+from eventregistry.EventRegistry import EventRegistry
+from typing import Union, List
 
 class GetRecentEvents(QueryParamsBase):
     def __init__(self,
-                 eventRegistry,
-                 mandatoryLang = None,
-                 mandatoryLocation = True,
-                 returnInfo = ReturnInfo(),
+                 eventRegistry: EventRegistry,
+                 mandatoryLang: Union[str, List[str]] = None,
+                 mandatoryLocation: bool = True,
+                 returnInfo: ReturnInfo = ReturnInfo(),
                  **kwargs):
         """
         Return info about recently added/modified events
@@ -53,10 +55,10 @@ class GetRecentEvents(QueryParamsBase):
 
 class GetRecentArticles(QueryParamsBase):
     def __init__(self,
-                 eventRegistry,
-                 mandatorySourceLocation = False,
-                 articleLang = None,
-                 returnInfo = ReturnInfo(),
+                 eventRegistry: EventRegistry,
+                 mandatorySourceLocation: bool = False,
+                 articleLang: Union[str, List[str]] = None,
+                 returnInfo: ReturnInfo = ReturnInfo(),
                  **kwargs):
         """
         Return info about recently added articles
