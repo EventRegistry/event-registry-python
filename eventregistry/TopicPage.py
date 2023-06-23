@@ -20,7 +20,9 @@ class TopicPages(QueryParamsBase):
 
         @param eventRegistry: instance of class EventRegistry
         """
+        super(QueryParamsBase, self).__init__()
         self.eventRegistry = eventRegistry
+
 
     def getMyTopicPages(self):
         """
@@ -38,6 +40,7 @@ class TopicPage(QueryParamsBase):
 
         @param eventRegistry: instance of class EventRegistry
         """
+        super(QueryParamsBase, self).__init__()
         self.eventRegistry = eventRegistry
         # topic page definition
         self.topicPage = self._createEmptyTopicPage()
@@ -243,7 +246,7 @@ class TopicPage(QueryParamsBase):
         self.topicPage["locations"] = []
 
 
-    def addConcept(self, conceptUri: str, weight: float, label: str = None, conceptType: str = None, required: bool = False, excluded: bool = False):
+    def addConcept(self, conceptUri: str, weight: float, label: Union[str, None] = None, conceptType: Union[str, None] = None, required: bool = False, excluded: bool = False):
         """
         add a relevant concept to the topic page
         @param conceptUri: uri of the concept to be added
@@ -252,11 +255,11 @@ class TopicPage(QueryParamsBase):
         @param excluded: if true, then all results annotated with this concept will be ignored
         """
         assert isinstance(weight, (float, int)), "weight value has to be a positive or negative integer"
-        assert not (required == True and excluded == True), "Parameters required and excluded can not be True at the same time"
+        assert not (required is True and excluded is True), "Parameters required and excluded can not be True at the same time"
         concept = {"uri": conceptUri, "wgt": weight, "required": required, "excluded": excluded }
-        if label != None:
+        if label is not None:
             concept["label"] = label
-        if conceptType != None:
+        if conceptType is not None:
             concept["type"] = conceptType
         self.topicPage["concepts"].append(concept)
 
@@ -270,7 +273,7 @@ class TopicPage(QueryParamsBase):
         @param excluded: if true, then no results that mention this keyword will be returned
         """
         assert isinstance(weight, (float, int)), "weight value has to be a positive or negative integer"
-        assert not (required == True and excluded == True), "Parameters required and excluded can not be True at the same time"
+        assert not (required is True and excluded is True), "Parameters required and excluded can not be True at the same time"
         self.topicPage["keywords"].append({"keyword": keyword, "wgt": weight, "required": required, "excluded": excluded })
 
 
@@ -283,7 +286,7 @@ class TopicPage(QueryParamsBase):
         @param excluded: if true, then no results with this category will be returned
         """
         assert isinstance(weight, (float, int)), "weight value has to be a positive or negative integer"
-        assert not (required == True and excluded == True), "Parameters required and excluded can not be True at the same time"
+        assert not (required is True and excluded is True), "Parameters required and excluded can not be True at the same time"
         self.topicPage["categories"].append({"uri": categoryUri, "wgt": weight, "required": required, "excluded": excluded })
 
 

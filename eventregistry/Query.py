@@ -24,29 +24,29 @@ class _QueryCore(object):
 
 class BaseQuery(_QueryCore):
     def __init__(self,
-                 keyword: Union[str, QueryItems] = None,
-                 conceptUri: Union[str, QueryItems] = None,
-                 categoryUri: Union[str, QueryItems] = None,
-                 sourceUri: Union[str, QueryItems] = None,
-                 locationUri: Union[str, QueryItems] = None,
-                 lang: Union[str, QueryItems] = None,
-                 dateStart: Union[datetime.datetime, datetime.date, str] = None,
-                 dateEnd: Union[datetime.datetime, datetime.date, str] = None,
-                 sourceLocationUri: Union[str, List[str]] = None,
-                 sourceGroupUri: Union[str, List[str]] = None,
+                 keyword: Union[str, QueryItems, None] = None,
+                 conceptUri: Union[str, QueryItems, None] = None,
+                 categoryUri: Union[str, QueryItems, None] = None,
+                 sourceUri: Union[str, QueryItems, None] = None,
+                 locationUri: Union[str, QueryItems, None] = None,
+                 lang: Union[str, QueryItems, None] = None,
+                 dateStart: Union[datetime.datetime, datetime.date, str, None] = None,
+                 dateEnd: Union[datetime.datetime, datetime.date, str, None] = None,
+                 sourceLocationUri: Union[str, List[str], None] = None,
+                 sourceGroupUri: Union[str, List[str], None] = None,
                  # article or event search only:
-                 dateMention: Union[datetime.datetime, datetime.date, str] = None,
-                 authorUri: Union[str, List[str]] = None,
+                 dateMention: Union[datetime.datetime, datetime.date, str, None] = None,
+                 authorUri: Union[str, List[str], None] = None,
                  keywordLoc: str = "body",
                  # event search only:
                  minMaxArticlesInEvent = None,
                  # mention search only:
-                 industryUri: Union[str, QueryItems] = None,
-                 sdgUri: Union[str, QueryItems] = None,
-                 sasbUri: Union[str, QueryItems] = None,
-                 esgUri: Union[str, QueryItems] = None,
+                 industryUri: Union[str, QueryItems, None] = None,
+                 sdgUri: Union[str, QueryItems, None] = None,
+                 sasbUri: Union[str, QueryItems, None] = None,
+                 esgUri: Union[str, QueryItems, None] = None,
                  # universal:
-                 exclude: Union["BaseQuery", "CombinedQuery"] = None):
+                 exclude: Union["BaseQuery", "CombinedQuery", None] = None):
         """
         @param keyword: keyword(s) to query. Either None, string or QueryItems instance
         @param conceptUri: concept(s) to query. Either None, string or QueryItems instance
@@ -74,14 +74,14 @@ class BaseQuery(_QueryCore):
         self._setQueryArrVal("lang", lang)
 
         # starting date of the published articles (e.g. 2014-05-02)
-        if dateStart != None:
+        if dateStart is not None:
             self._queryObj["dateStart"] = QueryParamsBase.encodeDate(dateStart)
         # ending date of the published articles (e.g. 2014-05-02)
-        if dateEnd != None:
+        if dateEnd is not None:
             self._queryObj["dateEnd"] = QueryParamsBase.encodeDate(dateEnd)
 
         # mentioned date detected in articles (e.g. 2014-05-02)
-        if dateMention != None:
+        if dateMention is not None:
             if isinstance(dateMention, list):
                 self._queryObj["dateMention"] = [QueryParamsBase.encodeDate(d) for d in dateMention]
             else:
@@ -99,12 +99,12 @@ class BaseQuery(_QueryCore):
         if keywordLoc != "body":
             self._queryObj["keywordLoc"] = keywordLoc
 
-        if minMaxArticlesInEvent != None:
+        if minMaxArticlesInEvent is not None:
             assert isinstance(minMaxArticlesInEvent, tuple), "minMaxArticlesInEvent parameter should either be None or a tuple with two integer values"
             self._queryObj["minArticlesInEvent"] = minMaxArticlesInEvent[0]
             self._queryObj["maxArticlesInEvent"] = minMaxArticlesInEvent[1]
 
-        if exclude != None:
+        if exclude is not None:
             assert isinstance(exclude, (CombinedQuery, BaseQuery)), "exclude parameter was not a CombinedQuery or BaseQuery instance"
             self._queryObj["$not"] = exclude.getQuery()
 
@@ -133,7 +133,7 @@ class CombinedQuery(_QueryCore):
 
     @staticmethod
     def AND(queryArr: List[Union["BaseQuery", "CombinedQuery"]],
-            exclude: Union["BaseQuery", "CombinedQuery"] = None):
+            exclude: Union["BaseQuery", "CombinedQuery", None] = None):
         """
         create a combined query with multiple items on which to perform an AND operation
         @param queryArr: a list of items on which to perform an AND operation. Items can be either a CombinedQuery or BaseQuery instances.
@@ -146,7 +146,7 @@ class CombinedQuery(_QueryCore):
         for item in queryArr:
             assert isinstance(item, (CombinedQuery, BaseQuery)), "item in the list was not a CombinedQuery or BaseQuery instance"
             q.getQuery()["$and"].append(item.getQuery())
-        if exclude != None:
+        if exclude is not None:
             assert isinstance(exclude, (CombinedQuery, BaseQuery)), "exclude parameter was not a CombinedQuery or BaseQuery instance"
             q.setQueryParam("$not", exclude.getQuery())
         return q
@@ -154,7 +154,7 @@ class CombinedQuery(_QueryCore):
 
     @staticmethod
     def OR(queryArr: List[Union["BaseQuery", "CombinedQuery"]],
-           exclude: Union["BaseQuery", "CombinedQuery"] = None):
+           exclude: Union["BaseQuery", "CombinedQuery", None] = None):
         """
         create a combined query with multiple items on which to perform an OR operation
         @param queryArr: a list of items on which to perform an OR operation. Items can be either a CombinedQuery or BaseQuery instances.
@@ -167,7 +167,7 @@ class CombinedQuery(_QueryCore):
         for item in queryArr:
             assert isinstance(item, (CombinedQuery, BaseQuery)), "item in the list was not a CombinedQuery or BaseQuery instance"
             q.getQuery()["$or"].append(item.getQuery())
-        if exclude != None:
+        if exclude is not None:
             assert isinstance(exclude, (CombinedQuery, BaseQuery)), "exclude parameter was not a CombinedQuery or BaseQuery instance"
             q.setQueryParam("$not", exclude.getQuery())
         return q
@@ -178,8 +178,8 @@ class ComplexArticleQuery(_QueryCore):
     def __init__(self,
                  query: Union["BaseQuery", "CombinedQuery"],
                  dataType: Union[str, List[str]] = "news",
-                 minSentiment: float = None,
-                 maxSentiment: float = None,
+                 minSentiment: Union[float, None] = None,
+                 maxSentiment: Union[float, None] = None,
                  minSocialScore: int = 0,
                  minFacebookShares: int = 0,
                  startSourceRankPercentile: int = 0,
@@ -220,9 +220,9 @@ class ComplexArticleQuery(_QueryCore):
         if dataType != "news":
             filter["dataType"] = dataType
 
-        if minSentiment != None:
+        if minSentiment is not None:
             filter["minSentiment"] = minSentiment
-        if maxSentiment != None:
+        if maxSentiment is not None:
             filter["maxSentiment"] = maxSentiment
 
         if minSocialScore > 0:
@@ -249,8 +249,8 @@ class ComplexArticleQuery(_QueryCore):
 class ComplexEventQuery(_QueryCore):
     def __init__(self,
                 query: Union["BaseQuery", "CombinedQuery"],
-                minSentiment: float = None,
-                maxSentiment: float = None):
+                minSentiment: Union[float, None] = None,
+                maxSentiment: Union[float, None] = None):
         """
         create an event query using a complex query
         @param query: an instance of CombinedQuery or BaseQuery to use to find events that match the conditions
@@ -259,9 +259,9 @@ class ComplexEventQuery(_QueryCore):
 
         assert isinstance(query, (CombinedQuery, BaseQuery)), "query parameter was not a CombinedQuery or BaseQuery instance"
         filter = {}
-        if minSentiment != None:
+        if minSentiment is not None:
             filter["minSentiment"] = minSentiment
-        if maxSentiment != None:
+        if maxSentiment is not None:
             filter["maxSentiment"] = maxSentiment
 
         if len(filter) > 0:
@@ -273,10 +273,10 @@ class ComplexEventQuery(_QueryCore):
 class ComplexMentionQuery(_QueryCore):
     def __init__(self,
                 query: Union["BaseQuery", "CombinedQuery"],
-                minSentiment: float = None,
-                maxSentiment: float = None,
-                minSentenceIndex: int = None,
-                maxSentenceIndex: int = None,
+                minSentiment: Union[float, None] = None,
+                maxSentiment: Union[float, None] = None,
+                minSentenceIndex: Union[int, None] = None,
+                maxSentenceIndex: Union[int, None] = None,
                 showDuplicates: bool = False):
         """
         create a mention query using a complex query
@@ -290,14 +290,14 @@ class ComplexMentionQuery(_QueryCore):
 
         assert isinstance(query, (CombinedQuery, BaseQuery)), "query parameter was not a CombinedQuery or BaseQuery instance"
         filter = {}
-        if minSentiment != None:
+        if minSentiment is not None:
             filter["minSentiment"] = minSentiment
-        if maxSentiment != None:
+        if maxSentiment is not None:
             filter["maxSentiment"] = maxSentiment
 
-        if minSentenceIndex != None:
+        if minSentenceIndex is not None:
             filter["minSentenceIndex"] = minSentenceIndex
-        if maxSentenceIndex != None:
+        if maxSentenceIndex is not None:
             filter["maxSentenceIndex"] = maxSentenceIndex
         if showDuplicates:
             filter["showDuplicates"] = showDuplicates

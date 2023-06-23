@@ -10,7 +10,7 @@ from typing import Union, List
 class GetRecentEvents(QueryParamsBase):
     def __init__(self,
                  eventRegistry: EventRegistry,
-                 mandatoryLang: Union[str, List[str]] = None,
+                 mandatoryLang: Union[str, List[str], None] = None,
                  mandatoryLocation: bool = True,
                  returnInfo: ReturnInfo = ReturnInfo(),
                  **kwargs):
@@ -26,7 +26,7 @@ class GetRecentEvents(QueryParamsBase):
         self._er = eventRegistry
         self._setVal("recentActivityEventsMandatoryLocation", mandatoryLocation)
         # return only events that have at least a story in the specified language
-        if mandatoryLang != None:
+        if mandatoryLang is not None:
             self._setVal("recentActivityEventsMandatoryLang", mandatoryLang)
         self.queryParams.update(kwargs)
         self._update(returnInfo.getParams("recentActivityEvents"))
@@ -57,7 +57,7 @@ class GetRecentArticles(QueryParamsBase):
     def __init__(self,
                  eventRegistry: EventRegistry,
                  mandatorySourceLocation: bool = False,
-                 articleLang: Union[str, List[str]] = None,
+                 articleLang: Union[str, List[str], None] = None,
                  returnInfo: ReturnInfo = ReturnInfo(),
                  **kwargs):
         """
@@ -71,7 +71,7 @@ class GetRecentArticles(QueryParamsBase):
 
         self._er = eventRegistry
         self._setVal("recentActivityArticlesMandatorySourceLocation", mandatorySourceLocation)
-        if articleLang != None:
+        if articleLang is not None:
             self._setVal("recentActivityArticlesLang", articleLang)
         self.queryParams.update(kwargs)
         self._update(returnInfo.getParams("recentActivityArticles"))

@@ -3,7 +3,7 @@ examples that illustrate how to query for mentions using different search option
 """
 from eventregistry import *
 
-er = EventRegistry(allowUseOfArchive=False)
+er = EventRegistry()
 
 #
 # Find mentions of stock price change event types related to companies in the transportation industry that occured in April 2023.

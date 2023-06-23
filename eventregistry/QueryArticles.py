@@ -4,36 +4,38 @@ from eventregistry.ReturnInfo import *
 from eventregistry.Query import *
 from eventregistry.Logger import logger
 from eventregistry.EventRegistry import EventRegistry
-from typing import Union, List
+from typing import Union, List, Literal
 
 
 class QueryArticles(Query):
     def __init__(self,
-                keywords: Union[str, QueryItems] = None,
-                conceptUri: Union[str, QueryItems] = None,
-                categoryUri: Union[str, QueryItems] = None,
-                sourceUri: Union[str, QueryItems] = None,
-                sourceLocationUri: Union[str, QueryItems] = None,
-                sourceGroupUri: Union[str, QueryItems] = None,
-                authorUri: Union[str, QueryItems] = None,
-                locationUri: Union[str, QueryItems] = None,
-                lang: Union[str, QueryItems] = None,
-                dateStart: Union[datetime.datetime, datetime.date, str] = None,
-                dateEnd: Union[datetime.datetime, datetime.date, str] = None,
-                dateMentionStart: Union[datetime.datetime, datetime.date, str] = None,
-                dateMentionEnd: Union[datetime.datetime, datetime.date, str] = None,
+                keywords: Union[str, QueryItems, None] = None,
+                conceptUri: Union[str, QueryItems, None] = None,
+                categoryUri: Union[str, QueryItems, None] = None,
+                sourceUri: Union[str, QueryItems, None] = None,
+                sourceLocationUri: Union[str, QueryItems, None] = None,
+                sourceGroupUri: Union[str, QueryItems, None] = None,
+                authorUri: Union[str, QueryItems, None] = None,
+                locationUri: Union[str, QueryItems, None] = None,
+                lang: Union[str, QueryItems, None] = None,
+                dateStart: Union[datetime.datetime, datetime.date, str, None] = None,
+                dateEnd: Union[datetime.datetime, datetime.date, str, None] = None,
+                dateMentionStart: Union[datetime.datetime, datetime.date, str, None] = None,
+                dateMentionEnd: Union[datetime.datetime, datetime.date, str, None] = None,
                 keywordsLoc: str = "body",
+                keywordSearchMode: Literal["simple", "exact", "phrase"] = "phrase",
 
-                ignoreKeywords: Union[str, QueryItems] = None,
-                ignoreConceptUri: Union[str, QueryItems] = None,
-                ignoreCategoryUri: Union[str, QueryItems] = None,
-                ignoreSourceUri: Union[str, QueryItems] = None,
-                ignoreSourceLocationUri: Union[str, QueryItems] = None,
-                ignoreSourceGroupUri: Union[str, QueryItems] = None,
-                ignoreAuthorUri: Union[str, QueryItems] = None,
-                ignoreLocationUri: Union[str, QueryItems] = None,
-                ignoreLang: Union[str, QueryItems] = None,
+                ignoreKeywords: Union[str, QueryItems, None] = None,
+                ignoreConceptUri: Union[str, QueryItems, None] = None,
+                ignoreCategoryUri: Union[str, QueryItems, None] = None,
+                ignoreSourceUri: Union[str, QueryItems, None] = None,
+                ignoreSourceLocationUri: Union[str, QueryItems, None] = None,
+                ignoreSourceGroupUri: Union[str, QueryItems, None] = None,
+                ignoreAuthorUri: Union[str, QueryItems, None] = None,
+                ignoreLocationUri: Union[str, QueryItems, None] = None,
+                ignoreLang: Union[str, QueryItems, None] = None,
                 ignoreKeywordsLoc: str = "body",
+                ignoreKeywordSearchMode: Literal["simple", "exact", "phrase"] = "phrase",
 
                 isDuplicateFilter: str = "keepAll",
                 hasDuplicateFilter: str = "keepAll",
@@ -46,7 +48,7 @@ class QueryArticles(Query):
                 minSentiment: float = -1,
                 maxSentiment: float = 1,
                 dataType: Union[str, List[str]] = "news",
-                requestedResult: "RequestArticles" = None):
+                requestedResult: Union["RequestArticles", None] = None):
         """
         Query class for searching for individual articles in the Event Registry.
         The resulting articles have to match all specified conditions. If a parameter value equals "" or [], then it is ignored.
@@ -85,6 +87,7 @@ class QueryArticles(Query):
         @param dateMentionStart: find articles that explicitly mention a date that is equal or greater than dateMentionStart.
         @param dateMentionEnd: find articles that explicitly mention a date that is lower or equal to dateMentionEnd.
         @param keywordsLoc: where should we look when searching using the keywords provided by "keywords" parameter. "body" (default), "title", or "body,title"
+        @param keywordSearchMode: what search mode to use when specifying keywords. Possible values are: simple, exact, phrase
 
         @param ignoreKeywords: ignore articles that mention all provided keywords
         @param ignoreConceptUri: ignore articles that mention all provided concepts
@@ -96,6 +99,8 @@ class QueryArticles(Query):
         @param ignoreLocationUri: ignore articles that occurred in any of the provided locations. A location can be a city or a place
         @param ignoreLang: ignore articles that are written in *any* of the provided languages
         @param ignoreKeywordsLoc: where should we look when data should be used when searching using the keywords provided by "ignoreKeywords" parameter. "body" (default), "title", or "body,title"
+        @param ignoreKeywordSearchMode: what search mode to use when specifying ignoreKeywords. Possible values are: simple, exact, phrase
+
         @param isDuplicateFilter: some articles can be duplicates of other articles. What should be done with them. Possible values are:
                 "skipDuplicates" (skip the resulting articles that are duplicates of other articles)
                 "keepOnlyDuplicates" (return only the duplicate articles)
@@ -132,6 +137,7 @@ class QueryArticles(Query):
                 a computed value for the sentiment (all non-English articles)
         @param dataType: what data types should we search? "news" (news content, default), "pr" (press releases), or "blog".
                 If you want to use multiple data types, put them in an array (e.g. ["news", "pr"])
+
         @param requestedResult: the information to return as the result of the query. By default return the list of matching articles
         """
         super(QueryArticles, self).__init__()
@@ -149,18 +155,21 @@ class QueryArticles(Query):
         self._setQueryArrVal(lang, "lang", None, "or")                      # a single lang or list (possible: eng, deu, spa, zho, slv)
 
         # starting date of the published articles (e.g. 2014-05-02)
-        if dateStart != None:
+        if dateStart is not None:
             self._setDateVal("dateStart", dateStart)
         # ending date of the published articles (e.g. 2014-05-02)
-        if dateEnd != None:
+        if dateEnd is not None:
             self._setDateVal("dateEnd", dateEnd)
 
         # first valid mentioned date detected in articles (e.g. 2014-05-02)
-        if dateMentionStart != None:
+        if dateMentionStart is not None:
             self._setDateVal("dateMentionStart", dateMentionStart)
         # last valid mentioned date detected in articles (e.g. 2014-05-02)
-        if dateMentionEnd != None:
+        if dateMentionEnd is not None:
             self._setDateVal("dateMentionEnd", dateMentionEnd)
+
+        self._setValIfNotDefault("keywordLoc", keywordsLoc, "body")
+        self._setValIfNotDefault("keywordSearchMode", keywordSearchMode, "phrase")
 
         # for the negative conditions, only the OR is a valid operator type
         self._setQueryArrVal(ignoreKeywords, "ignoreKeyword", None, "or")
@@ -173,9 +182,9 @@ class QueryArticles(Query):
         self._setQueryArrVal(ignoreLocationUri, "ignoreLocationUri", None, "or")
 
         self._setQueryArrVal(ignoreLang, "ignoreLang", None, "or")
-
-        self._setValIfNotDefault("keywordLoc", keywordsLoc, "body")
         self._setValIfNotDefault("ignoreKeywordLoc", ignoreKeywordsLoc, "body")
+        self._setValIfNotDefault("ignoreKeywordSearchMode", ignoreKeywordSearchMode, "phrase")
+
 
         self._setValIfNotDefault("isDuplicateFilter", isDuplicateFilter, "keepAll")
         self._setValIfNotDefault("hasDuplicateFilter", hasDuplicateFilter, "keepAll")
@@ -217,19 +226,19 @@ class QueryArticles(Query):
 
 
     @staticmethod
-    def initWithArticleUriList(uriList: Union[str, List[str]], returnInfo: ReturnInfo = None):
+    def initWithArticleUriList(uriList: Union[str, List[str]], returnInfo: Union[ReturnInfo, None] = None):
         """
         instead of making a query, provide a list of article URIs manually, and then produce the desired results on top of them
         """
         # we need to set the dataType parameter here, otherwise users cannot ask for blog or pr articles using this way
-        q = QueryArticles(requestedResult=RequestArticlesInfo(returnInfo=returnInfo))
+        q = QueryArticles(requestedResult=RequestArticlesInfo(returnInfo = returnInfo))
         assert isinstance(uriList, str) or isinstance(uriList, list), "uriList has to be a list of strings or a string that represent article uris"
         q.queryParams = { "action": "getArticles", "articleUri": uriList, "dataType": ["news", "blog", "pr"] }
         return q
 
 
     @staticmethod
-    def initWithArticleUriWgtList(uriWgtList: Union[str, List[str]], returnInfo: ReturnInfo = None):
+    def initWithArticleUriWgtList(uriWgtList: Union[str, List[str]], returnInfo: Union[ReturnInfo, None] = None):
         """
         instead of making a query, provide a list of article URIs manually, and then produce the desired results on top of them
         """
@@ -289,7 +298,7 @@ class QueryArticlesIter(QueryArticles, six.Iterator):
     def execQuery(self, eventRegistry: EventRegistry,
                   sortBy: str = "rel",
                   sortByAsc: bool = False,
-                  returnInfo: ReturnInfo = None,
+                  returnInfo: Union[ReturnInfo, None] = None,
                   maxItems: int = -1,
                   **kwargs):
         """
@@ -361,10 +370,10 @@ class QueryArticlesIter(QueryArticles, six.Iterator):
             sortBy=self._sortBy, sortByAsc=self._sortByAsc,
             returnInfo = self._returnInfo))
         if self._er._verboseOutput:
-            logger.debug("Downloading article page %d..." % (self._articlePage))
+            logger.debug("Downloading article page %d...", self._articlePage)
         res = self._er.execQuery(self)
         if "error" in res:
-            logger.error("Error while obtaining a list of articles: " + res["error"])
+            logger.error("Error while obtaining a list of articles: %s", res["error"])
         else:
             self._totalPages = res.get("articles", {}).get("pages", 0)
         results = res.get("articles", {}).get("results", [])
@@ -404,7 +413,7 @@ class RequestArticlesInfo(RequestArticles):
                  page: int = 1,
                  count: int = 100,
                  sortBy: str = "date", sortByAsc: bool = False,
-                 returnInfo : ReturnInfo = None):
+                 returnInfo : Union[ReturnInfo, None] = None):
         """
         return article details for resulting articles
         @param page: page of the articles to return
@@ -413,6 +422,7 @@ class RequestArticlesInfo(RequestArticles):
         @param sortByAsc: should the results be sorted in ascending order (True) or descending (False)
         @param returnInfo: what details should be included in the returned information
         """
+        super(RequestArticles, self).__init__()
         assert page >= 1, "page has to be >= 1"
         assert count <= 200, "at most 100 articles can be returned per call"
         self.resultType = "articles"
@@ -420,7 +430,7 @@ class RequestArticlesInfo(RequestArticles):
         self.articlesCount = count
         self.articlesSortBy = sortBy
         self.articlesSortByAsc = sortByAsc
-        if returnInfo != None:
+        if returnInfo is not None:
             self.__dict__.update(returnInfo.getParams("articles"))
 
 
@@ -428,6 +438,7 @@ class RequestArticlesInfo(RequestArticles):
         """
         set the page of results to obtain
         """
+        super(RequestArticles, self).__init__()
         assert page >= 1, "page has to be >= 1"
         self.articlesPage = page
 
@@ -445,6 +456,7 @@ class RequestArticlesUriWgtList(RequestArticles):
         @param sortBy: how are articles sorted. Options: id (internal id), date (publishing date), cosSim (closeness to the event centroid), rel (relevance to the query), sourceImportance (manually curated score of source importance - high value, high importance), sourceImportanceRank (reverse of sourceImportance), sourceAlexaGlobalRank (global rank of the news source), sourceAlexaCountryRank (country rank of the news source), socialScore (total shares on social media), facebookShares (shares on Facebook only)
         @param sortByAsc: should the results be sorted in ascending order (True) or descending (False) according to the sortBy criteria
         """
+        super(RequestArticles, self).__init__()
         assert page >= 1, "page has to be >= 1"
         assert count <= 50000
         self.resultType = "uriWgtList"
@@ -465,6 +477,7 @@ class RequestArticlesTimeAggr(RequestArticles):
         """
         return time distribution of resulting articles
         """
+        super(RequestArticles, self).__init__()
         self.resultType = "timeAggr"
 
 
@@ -472,9 +485,9 @@ class RequestArticlesTimeAggr(RequestArticles):
 class RequestArticlesConceptAggr(RequestArticles):
     def __init__(self,
                  conceptCount: int = 25,
-                 conceptCountPerType: int = None,
+                 conceptCountPerType: Union[int, None] = None,
                  conceptScoring: str = "importance",
-                 articlesSampleSize: str = 10000,
+                 articlesSampleSize: int = 10000,
                  returnInfo: ReturnInfo = ReturnInfo()):
         """
         get aggreate of concepts of resulting articles
@@ -488,6 +501,7 @@ class RequestArticlesConceptAggr(RequestArticles):
         @param articlesSampleSize: on what sample of results should the aggregate be computed (at most 20000)
         @param returnInfo: what details about the concepts should be included in the returned information
         """
+        super(RequestArticles, self).__init__()
         assert conceptCount <= 500
         assert articlesSampleSize <= 20000
         self.resultType = "conceptAggr"
@@ -509,6 +523,7 @@ class RequestArticlesCategoryAggr(RequestArticles):
         @param articlesSampleSize: on what sample of results should the aggregate be computed (at most 50000)
         @param returnInfo: what details about the categories should be included in the returned information
         """
+        super(RequestArticles, self).__init__()
         assert articlesSampleSize <= 50000
         self.resultType = "categoryAggr"
         self.categoryAggrSampleSize = articlesSampleSize
@@ -530,6 +545,7 @@ class RequestArticlesSourceAggr(RequestArticles):
             content overall, but their published content is more about the searched query.
         @param returnInfo: what details about the sources should be included in the returned information
         """
+        super(RequestArticles, self).__init__()
         self.resultType = "sourceAggr"
         self.sourceAggrSourceCount = sourceCount
         self.sourceAggrNormalizeBySourceArts = normalizeBySourceArts
@@ -543,6 +559,7 @@ class RequestArticlesKeywordAggr(RequestArticles):
         get top keywords in the resulting articles
         @param articlesSampleSize: on what sample of results should the aggregate be computed (at most 20000)
         """
+        super(RequestArticles, self).__init__()
         assert articlesSampleSize <= 20000
         self.resultType = "keywordAggr"
         self.keywordAggrSampleSize = articlesSampleSize
@@ -563,6 +580,7 @@ class RequestArticlesConceptGraph(RequestArticles):
         @param articlesSampleSize: on what sample of results should the aggregate be computed (at most 50000)
         @param returnInfo: what details about the concepts should be included in the returned information
         """
+        super(RequestArticles, self).__init__()
         assert conceptCount <= 1000
         assert linkCount <= 2000
         assert articlesSampleSize <= 50000
@@ -588,6 +606,7 @@ class RequestArticlesConceptMatrix(RequestArticles):
         @param articlesSampleSize: on what sample of results should the aggregate be computed (at most 50000)
         @param returnInfo: what details should be included in the returned information
         """
+        super(RequestArticles, self).__init__()
         assert conceptCount <= 200
         assert articlesSampleSize <= 50000
         self.resultType = "conceptMatrix"
@@ -600,7 +619,7 @@ class RequestArticlesConceptMatrix(RequestArticles):
 
 class RequestArticlesConceptTrends(RequestArticles):
     def __init__(self,
-                 conceptUris: Union[str, List[str]] = None,
+                 conceptUris: Union[str, List[str], None] = None,
                  conceptCount: int = 25,
                  articlesSampleSize: int = 10000,
                  returnInfo: ReturnInfo = ReturnInfo()):
@@ -611,10 +630,11 @@ class RequestArticlesConceptTrends(RequestArticles):
         @param articlesSampleSize: on what sample of results should the aggregate be computed (at most 50000)
         @param returnInfo: what details should be included in the returned information
         """
+        super(RequestArticles, self).__init__()
         assert conceptCount <= 50
         assert articlesSampleSize <= 50000
         self.resultType = "conceptTrends"
-        if conceptUris != None:
+        if conceptUris is not None:
             self.conceptTrendsConceptUri = conceptUris
         self.conceptTrendsConceptCount = conceptCount
         self.conceptTrendsSampleSize = articlesSampleSize
@@ -627,6 +647,7 @@ class RequestArticlesDateMentionAggr(RequestArticles):
     get mentioned dates in the articles
     """
     def __init__(self):
+        super(RequestArticles, self).__init__()
         self.resultType = "dateMentionAggr"
 
 
@@ -634,15 +655,15 @@ class RequestArticlesDateMentionAggr(RequestArticles):
 class RequestArticlesRecentActivity(RequestArticles):
     def __init__(self,
                  maxArticleCount: int = 100,
-                 updatesAfterNewsUri: str = None,
-                 updatesafterBlogUri: str = None,
-                 updatesAfterPrUri: str = None,
-                 updatesAfterTm: Union[datetime.datetime, datetime.date, str] = None,
-                 updatesAfterMinsAgo: int = None,
-                 updatesUntilTm: Union[datetime.datetime, datetime.date, str] = None,
-                 updatesUntilMinsAgo: int = None,
+                 updatesAfterNewsUri: Union[str, None] = None,
+                 updatesafterBlogUri: Union[str, None] = None,
+                 updatesAfterPrUri: Union[str, None] = None,
+                 updatesAfterTm: Union[datetime.datetime, str, None] = None,
+                 updatesAfterMinsAgo: Union[int, None] = None,
+                 updatesUntilTm: Union[datetime.datetime, str, None] = None,
+                 updatesUntilMinsAgo: Union[int, None] = None,
                  mandatorySourceLocation: bool = False,
-                 returnInfo: ReturnInfo = None):
+                 returnInfo: Union[ReturnInfo, None] = None):
         """
         get the list of articles that were recently added to the Event Registry and match the selected criteria
         @param maxArticleCount: the maximum number of articles to return in the call (the number can be even higher than 100 but in case more articles
@@ -654,29 +675,30 @@ class RequestArticlesRecentActivity(RequestArticles):
         @param mandatorySourceLocation: return only articles for which we know the source's geographic location
         @param returnInfo: what details should be included in the returned information
         """
+        super(RequestArticles, self).__init__()
         assert maxArticleCount <= 2000
-        assert updatesAfterTm == None or updatesAfterMinsAgo == None, "You should specify either updatesAfterTm or updatesAfterMinsAgo parameter, but not both"
-        assert updatesUntilTm == None or updatesUntilMinsAgo == None, "You should specify either updatesUntilTm or updatesUntilMinsAgo parameter, but not both"
+        assert updatesAfterTm is None or updatesAfterMinsAgo is None, "You should specify either updatesAfterTm or updatesAfterMinsAgo parameter, but not both"
+        assert updatesUntilTm is None or updatesUntilMinsAgo is None, "You should specify either updatesUntilTm or updatesUntilMinsAgo parameter, but not both"
         self.resultType = "recentActivityArticles"
         self.recentActivityArticlesMaxArticleCount  = maxArticleCount
-        if updatesAfterTm != None:
+        if updatesAfterTm is not None:
             self.recentActivityArticlesUpdatesAfterTm = QueryParamsBase.encodeDateTime(updatesAfterTm)
-        if updatesAfterMinsAgo != None:
+        if updatesAfterMinsAgo is not None:
             self.recentActivityArticlesUpdatesAfterMinsAgo = updatesAfterMinsAgo
-        if updatesUntilTm != None:
+        if updatesUntilTm is not None:
             self.recentActivityArticlesUpdatesUntilTm = QueryParamsBase.encodeDateTime(updatesUntilTm)
-        if updatesUntilMinsAgo != None:
+        if updatesUntilMinsAgo is not None:
             self.recentActivityArticlesUpdatesUntilMinsAgo = updatesUntilMinsAgo
 
         # set the stopping uris, if provided
-        if updatesAfterNewsUri != None:
+        if updatesAfterNewsUri is not None:
             self.recentActivityArticlesNewsUpdatesAfterUri = updatesAfterNewsUri
-        if updatesafterBlogUri != None:
+        if updatesafterBlogUri is not None:
             self.recentActivityArticlesBlogUpdatesAfterUri = updatesafterBlogUri
-        if updatesAfterPrUri != None:
+        if updatesAfterPrUri is not None:
             self.recentActivityArticlesPrUpdatesAfterUri = updatesAfterPrUri
 
         self.recentActivityArticlesMaxArticleCount = maxArticleCount
         self.recentActivityArticlesMandatorySourceLocation = mandatorySourceLocation
-        if returnInfo != None:
+        if returnInfo is not None:
             self.__dict__.update(returnInfo.getParams("recentActivityArticles"))

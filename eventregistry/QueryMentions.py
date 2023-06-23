@@ -9,44 +9,44 @@ from typing import Union, List
 
 class QueryMentions(Query):
     def __init__(self,
-                eventTypeUri: Union[str, QueryItems] = None,
-                keywords: Union[str, QueryItems] = None,
-                conceptUri: Union[str, QueryItems] = None,
-                categoryUri: Union[str, QueryItems] = None,
-                sourceUri: Union[str, QueryItems] = None,
-                sourceLocationUri: Union[str, QueryItems] = None,
-                sourceGroupUri: Union[str, QueryItems] = None,
-                industryUri: Union[str, QueryItems] = None,
-                sdgUri: Union[str, QueryItems] = None,
-                sasbUri: Union[str, QueryItems] = None,
-                esgUri: Union[str, QueryItems] = None,
-                locationUri: Union[str, QueryItems] = None,
-                lang: Union[str, QueryItems] = None,
-                dateStart: Union[datetime.datetime, datetime.date, str] = None,
-                dateEnd: Union[datetime.datetime, datetime.date, str] = None,
+                eventTypeUri: Union[str, QueryItems, None] = None,
+                keywords: Union[str, QueryItems, None] = None,
+                conceptUri: Union[str, QueryItems, None] = None,
+                categoryUri: Union[str, QueryItems, None] = None,
+                sourceUri: Union[str, QueryItems, None] = None,
+                sourceLocationUri: Union[str, QueryItems, None] = None,
+                sourceGroupUri: Union[str, QueryItems, None] = None,
+                industryUri: Union[str, QueryItems, None] = None,
+                sdgUri: Union[str, QueryItems, None] = None,
+                sasbUri: Union[str, QueryItems, None] = None,
+                esgUri: Union[str, QueryItems, None] = None,
+                locationUri: Union[str, QueryItems, None] = None,
+                lang: Union[str, QueryItems, None] = None,
+                dateStart: Union[datetime.datetime, datetime.date, str, None] = None,
+                dateEnd: Union[datetime.datetime, datetime.date, str, None] = None,
 
-                ignoreEventTypeUri: Union[str, QueryItems] = None,
-                ignoreKeywords: Union[str, QueryItems] = None,
-                ignoreConceptUri: Union[str, QueryItems] = None,
-                ignoreCategoryUri: Union[str, QueryItems] = None,
-                ignoreSourceUri: Union[str, QueryItems] = None,
-                ignoreSourceLocationUri: Union[str, QueryItems] = None,
-                ignoreSourceGroupUri: Union[str, QueryItems] = None,
-                ignoreIndustryUri: Union[str, QueryItems] = None,
-                ignoreSdgUri: Union[str, QueryItems] = None,
-                ignoreSasbUri: Union[str, QueryItems] = None,
-                ignoreEsgUri: Union[str, QueryItems] = None,
-                ignoreLocationUri: Union[str, QueryItems] = None,
-                ignoreLang: Union[str, QueryItems] = None,
+                ignoreEventTypeUri: Union[str, QueryItems, None] = None,
+                ignoreKeywords: Union[str, QueryItems, None] = None,
+                ignoreConceptUri: Union[str, QueryItems, None] = None,
+                ignoreCategoryUri: Union[str, QueryItems, None] = None,
+                ignoreSourceUri: Union[str, QueryItems, None] = None,
+                ignoreSourceLocationUri: Union[str, QueryItems, None] = None,
+                ignoreSourceGroupUri: Union[str, QueryItems, None] = None,
+                ignoreIndustryUri: Union[str, QueryItems, None] = None,
+                ignoreSdgUri: Union[str, QueryItems, None] = None,
+                ignoreSasbUri: Union[str, QueryItems, None] = None,
+                ignoreEsgUri: Union[str, QueryItems, None] = None,
+                ignoreLocationUri: Union[str, QueryItems, None] = None,
+                ignoreLang: Union[str, QueryItems, None] = None,
 
                 showDuplicates: bool = False,
                 startSourceRankPercentile: int = 0,
                 endSourceRankPercentile: int = 100,
                 minSentiment: float = -1,
                 maxSentiment: float = 1,
-                minSentenceIndex: int = None,
-                maxSentenceIndex: int = None,
-                requestedResult: "RequestMentions" = None):
+                minSentenceIndex: Union[int, None] = None,
+                maxSentenceIndex: Union[int, None] = None,
+                requestedResult: Union["RequestMentions", None] = None):
         """
         Query class for searching for individual mentions in the Event Registry.
         The resulting mentions (objects, containing sentence, article information, mentioned entities, etc.) have to match all specified conditions.
@@ -144,10 +144,10 @@ class QueryMentions(Query):
         self._setQueryArrVal(lang, "lang", None, "or")                      # a single lang or list (possible: eng, deu, spa, zho, slv)
 
         # starting date of the published articles (e.g. 2014-05-02)
-        if dateStart != None:
+        if dateStart is not None:
             self._setDateVal("dateStart", dateStart)
         # ending date of the published articles (e.g. 2014-05-02)
-        if dateEnd != None:
+        if dateEnd is not None:
             self._setDateVal("dateEnd", dateEnd)
 
 
@@ -181,10 +181,10 @@ class QueryMentions(Query):
         if maxSentiment != 1:
             assert maxSentiment >= -1 and maxSentiment <= 1
             self._setVal("maxSentiment", maxSentiment)
-        if minSentenceIndex != None:
+        if minSentenceIndex is not None:
             assert minSentenceIndex >= 0
             self._setVal("minSentenceIndex", minSentenceIndex)
-        if maxSentenceIndex != None:
+        if maxSentenceIndex is not None:
             assert maxSentenceIndex >= 0
             self._setVal("maxSentenceIndex", maxSentenceIndex)
 
@@ -270,7 +270,7 @@ class QueryMentionsIter(QueryMentions, six.Iterator):
     def execQuery(self, eventRegistry: EventRegistry,
                   sortBy: str = "rel",
                   sortByAsc: bool = False,
-                  returnInfo: ReturnInfo = None,
+                  returnInfo: Union[ReturnInfo, None] = None,
                   maxItems: int = -1,
                   **kwargs):
         """
@@ -330,16 +330,16 @@ class QueryMentionsIter(QueryMentions, six.Iterator):
         # try to get more uris, if none
         self._mentionPage += 1
         # if we have already obtained all pages, then exit
-        if self._totalPages != None and self._mentionPage > self._totalPages:
+        if self._totalPages is not None and self._mentionPage > self._totalPages:
             return
         self.setRequestedResult(RequestMentionsInfo(page=self._mentionPage,
             sortBy=self._sortBy, sortByAsc=self._sortByAsc,
             returnInfo = self._returnInfo))
         if self._er._verboseOutput:
-            logger.debug("Downloading mention page %d..." % (self._mentionPage))
+            logger.debug("Downloading mention page %d...", self._mentionPage)
         res = self._er.execQuery(self)
         if "error" in res:
-            logger.error("Error while obtaining a list of mentions: " + res["error"])
+            logger.error("Error while obtaining a list of mentions: %s", res["error"])
         else:
             self._totalPages = res.get("mentions", {}).get("pages", 0)
         results = res.get("mentions", {}).get("results", [])
@@ -379,7 +379,7 @@ class RequestMentionsInfo(RequestMentions):
                  page: int = 1,
                  count: int = 100,
                  sortBy: str = "date", sortByAsc: bool = False,
-                 returnInfo: RequestMentions = None):
+                 returnInfo: Union[ReturnInfo, None] = None):
         """
         return mention details for resulting mentions
         @param page: page of the mentions to return
@@ -388,6 +388,7 @@ class RequestMentionsInfo(RequestMentions):
         @param sortByAsc: should the results be sorted in ascending order (True) or descending (False)
         @param returnInfo: what details should be included in the returned information
         """
+        super(RequestMentions, self).__init__()
         assert page >= 1, "page has to be >= 1"
         assert count <= 200, "at most 100 mentions can be returned per call"
         self.resultType = "mentions"
@@ -395,7 +396,7 @@ class RequestMentionsInfo(RequestMentions):
         self.mentionsCount = count
         self.mentionsSortBy = sortBy
         self.mentionsSortByAsc = sortByAsc
-        if returnInfo != None:
+        if returnInfo is not None:
             self.__dict__.update(returnInfo.getParams("mentions"))
 
 
@@ -420,6 +421,7 @@ class RequestMentionsUriWgtList(RequestMentions):
         @param sortBy: how are mentions sorted. Options: id (internal id), date (publishing date), cosSim (closeness to the event centroid), rel (relevance to the query), sourceImportance (manually curated score of source importance - high value, high importance), sourceImportanceRank (reverse of sourceImportance), sourceAlexaGlobalRank (global rank of the news source), sourceAlexaCountryRank (country rank of the news source), socialScore (total shares on social media), facebookShares (shares on Facebook only)
         @param sortByAsc: should the results be sorted in ascending order (True) or descending (False) according to the sortBy criteria
         """
+        super(RequestMentions, self).__init__()
         assert page >= 1, "page has to be >= 1"
         assert count <= 50000
         self.resultType = "uriWgtList"
@@ -440,6 +442,7 @@ class RequestMentionsTimeAggr(RequestMentions):
         """
         return time distribution of resulting mentions
         """
+        super(RequestMentions, self).__init__()
         self.resultType = "timeAggr"
 
 
@@ -447,7 +450,7 @@ class RequestMentionsTimeAggr(RequestMentions):
 class RequestMentionsConceptAggr(RequestMentions):
     def __init__(self,
                  conceptCount: int = 25,
-                 conceptCountPerType: bool = None,
+                 conceptCountPerType: Union[int, None] = None,
                  conceptScoring: str = "importance",
                  mentionsSampleSize: int = 10000,
                  returnInfo: ReturnInfo = ReturnInfo()):
@@ -463,13 +466,14 @@ class RequestMentionsConceptAggr(RequestMentions):
         @param mentionsSampleSize: on what sample of results should the aggregate be computed (at most 20000)
         @param returnInfo: what details about the concepts should be included in the returned information
         """
+        super(RequestMentions, self).__init__()
         assert conceptCount <= 500
         assert mentionsSampleSize <= 20000
         self.resultType = "conceptAggr"
         self.conceptAggrConceptCount = conceptCount
         self.conceptAggrSampleSize = mentionsSampleSize
         self.conceptAggrScoring = conceptScoring
-        if conceptCountPerType != None:
+        if conceptCountPerType is not None:
             self.conceptAggrConceptCountPerType = conceptCountPerType
         self.__dict__.update(returnInfo.getParams("conceptAggr"))
 
@@ -484,6 +488,7 @@ class RequestMentionsCategoryAggr(RequestMentions):
         @param mentionsSampleSize: on what sample of results should the aggregate be computed (at most 50000)
         @param returnInfo: what details about the categories should be included in the returned information
         """
+        super(RequestMentions, self).__init__()
         assert mentionsSampleSize <= 50000
         self.resultType = "categoryAggr"
         self.categoryAggrSampleSize = mentionsSampleSize
@@ -500,6 +505,7 @@ class RequestMentionsSourceAggr(RequestMentions):
         @param sourceCount: the number of top sources to return
         @param returnInfo: what details about the sources should be included in the returned information
         """
+        super(RequestMentions, self).__init__()
         self.resultType = "sourceAggr"
         self.sourceAggrSourceCount = sourceCount
         self.__dict__.update(returnInfo.getParams("sourceAggr"))
@@ -512,6 +518,7 @@ class RequestMentionsKeywordAggr(RequestMentions):
         get top keywords in the resulting mentions
         @param mentionsSampleSize: on what sample of results should the aggregate be computed (at most 20000)
         """
+        super(RequestMentions, self).__init__()
         assert mentionsSampleSize <= 20000
         self.resultType = "keywordAggr"
         self.keywordAggrSampleSize = mentionsSampleSize
@@ -532,6 +539,7 @@ class RequestMentionsConceptGraph(RequestMentions):
         @param mentionsSampleSize: on what sample of results should the aggregate be computed (at most 50000)
         @param returnInfo: what details about the concepts should be included in the returned information
         """
+        super(RequestMentions, self).__init__()
         assert conceptCount <= 1000
         assert linkCount <= 2000
         assert mentionsSampleSize <= 50000
@@ -547,13 +555,13 @@ class RequestMentionsConceptGraph(RequestMentions):
 class RequestMentionsRecentActivity(RequestMentions):
     def __init__(self,
                  maxMentionCount: int = 100,
-                 updatesAfterUri: str =None,
-                 updatesAfterTm: Union[datetime.datetime, str] = None,
-                 updatesAfterMinsAgo: int = None,
-                 updatesUntilTm: Union[datetime.datetime, str] = None,
-                 updatesUntilMinsAgo: int = None,
+                 updatesAfterUri: Union[str, None] = None,
+                 updatesAfterTm: Union[datetime.datetime, str, None] = None,
+                 updatesAfterMinsAgo: Union[int, None] = None,
+                 updatesUntilTm: Union[datetime.datetime, str, None] = None,
+                 updatesUntilMinsAgo: Union[int, None] = None,
                  mandatorySourceLocation: bool = False,
-                 returnInfo: ReturnInfo = None):
+                 returnInfo: Union[ReturnInfo, None] = None):
         """
         get the list of mentions that were recently added to the Event Registry and match the selected criteria
         @param maxMentionCount: the maximum number of mentions to return in the call (the number can be even higher than 100 but in case more mentions
@@ -565,25 +573,26 @@ class RequestMentionsRecentActivity(RequestMentions):
         @param mandatorySourceLocation: return only mentions for which we know the source's geographic location
         @param returnInfo: what details should be included in the returned information
         """
+        super(RequestMentions, self).__init__()
         assert maxMentionCount <= 2000
-        assert updatesAfterTm == None or updatesAfterMinsAgo == None, "You should specify either updatesAfterTm or updatesAfterMinsAgo parameter, but not both"
-        assert updatesUntilTm == None or updatesUntilMinsAgo == None, "You should specify either updatesUntilTm or updatesUntilMinsAgo parameter, but not both"
+        assert updatesAfterTm is None or updatesAfterMinsAgo is None, "You should specify either updatesAfterTm or updatesAfterMinsAgo parameter, but not both"
+        assert updatesUntilTm is None or updatesUntilMinsAgo is None, "You should specify either updatesUntilTm or updatesUntilMinsAgo parameter, but not both"
         self.resultType = "recentActivityMentions"
         self.recentActivityMentionsMaxMentionCount  = maxMentionCount
-        if updatesAfterTm != None:
+        if updatesAfterTm is not None:
             self.recentActivityMentionsUpdatesAfterTm = QueryParamsBase.encodeDateTime(updatesAfterTm)
-        if updatesAfterMinsAgo != None:
+        if updatesAfterMinsAgo is not None:
             self.recentActivityMentionsUpdatesAfterMinsAgo = updatesAfterMinsAgo
-        if updatesUntilTm != None:
+        if updatesUntilTm is not None:
             self.recentActivityMentionsUpdatesUntilTm = QueryParamsBase.encodeDateTime(updatesUntilTm)
-        if updatesUntilMinsAgo != None:
+        if updatesUntilMinsAgo is not None:
             self.recentActivityMentionsUpdatesUntilMinsAgo = updatesUntilMinsAgo
 
         # set the stopping uris, if provided
-        if updatesAfterUri != None:
+        if updatesAfterUri is not None:
             self.recentActivityMentionsUpdatesAfterUri = updatesAfterUri
 
         self.recentActivityMentionsMaxMentionCount = maxMentionCount
         self.recentActivityMentionsMandatorySourceLocation = mandatorySourceLocation
-        if returnInfo != None:
+        if returnInfo is not None:
             self.__dict__.update(returnInfo.getParams("recentActivityMentions"))

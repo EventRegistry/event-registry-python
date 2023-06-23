@@ -1,5 +1,18 @@
 # Change Log
 
+## [v9.1]() (2023-06-23)
+
+**Added**
+- added `keywordSearchMode` parameter that can be used in `QueryArticles`, `QueryArticlesIter`, `QueryEvents`, `QueryEventsIter` and `QueryEvent` constructors.
+- added `keywordSearchMode` parameter to the advanced query language
+
+
+**Updated**
+- types of parameters in the method calls
+- updated several code example files
+
+
+
 ## [v9.0]() (2023-05-15)
 
 **Added**

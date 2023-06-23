@@ -5,15 +5,19 @@ from eventregistry import *
 
 er = EventRegistry(allowUseOfArchive=False)
 
+# max articles to return - change for your use case
 MAX_RESULTS = 100
 
 # search for the phrase "Tesla Inc" - both words have to appear together - download at most 100 articles
+# for each article retrieve also the list of mentioned concepts, categories, location, image, links and videos from the article
 q = QueryArticlesIter(keywords = "Tesla Inc")
-for art in q.execQuery(er, maxItems = MAX_RESULTS):
+for art in q.execQuery(er,
+                       returnInfo = ReturnInfo(articleInfo=ArticleInfoFlags(concepts=True, categories=True, location=True, image=True, links=True, videos=True)),
+                       maxItems = MAX_RESULTS):
     print(art)
 
 # search for articles that mention both of the two words - maybe together, maybe apart
-# this form of specifying multiple keywords, concepts, etc is now depricated. When you have a list,
+# this form of specifying multiple keywords, concepts, etc is now deprecated. When you have a list,
 # use it with QueryItems.AND() or QueryItems.OR() to explicitly specify how the query should be processed
 q = QueryArticles(keywords = ["Barack", "Obama"])
 # set some custom information that should be returned as a result of the query
@@ -99,7 +103,7 @@ q = QueryArticlesIter(
 for art in q.execQuery(er, sortBy="sourceAlexaGlobalRank",
         returnInfo = ReturnInfo(
             articleInfo=ArticleInfoFlags(concepts=True, categories=True, location=True, image=True)),
-        maxItems = 500):
+        maxItems = MAX_RESULTS):
     print(art["uri"])
 
 
@@ -213,28 +217,112 @@ res = er.execQuery(q)
 
 # get articles that were published on 2017-02-05 or are about trump or are about politics or are about Merkel and business
 # # and are not published on 2017-02-05 or are about Obama
-qStr = """
-{
+q = {
     "$query": {
         "$or": [
             { "dateStart": "2017-02-05", "dateEnd": "2017-02-05" },
-            { "conceptUri": "%s" },
-            { "categoryUri": "%s" },
+            { "conceptUri": trumpUri },
+            { "categoryUri": politicsUri },
             {
                 "$and": [
-                    { "conceptUri": "%s" },
-                    { "categoryUri": "%s" }
+                    { "conceptUri": merkelUri },
+                    { "categoryUri": businessUri }
                 ]
             }
         ],
         "$not": {
             "$or": [
                 { "dateStart": "2017-02-04", "dateEnd": "2017-02-04" },
-                { "conceptUri": "%s" }
+                { "conceptUri": obamaUri }
             ]
         }
     }
 }
-    """ % (trumpUri, politicsUri, merkelUri, businessUri, obamaUri)
-q1 = QueryArticles.initWithComplexQuery(qStr)
-res = er.execQuery(q1)
+query = QueryArticles.initWithComplexQuery(q)
+res = er.execQuery(query)
+
+#
+# use of EXACT search mode when using keywords
+# NOTE: You don’t have to write AND, OR, NOT in uppercase — we will use uppercase just to make examples more readable.
+#
+
+# USE OF AND, OR and NOT operators
+# find articles from Jan 2013 that mention samsung and tv and either led or lcd or plasma but not smartphone or phone
+q = {
+    "$query": {
+        "keyword": "Samsung AND TV AND (LED OR LCD OR Plasma) NOT (smartphone OR phone)",
+        "keywordSearchMode": "exact",
+        "dateStart": "2023-01-01",
+        "dateEnd": "2023-01-31"
+    }
+}
+iter = QueryArticlesIter.initWithComplexQuery(q)
+for art in iter.execQuery(er, maxItems = MAX_RESULTS):
+    print(art)
+
+
+# use of operator NEAR
+# find English articles that mention siemens and sustainability or ecology or renewable energy, but at most 15 words apart (forward or backward)
+q = {
+    "$query": {
+        "keyword": "Siemens NEAR/15 (sustainability or ecology or renewable energy)",
+        "keywordSearchMode": "exact",
+        "lang": "eng"
+    }
+}
+iter = QueryArticlesIter.initWithComplexQuery(q)
+for art in iter.execQuery(er, maxItems = MAX_RESULTS):
+    print(art)
+
+
+# use of operator NEXT
+# find English articles that mention sustainability or ecology or renewable energy at most 15 words after siemens is mentioned
+q = {
+    "$query": {
+        "keyword": "Siemens NEXT/15 (sustainability or ecology or renewable energy)",
+        "keywordSearchMode": "exact",
+        "lang": "eng"
+    }
+}
+iter = QueryArticlesIter.initWithComplexQuery(q)
+for art in iter.execQuery(er, maxItems = MAX_RESULTS):
+    print(art)
+
+
+#
+# use of SIMPLE search mode when using keywords
+#
+
+# find articles that at least some of the specified keywords and phrases and that belong to the AI category
+q = {
+    "$query": {
+        "keyword": "AI \\\"deep learning\\\" \\\"machine learning\\\" latest developments",
+        "keywordSearchMode": "simple",
+        "categoryUri": "dmoz/Computers/Artificial_Intelligence"
+    }
+}
+iter = QueryArticlesIter.initWithComplexQuery(q)
+for art in iter.execQuery(er, sortBy = "rel", maxItems = MAX_RESULTS):
+    print(art)
+
+# the same query, but without using the complex query language
+iter = QueryArticlesIter(keywords = "AI \\\"deep learning\\\" \\\"machine learning\\\" latest developments", keywordSearchMode="simple")
+for art in iter.execQuery(er, sortBy = "rel", maxItems = MAX_RESULTS):
+    print(art)
+
+
+#
+# use of PHRASE search mode when using keywords
+# phrase search mode is used by default, so in this case, you don't even need to specify the "keywordSearchMode" parameter
+#
+
+# search for articles that mention the phrase "Apple iPhone" or "Microsoft Store"
+qStr = {
+    "$query": {
+        "$or": [
+            { "keyword": "Apple iPhone" },
+            { "keyword": "Microsoft Store" }
+        ]
+    }
+}
+q = QueryArticlesIter.initWithComplexQuery(qStr)

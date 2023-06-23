@@ -5,7 +5,7 @@ from eventregistry.QueryArticles import QueryArticles, RequestArticlesInfo
 from eventregistry.Query import *
 from eventregistry.Logger import logger
 from eventregistry.EventRegistry import EventRegistry
-from typing import Union, List
+from typing import Union, List, Literal
 
 
 class QueryEvent(Query):
@@ -14,7 +14,7 @@ class QueryEvent(Query):
     """
     def __init__(self,
                  eventUriOrList: Union[str, List[str]],
-                 requestedResult: "RequestEvent" = None):
+                 requestedResult: Union["RequestEvent", None] = None):
         """
         @param eventUriOrUriList: a single event uri or a list of event uris (max 50)
         @param requestedResult: the information to return as the result of the query. By default return the details of the event
@@ -44,20 +44,21 @@ class QueryEventArticlesIter(QueryEvent, six.Iterator):
     Class for obtaining an iterator over all articles in the event
     """
     def __init__(self, eventUri: str,
-                lang: Union[str, QueryItems] = None,
-                keywords: Union[str, QueryItems] = None,
-                conceptUri: Union[str, QueryItems] = None,
-                categoryUri: Union[str, QueryItems] = None,
-                sourceUri: Union[str, QueryItems] = None,
-                sourceLocationUri: Union[str, QueryItems] = None,
-                sourceGroupUri: Union[str, QueryItems] = None,
-                authorUri: Union[str, QueryItems] = None,
-                locationUri: Union[str, QueryItems] = None,
-                dateStart: Union[datetime.datetime, datetime.date, str] = None,
-                dateEnd: Union[datetime.datetime, datetime.date, str] = None,
-                dateMentionStart: Union[datetime.datetime, datetime.date, str] = None,
-                dateMentionEnd: Union[datetime.datetime, datetime.date, str] = None,
+                lang: Union[str, QueryItems, None] = None,
+                keywords: Union[str, QueryItems, None] = None,
+                conceptUri: Union[str, QueryItems, None] = None,
+                categoryUri: Union[str, QueryItems, None] = None,
+                sourceUri: Union[str, QueryItems, None] = None,
+                sourceLocationUri: Union[str, QueryItems, None] = None,
+                sourceGroupUri: Union[str, QueryItems, None] = None,
+                authorUri: Union[str, QueryItems, None] = None,
+                locationUri: Union[str, QueryItems, None] = None,
+                dateStart: Union[datetime.datetime, datetime.date, str, None] = None,
+                dateEnd: Union[datetime.datetime, datetime.date, str, None] = None,
+                dateMentionStart: Union[datetime.datetime, datetime.date, str, None] = None,
+                dateMentionEnd: Union[datetime.datetime, datetime.date, str, None] = None,
                 keywordsLoc: str = "body",
+                keywordSearchMode: Literal["simple", "exact", "phrase"] = "phrase",
 
                 startSourceRankPercentile: int = 0,
                 endSourceRankPercentile: int = 100,
@@ -99,6 +100,7 @@ class QueryEventArticlesIter(QueryEvent, six.Iterator):
         @param dateMentionStart: limit the event articles to those that explicitly mention a date that is equal or greater than dateMentionStart.
         @param dateMentionEnd: limit the event articles to those that explicitly mention a date that is lower or equal to dateMentionEnd.
         @param keywordsLoc: where should we look when searching using the keywords provided by "keywords" parameter. "body" (default), "title", or "body,title"
+        @param keywordSearchMode: what search mode to use when specifying keywords. Possible values are: simple, exact, phrase
 
         @param startSourceRankPercentile: starting percentile of the sources to consider in the results (default: 0). Value should be in range 0-90 and divisible by 10.
         @param endSourceRankPercentile: ending percentile of the sources to consider in the results (default: 100). Value should be in range 10-100 and divisible by 10.
@@ -120,20 +122,21 @@ class QueryEventArticlesIter(QueryEvent, six.Iterator):
         self._setQueryArrVal(lang, "articlesLang", None, "or")                      # a single lang or list
 
         # starting date of the published articles (e.g. 2014-05-02)
-        if dateStart != None:
+        if dateStart is not None:
             self._setDateVal("dateStart", dateStart)
         # ending date of the published articles (e.g. 2014-05-02)
-        if dateEnd != None:
+        if dateEnd is not None:
             self._setDateVal("dateEnd", dateEnd)
 
         # first valid mentioned date detected in articles (e.g. 2014-05-02)
-        if dateMentionStart != None:
+        if dateMentionStart is not None:
             self._setDateVal("dateMentionStart", dateMentionStart)
         # last valid mentioned date detected in articles (e.g. 2014-05-02)
-        if dateMentionEnd != None:
+        if dateMentionEnd is not None:
             self._setDateVal("dateMentionEnd", dateMentionEnd)
 
         self._setValIfNotDefault("keywordLoc", keywordsLoc, "body")
+        self._setValIfNotDefault("keywordSearchMode", keywordSearchMode, "phrase")
 
         assert startSourceRankPercentile >= 0 and startSourceRankPercentile % 10 == 0 and startSourceRankPercentile <= 100
         assert endSourceRankPercentile >= 0 and endSourceRankPercentile % 10 == 0 and endSourceRankPercentile <= 100
@@ -165,7 +168,7 @@ class QueryEventArticlesIter(QueryEvent, six.Iterator):
 
     def execQuery(self, eventRegistry: EventRegistry,
             sortBy: str = "cosSim", sortByAsc: bool = False,
-            returnInfo: ReturnInfo = None,
+            returnInfo: Union[ReturnInfo, None] = None,
             maxItems: int = -1):
         """
         @param eventRegistry: instance of EventRegistry class. used to obtain the necessary data
@@ -200,7 +203,7 @@ class QueryEventArticlesIter(QueryEvent, six.Iterator):
         if self._totalPages != None and self._articlePage > self._totalPages:
             return
         if self._er._verboseOutput:
-            logger.debug("Downloading article page %d from event %s" % (self._articlePage, eventUri))
+            logger.debug("Downloading article page %d from event %s", self._articlePage, eventUri)
 
         self.setRequestedResult(RequestEventArticles(
             page = self._articlePage,
@@ -260,26 +263,27 @@ class RequestEventArticles(RequestEvent, QueryParamsBase):
                 page = 1,
                 count = 100,
 
-                lang: Union[str, QueryItems] = None,
-                keywords: Union[str, QueryItems] = None,
-                conceptUri: Union[str, QueryItems] = None,
-                categoryUri: Union[str, QueryItems] = None,
-                sourceUri: Union[str, QueryItems] = None,
-                sourceLocationUri: Union[str, QueryItems] = None,
-                sourceGroupUri: Union[str, QueryItems] = None,
-                authorUri: Union[str, QueryItems] = None,
-                locationUri: Union[str, QueryItems] = None,
-                dateStart: Union[datetime.datetime, datetime.date, str] = None,
-                dateEnd: Union[datetime.datetime, datetime.date, str] = None,
-                dateMentionStart: Union[datetime.datetime, datetime.date, str] = None,
-                dateMentionEnd: Union[datetime.datetime, datetime.date, str] = None,
+                lang: Union[str, QueryItems, None] = None,
+                keywords: Union[str, QueryItems, None] = None,
+                conceptUri: Union[str, QueryItems, None] = None,
+                categoryUri: Union[str, QueryItems, None] = None,
+                sourceUri: Union[str, QueryItems, None] = None,
+                sourceLocationUri: Union[str, QueryItems, None] = None,
+                sourceGroupUri: Union[str, QueryItems, None] = None,
+                authorUri: Union[str, QueryItems, None] = None,
+                locationUri: Union[str, QueryItems, None] = None,
+                dateStart: Union[datetime.datetime, datetime.date, str, None] = None,
+                dateEnd: Union[datetime.datetime, datetime.date, str, None] = None,
+                dateMentionStart: Union[datetime.datetime, datetime.date, str, None] = None,
+                dateMentionEnd: Union[datetime.datetime, datetime.date, str, None] = None,
                 keywordsLoc: str = "body",
+                keywordSearchMode: Literal["simple", "exact", "phrase"] = "phrase",
 
                 startSourceRankPercentile: int = 0,
                 endSourceRankPercentile: int = 100,
 
                 sortBy: str = "cosSim", sortByAsc: bool = False,
-                returnInfo: ReturnInfo = None,
+                returnInfo: Union[ReturnInfo, None] = None,
                 **kwds):
         """
         return articles about the event
@@ -320,6 +324,7 @@ class RequestEventArticles(RequestEvent, QueryParamsBase):
         @param dateMentionStart: limit the event articles to those that explicitly mention a date that is equal or greater than dateMentionStart.
         @param dateMentionEnd: limit the event articles to those that explicitly mention a date that is lower or equal to dateMentionEnd.
         @param keywordsLoc: where should we look when searching using the keywords provided by "keywords" parameter. "body" (default), "title", or "body,title"
+        @param keywordSearchMode: what search mode to use when specifying keywords. Possible values are: simple, exact, phrase
 
         @param startSourceRankPercentile: starting percentile of the sources to consider in the results (default: 0). Value should be in range 0-100 and divisible by 10.
         @param endSourceRankPercentile: ending percentile of the sources to consider in the results (default: 100). Value should be in range 0-100 and divisible by 10.
@@ -348,20 +353,21 @@ class RequestEventArticles(RequestEvent, QueryParamsBase):
         self._setQueryArrVal(lang, "lang", None, "or")                      # a single lang or list (possible: eng, deu, spa, zho, slv)
 
         # starting date of the published articles (e.g. 2014-05-02)
-        if dateStart != None:
+        if dateStart is not None:
             self._setDateVal("dateStart", dateStart)
         # ending date of the published articles (e.g. 2014-05-02)
-        if dateEnd != None:
+        if dateEnd is not None:
             self._setDateVal("dateEnd", dateEnd)
 
         # first valid mentioned date detected in articles (e.g. 2014-05-02)
-        if dateMentionStart != None:
+        if dateMentionStart is not None:
             self._setDateVal("dateMentionStart", dateMentionStart)
         # last valid mentioned date detected in articles (e.g. 2014-05-02)
-        if dateMentionEnd != None:
+        if dateMentionEnd is not None:
             self._setDateVal("dateMentionEnd", dateMentionEnd)
 
         self._setValIfNotDefault("keywordLoc", keywordsLoc, "body")
+        self._setValIfNotDefault("keywordSearchMode", keywordSearchMode, "phrase")
 
         assert startSourceRankPercentile >= 0 and startSourceRankPercentile % 10 == 0 and startSourceRankPercentile <= 100
         assert endSourceRankPercentile >= 0 and endSourceRankPercentile % 10 == 0 and endSourceRankPercentile <= 100
@@ -383,7 +389,7 @@ class RequestEventArticles(RequestEvent, QueryParamsBase):
 
 class RequestEventArticleUriWgts(RequestEvent):
     def __init__(self,
-                 lang: Union[str, List[str]] = None,
+                 lang: Union[str, List[str], None] = None,
                  sortBy: str = "cosSim", sortByAsc: bool = False,
                  **kwds):
         """
@@ -403,7 +409,7 @@ class RequestEventArticleUriWgts(RequestEvent):
 
 
 class RequestEventKeywordAggr(RequestEvent):
-    def __init__(self, lang: Union[str, List[str]] = None,
+    def __init__(self, lang: Union[str, List[str], None] = None,
                 **kwds):
         """
         return keyword aggregate (tag-cloud) from articles in the event
@@ -437,7 +443,7 @@ class RequestEventDateMentionAggr(RequestEvent):
 
 class RequestEventArticleTrend(RequestEvent):
     def __init__(self,
-                 lang: str = None,
+                 lang: Union[str, None] = None,
                  page: int = 1, count: int = 100,
                  minArticleCosSim: int = -1,
                  returnInfo: ReturnInfo = ReturnInfo(articleInfo = ArticleInfoFlags(bodyLen = 0))):
@@ -464,8 +470,8 @@ class RequestEventSimilarEvents(RequestEvent):
     def __init__(self,
                 conceptInfoList: List[dict],
                 count: int = 50,                    # number of similar events to return
-                dateStart: Union[datetime.datetime, datetime.date, str] = None,              # what can be the oldest date of the similar events
-                dateEnd: Union[datetime.datetime, datetime.date, str] = None,                # what can be the newest date of the similar events
+                dateStart: Union[datetime.datetime, datetime.date, str, None] = None,              # what can be the oldest date of the similar events
+                dateEnd: Union[datetime.datetime, datetime.date, str, None] = None,                # what can be the newest date of the similar events
                 addArticleTrendInfo: bool = False,   # add info how the articles in the similar events are distributed over time
                 aggrHours: int = 6,                 # if similarEventsAddArticleTrendInfo == True then this is the aggregating window
                 returnInfo: ReturnInfo = ReturnInfo()):
@@ -484,9 +490,9 @@ class RequestEventSimilarEvents(RequestEvent):
         self.action = "getSimilarEvents"
         self.concepts = json.dumps(conceptInfoList)
         self.eventsCount = count
-        if dateStart != None:
+        if dateStart is not None:
             self.dateStart = QueryParamsBase.encodeDate(dateStart)
-        if dateEnd != None:
+        if dateEnd is not None:
             self.dateEnd = QueryParamsBase.encodeDate(dateEnd)
         self.similarEventsAddArticleTrendInfo = addArticleTrendInfo
         self.similarEventsAggrHours = aggrHours

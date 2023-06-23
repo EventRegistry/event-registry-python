@@ -6,6 +6,10 @@ import json, datetime
 
 er = EventRegistry()
 
+# max events to return - change for your use case
+MAX_RESULTS = 50
+
+
 # get the concept URI that matches label "Barack Obama"
 obamaUri = er.getConceptUri("Obama")
 print("Concept uri for 'Obama' is " + obamaUri)
@@ -19,9 +23,9 @@ someDaysAgo = datetime.datetime.now() - datetime.timedelta(days=20)
 
 # query for events related to Barack Obama. return the matching events sorted from the latest to oldest event
 # use the iterator class and easily iterate over all matching events
-# we specify maxItems to limit the results to maximum 300 results
+# we specify maxItems to limit the results to maximum MAX_RESULTS results
 q = QueryEventsIter(conceptUri = obamaUri)
-for event in q.execQuery(er, sortBy = "date", maxItems = 300):
+for event in q.execQuery(er, sortBy = "date", maxItems = MAX_RESULTS):
     # print(json.dumps(event, indent=2))
     print(event["uri"])
 
@@ -116,7 +120,7 @@ q.setRequestedResult(RequestEventsCategoryAggr())
 res = er.execQuery(q)
 
 
-# query for events about Obama and produce the concept co-occurence graph - which concepts appear frequently together in the matching events
+# query for events about Obama and produce the concept co-occurrence graph - which concepts appear frequently together in the matching events
 q = QueryEvents(conceptUri = er.getConceptUri("Obama"))
 q.setRequestedResult(RequestEventsConceptGraph(conceptCount = 200, linkCount = 500, eventsSampleSize = 2000))
 res = er.execQuery(q)
@@ -128,17 +132,15 @@ res = er.execQuery(q)
 
 # events that are occurred between 2017-02-05 and 2017-02-06 and are not about business
 businessUri = er.getCategoryUri("Business")
-q = QueryEvents.initWithComplexQuery("""
-{
+query = QueryEvents.initWithComplexQuery({
     "$query": {
         "dateStart": "2017-02-05", "dateEnd": "2017-02-06",
         "$not": {
-            "categoryUri": "%s"
+            "categoryUri": businessUri
         }
     }
-}
-""" % (businessUri))
-res = er.execQuery(q)
+})
+res = er.execQuery(query)
 
 # example of a complex query containing a combination of OR and AND parameters
 # get events that:
@@ -153,31 +155,29 @@ politicsUri = er.getCategoryUri("politics")
 merkelUri = er.getConceptUri("merkel")
 businessUri = er.getCategoryUri("business")
 
-qStr = """
-{
+q = {
     "$query": {
         "$or": [
             { "dateStart": "2017-02-05", "dateEnd": "2017-02-05" },
-            { "conceptUri": "%s" },
-            { "categoryUri": "%s" },
+            { "conceptUri": trumpUri },
+            { "categoryUri": politicsUri },
             {
                 "$and": [
-                    { "conceptUri": "%s" },
-                    { "categoryUri": "%s" }
+                    { "conceptUri": merkelUri },
+                    { "categoryUri": businessUri }
                 ]
             }
         ],
         "$not": {
             "$or": [
                 { "dateStart": "2017-02-04", "dateEnd": "2017-02-04" },
-                { "conceptUri": "%s" }
+                { "conceptUri": obamaUri }
             ]
         }
     }
 }
-    """ % (trumpUri, politicsUri, merkelUri, businessUri, obamaUri)
-q1 = QueryEvents.initWithComplexQuery(qStr)
-res = er.execQuery(q1)
+query = QueryEvents.initWithComplexQuery(q)
+res = er.execQuery(query)
 
 cq = ComplexEventQuery(
     query = CombinedQuery.OR([
@@ -194,5 +194,93 @@ retInfo = ReturnInfo(eventInfo = EventInfoFlags(concepts = True, categories = Tr
 
 # example of an ITERATOR with a COMPLEX QUERY
 iter = QueryEventsIter.initWithComplexQuery(cq)
-for event in iter.execQuery(er, returnInfo =  retInfo, maxItems = 10):
+for event in iter.execQuery(er, returnInfo =  retInfo, maxItems = MAX_RESULTS):
     print(json.dumps(event, indent=2))
+
+
+
+#
+# use of EXACT search mode when using keywords
+# NOTE: You don’t have to write AND, OR, NOT in uppercase — we will use uppercase just to make examples more readable.
+#
+
+# USE OF AND, OR and NOT operators
+# find events from Jan 2013 that mention samsung and tv and either led or lcd or plasma but not smartphone or phone
+q = {
+    "$query": {
+        "keyword": "Samsung AND TV AND (LED OR LCD OR Plasma) NOT (smartphone OR phone)",
+        "keywordSearchMode": "exact",
+        "dateStart": "2023-01-01",
+        "dateEnd": "2023-01-31"
+    }
+}
+iter = QueryEventsIter.initWithComplexQuery(q)
+for ev in iter.execQuery(er, maxItems = MAX_RESULTS):
+    print(ev)
+
+
+# use of operator NEAR
+# find English events that mention siemens and sustainability or ecology or renewable energy, but at most 15 words apart (forward or backward)
+q = {
+    "$query": {
+        "keyword": "Siemens NEAR/15 (sustainability or ecology or renewable energy)",
+        "keywordSearchMode": "exact",
+        "lang": "eng"
+    }
+}
+iter = QueryEventsIter.initWithComplexQuery(q)
+for ev in iter.execQuery(er, maxItems = MAX_RESULTS):
+    print(ev)
+
+
+# use of operator NEXT
+# find English events that mention sustainability or ecology or renewable energy at most 15 words after siemens is mentioned
+q = {
+    "$query": {
+        "keyword": "Siemens NEXT/15 (sustainability or ecology or renewable energy)",
+        "keywordSearchMode": "exact",
+        "lang": "eng"
+    }
+}
+iter = QueryEventsIter.initWithComplexQuery(q)
+for ev in iter.execQuery(er, maxItems = MAX_RESULTS):
+    print(ev)
+
+
+#
+# use of SIMPLE search mode when using keywords
+#
+
+# find events that at least some of the specified keywords and phrases and that belong to the AI category
+q = {
+    "$query": {
+        "keyword": "AI \\\"deep learning\\\" \\\"machine learning\\\" latest developments",
+        "keywordSearchMode": "simple",
+        "categoryUri": "dmoz/Computers/Artificial_Intelligence"
+    }
+}
+iter = QueryEventsIter.initWithComplexQuery(q)
+for ev in iter.execQuery(er, sortBy = "rel", maxItems = MAX_RESULTS):
+    print(ev)
+
+# the same query, but without using the complex query language
+iter = QueryEventsIter(keywords = "AI \\\"deep learning\\\" \\\"machine learning\\\" latest developments", keywordSearchMode="simple")
+for ev in iter.execQuery(er, sortBy = "rel", maxItems = MAX_RESULTS):
+    print(ev)
+
+
+#
+# use of PHRASE search mode when using keywords
+# phrase search mode is used by default, so in this case, you don't even need to specify the "keywordSearchMode" parameter
+#
+
+# search for events that mention the phrase "Apple iPhone" or "Microsoft Store"
+qStr = {
+    "$query": {
+        "$or": [
+            { "keyword": "Apple iPhone" },
+            { "keyword": "Microsoft Store" }
+        ]
+    }
+}
+q = QueryEventsIter.initWithComplexQuery(qStr)

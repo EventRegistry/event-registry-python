@@ -3,7 +3,7 @@ main class responsible for obtaining results from the Event Registry
 """
 import six, os, sys, traceback, json, re, requests, time, logging, threading
 
-from typing import Union, List
+from typing import Union, List, Tuple
 from eventregistry.Base import *
 from eventregistry.ReturnInfo import *
 from eventregistry.Logger import logger
@@ -15,14 +15,14 @@ class EventRegistry(object):
     it is used to send all the requests and queries
     """
     def __init__(self,
-                 apiKey: str = None,
-                 host: str = None,
-                 hostAnalytics: str = None,
+                 apiKey: Union[str, None] = None,
+                 host: Union[str, None] = None,
+                 hostAnalytics: Union[str, None] = None,
                  minDelayBetweenRequests: float = 0.5,
                  repeatFailedRequestCount: int = -1,
                  allowUseOfArchive: bool = True,
                  verboseOutput: bool = False,
-                 settingsFName: str = None):
+                 settingsFName: Union[str, None] = None):
         """
         @param apiKey: API key that should be used to make the requests to the Event Registry. API key is assigned to each user account and can be obtained on
             this page: https://newsapi.ai/dashboard
@@ -38,8 +38,8 @@ class EventRegistry(object):
         @param settingsFName: If provided it should be a full path to 'settings.json' file where apiKey an/or host can be loaded from.
             If None, we will look for the settings file in the eventregistry module folder
         """
-        self._host = host
-        self._hostAnalytics = hostAnalytics
+        self._host = host or "http://eventregistry.org"
+        self._hostAnalytics = hostAnalytics or "http://analytics.eventregistry.org"
         self._lastException = None
         self._logRequests = False
         self._minDelayBetweenRequests = minDelayBetweenRequests
@@ -72,16 +72,13 @@ class EventRegistry(object):
             if "apiKey" in settings and not apiKey:
                 logger.debug("found apiKey in settings file which will be used for making requests")
                 self._apiKey = settings["apiKey"]
-        else:
-            self._host = host or "http://eventregistry.org"
-            self._hostAnalytics = hostAnalytics or "http://analytics.eventregistry.org"
 
         if self._apiKey == None:
             print("No API key was provided. You will be allowed to perform only a very limited number of requests per day.")
         self._requestLogFName = os.path.join(currPath, "requests_log.txt")
 
-        logger.debug("Event Registry host: %s" % (self._host))
-        logger.debug("Text analytics host: %s" % (self._hostAnalytics))
+        logger.debug("Event Registry host: %s", self._host)
+        logger.debug("Text analytics host: %s", self._hostAnalytics)
 
         # list of status codes - when we get them as a response from the call, we don't want to repeat the query as the response will likely always be the same
         self._stopStatusCodes = set([
@@ -106,7 +103,7 @@ class EventRegistry(object):
             for (latest, current) in zip(latestVersion.split("."), currentVersion.split(".")):
                 if int(latest) > int(current):
                     logger.info("==============\nYour version of the module is outdated, please update to the latest version")
-                    logger.info("Your version is %s while the latest is %s" % (currentVersion, latestVersion))
+                    logger.info("Your version is %s while the latest is %s", currentVersion, latestVersion)
                     logger.info("Update by calling: pip install --upgrade eventregistry\n==============")
                     return
                 # in case the server mistakenly has a lower version that the user has, don't report an error
@@ -122,7 +119,7 @@ class EventRegistry(object):
 
 
     def setExtraParams(self, params: dict):
-        if params != None:
+        if params is not None:
             assert(isinstance(params, dict))
         self._extraParams = params
 
@@ -175,10 +172,7 @@ class EventRegistry(object):
         # don't modify original query params
         allParams = query._getQueryParams()
         # make the url
-        try:
-            url = self._host + query._getPath() + "?" + urllib.urlencode(allParams, doseq=True)
-        except:
-            url = self._host + query._getPath() + "?" + urllib.parse.urlencode(allParams, doseq=True)
+        url = self._host + query._getPath() + "?" + urllib.parse.urlencode(allParams, doseq=True)
         return url
 
 
@@ -200,8 +194,8 @@ class EventRegistry(object):
         """
         print some statistics about the last executed request
         """
-        print("Tokens used by the request: " + self.getLastHeader("req-tokens"))
-        print("Performed action: " + self.getLastHeader("req-action"))
+        print("Tokens used by the request: " + str(self.getLastHeader("req-tokens")))
+        print("Performed action: " + str(self.getLastHeader("req-action")))
         print("Was archive used for the query: " + (self.getLastHeader("req-archive") == "1" and "Yes" or "No"))
 
 
@@ -212,7 +206,7 @@ class EventRegistry(object):
         return self.getLastHeader("req-archive", "0") == "1"
 
 
-    def execQuery(self, query:QueryParamsBase, allowUseOfArchive: bool = None):
+    def execQuery(self, query:QueryParamsBase, allowUseOfArchive: Union[bool, None] = None):
         """
         main method for executing the search queries.
         @param query: instance of Query class
@@ -228,7 +222,7 @@ class EventRegistry(object):
         return respInfo
 
 
-    def jsonRequest(self, methodUrl: str, paramDict: dict, customLogFName: str = None, allowUseOfArchive: bool = None):
+    def jsonRequest(self, methodUrl: str, paramDict: dict, customLogFName: Union[str, None] = None, allowUseOfArchive: Union[bool, None] = None):
         """
         make a request for json data. repeat it _repeatFailedRequestCount times, if they fail (indefinitely if _repeatFailedRequestCount = -1)
         @param methodUrl: url on er (e.g. "/api/v1/article")
@@ -244,24 +238,24 @@ class EventRegistry(object):
         self._lock.acquire()
         if self._logRequests:
             try:
-                with open(customLogFName or self._requestLogFName, "a") as log:
-                    if paramDict != None:
+                with open(customLogFName or self._requestLogFName, "a", encoding="utf-8") as log:
+                    if isinstance(paramDict, dict):
                         log.write("# " + json.dumps(paramDict) + "\n")
                     log.write(methodUrl + "\n\n")
             except Exception as ex:
                 self._lastException = ex
 
-        if paramDict == None:
+        if paramDict is None:
             paramDict = {}
         # if we have api key then add it to the paramDict
         if self._apiKey:
             paramDict["apiKey"] = self._apiKey
         # if we want to ignore the archive, set the flag
-        if allowUseOfArchive != None:
+        if isinstance(allowUseOfArchive, bool):
             if not allowUseOfArchive:
                 paramDict["forceMaxDataTimeWindow"] = 31
         # if we didn't override the parameter then check what we've set when constructing the EventRegistry class
-        elif self._allowUseOfArchive == False:
+        elif self._allowUseOfArchive is False:
             paramDict["forceMaxDataTimeWindow"] = 31
         # if we also have some extra parameters, then set those too
         if self._extraParams:
@@ -284,7 +278,7 @@ class EventRegistry(object):
                     raise Exception(respInfo.text)
                 # did we get a warning. if yes, print it
                 if self.getLastHeader("warning"):
-                    logger.warning("=========== WARNING ===========\n%s\n===============================" % (self.getLastHeader("warning")))
+                    logger.warning("=========== WARNING ===========\n%s\n===============================", self.getLastHeader("warning"))
                 # remember the available requests
                 self._dailyAvailableRequests = tryParseInt(self.getLastHeader("x-ratelimit-limit", ""), val = -1)
                 self._remainingAvailableRequests = tryParseInt(self.getLastHeader("x-ratelimit-remaining", ""), val = -1)
@@ -295,16 +289,16 @@ class EventRegistry(object):
                 self._lastException = ex
                 if self._verboseOutput:
                     logger.error("Event Registry exception while executing the request:")
-                    logger.error("endpoint: %s\nParams: %s" % (url, json.dumps(paramDict, indent=4)))
+                    logger.error("endpoint: %s\nParams: %s", url, json.dumps(paramDict, indent=4))
                     self.printLastException()
                 # in case of invalid input parameters, don't try to repeat the search but we simply raise the same exception again
-                if respInfo != None and respInfo.status_code in self._stopStatusCodes:
+                if respInfo is not None and respInfo.status_code in self._stopStatusCodes:
                     break
                 # in case of the other exceptions (maybe the service is temporarily unavailable) we try to repeat the query
                 logger.info("The request will be automatically repeated in 3 seconds...")
                 time.sleep(5)   # sleep for X seconds on error
         self._lock.release()
-        if returnData == None:
+        if returnData is None:
             raise self._lastException or Exception("No valid return data provided")
         return returnData
 
@@ -334,22 +328,21 @@ class EventRegistry(object):
                 # if we got some error codes print the error and repeat the request after a short time period
                 if respInfo.status_code != 200:
                     raise Exception(respInfo.text)
-
                 returnData = respInfo.json()
                 break
             except Exception as ex:
                 self._lastException = ex
                 if self._verboseOutput:
                     logger.error("Event Registry Analytics exception while executing the request:")
-                    logger.error("endpoint: %s\nParams: %s" % (url, json.dumps(paramDict, indent=4)))
+                    logger.error("endpoint: %s\nParams: %s", url, json.dumps(paramDict, indent=4))
                     self.printLastException()
                 # in case of invalid input parameters, don't try to repeat the search but we simply raise the same exception again
-                if respInfo != None and respInfo.status_code in self._stopStatusCodes:
+                if respInfo is not None and respInfo.status_code in self._stopStatusCodes:
                     break
                 logger.info("The request will be automatically repeated in 3 seconds...")
                 time.sleep(5)   # sleep for X seconds on error
         self._lock.release()
-        if returnData == None:
+        if returnData is None:
             raise self._lastException or Exception("No valid return data provided")
         return returnData
 
@@ -417,7 +410,7 @@ class EventRegistry(object):
         return self.jsonRequest("/api/v1/suggestSourceGroups", params)
 
 
-    def suggestLocations(self, prefix: str, sources: Union[str, list] = ["place", "country"], lang: str = "eng", count: int = 20, countryUri: str = None, sortByDistanceTo: bool = None, returnInfo: ReturnInfo = ReturnInfo(), **kwargs):
+    def suggestLocations(self, prefix: str, sources: Union[str, list] = ["place", "country"], lang: str = "eng", count: int = 20, countryUri: Union[str, None] = None, sortByDistanceTo: Union[List, Tuple, None] = None, returnInfo: ReturnInfo = ReturnInfo(), **kwargs):
         """
         return a list of geo locations (cities or countries) that contain the prefix
         @param prefix: input text that should be contained in the location name
@@ -439,7 +432,7 @@ class EventRegistry(object):
         return self.jsonRequest("/api/v1/suggestLocationsFast", params)
 
 
-    def suggestLocationsAtCoordinate(self, latitude: Union[int, float], longitude: Union[int, float], radiusKm: Union[int, float], limitToCities: bool = False, lang: str = "eng", count: int = 20, ignoreNonWiki: bool = True, returnInfo: ReturnInfo = ReturnInfo(), **kwargs):
+    def suggestLocationsAtCoordinate(self, latitude: Union[int, float], longitude: Union[int, float], radiusKm: Union[int, float], limitToCities: bool = False, lang: str = "eng", count: int = 20, returnInfo: ReturnInfo = ReturnInfo(), **kwargs):
         """
         return a list of geo locations (cities or places) that are close to the provided (lat, long) values
         @param latitude: latitude part of the coordinate
@@ -448,7 +441,6 @@ class EventRegistry(object):
         @param limitToCities: limit the set of results only to cities (True) or also to general places (False)
         @param lang: language in which the location label should be returned
         @param count: number of returned suggestions
-        @param ignoreNonWiki: ignore locations that don't have a wiki page and can not be used for concept search
         @param returnInfo: what details about locations should be included in the returned information
         """
         assert isinstance(latitude, (int, float)), "The 'latitude' should be a number"
@@ -574,7 +566,7 @@ class EventRegistry(object):
         return None
 
 
-    def getLocationUri(self, locationLabel: str, lang: str = "eng", sources: Union[str, List[str]] = ["place", "country"], countryUri: str = None, sortByDistanceTo: str = None):
+    def getLocationUri(self, locationLabel: str, lang: str = "eng", sources: Union[str, List[str]] = ["place", "country"], countryUri: Union[str, None] = None, sortByDistanceTo: Union[List, Tuple, None] = None):
         """
         return a location uri that is the best match for the given location label
         @param locationLabel: partial or full location name for which to return the location uri
@@ -624,7 +616,7 @@ class EventRegistry(object):
         @param sourceGroupName: partial or full name of the source group
         """
         matches = self.suggestSourceGroups(sourceGroupName)
-        if matches != None and isinstance(matches, list) and len(matches) > 0 and "uri" in matches[0]:
+        if matches is not None and isinstance(matches, list) and len(matches) > 0 and "uri" in matches[0]:
             return matches[0]["uri"]
         return None
 
@@ -635,7 +627,7 @@ class EventRegistry(object):
         @param classLabel: partial or full name of the concept class for which to return class uri
         """
         matches = self.suggestConceptClasses(classLabel, lang = lang)
-        if matches != None and isinstance(matches, list) and len(matches) > 0 and "uri" in matches[0]:
+        if matches is not None and isinstance(matches, list) and len(matches) > 0 and "uri" in matches[0]:
             return matches[0]["uri"]
         return None
 
@@ -659,7 +651,7 @@ class EventRegistry(object):
         @param authorName: partial or full name of the author, potentially also containing the source url (e.g. "george brown nytimes")
         """
         matches = self.suggestAuthors(authorName)
-        if matches != None and isinstance(matches, list) and len(matches) > 0 and "uri" in matches[0]:
+        if matches is not None and isinstance(matches, list) and len(matches) > 0 and "uri" in matches[0]:
             return matches[0]["uri"]
         return None
 
@@ -670,7 +662,7 @@ class EventRegistry(object):
         @param eventTypeLabel: partial or full name of the event type for which we want to retrieve uri
         """
         matches = self.suggestEventTypes(eventTypeLabel)
-        if matches != None and isinstance(matches, list) and len(matches) > 0 and "uri" in matches[0]:
+        if matches is not None and isinstance(matches, list) and len(matches) > 0 and "uri" in matches[0]:
             return matches[0]["uri"]
         return None
 

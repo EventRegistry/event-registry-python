@@ -4,41 +4,45 @@ from eventregistry.ReturnInfo import *
 from eventregistry.Query import *
 from eventregistry.Logger import logger
 from eventregistry.EventRegistry import EventRegistry
-from typing import Union, List
+from typing import Union, List, Literal
 
 class QueryEvents(Query):
     def __init__(self,
-                 keywords: Union[str, QueryItems] = None,
-                 conceptUri: Union[str, QueryItems] = None,
-                 categoryUri: Union[str, QueryItems] = None,
-                 sourceUri: Union[str, QueryItems] = None,
-                 sourceLocationUri: Union[str, QueryItems] = None,
-                 sourceGroupUri: Union[str, QueryItems] = None,
-                 authorUri: Union[str, QueryItems] = None,
-                 locationUri: Union[str, QueryItems] = None,
-                 lang: Union[str, QueryItems] = None,
-                 dateStart: Union[datetime.datetime, datetime.date, str] = None,
-                 dateEnd: Union[datetime.datetime, datetime.date, str] = None,
-                 reportingDateStart: Union[datetime.datetime, datetime.date, str] = None,
-                 reportingDateEnd: Union[datetime.datetime, datetime.date, str] = None,
+                 keywords: Union[str, QueryItems, None] = None,
+                 conceptUri: Union[str, QueryItems, None] = None,
+                 categoryUri: Union[str, QueryItems, None] = None,
+                 sourceUri: Union[str, QueryItems, None] = None,
+                 sourceLocationUri: Union[str, QueryItems, None] = None,
+                 sourceGroupUri: Union[str, QueryItems, None] = None,
+                 authorUri: Union[str, QueryItems, None] = None,
+                 locationUri: Union[str, QueryItems, None] = None,
+                 lang: Union[str, QueryItems, None] = None,
+                 dateStart: Union[datetime.datetime, datetime.date, str, None] = None,
+                 dateEnd: Union[datetime.datetime, datetime.date, str, None] = None,
+                 reportingDateStart: Union[datetime.datetime, datetime.date, str, None] = None,
+                 reportingDateEnd: Union[datetime.datetime, datetime.date, str, None] = None,
                  minSentiment: float = -1,
                  maxSentiment: float = 1,
-                 minArticlesInEvent: int = None,
-                 maxArticlesInEvent: int = None,
-                 dateMentionStart: Union[datetime.datetime, datetime.date, str] = None,
-                 dateMentionEnd: Union[datetime.datetime, datetime.date, str] = None,
-                 ignoreKeywords: Union[str, QueryItems] = None,
-                 ignoreConceptUri: Union[str, QueryItems] = None,
-                 ignoreCategoryUri: Union[str, QueryItems] = None,
-                 ignoreSourceUri: Union[str, QueryItems] = None,
-                 ignoreSourceLocationUri: Union[str, QueryItems] = None,
-                 ignoreSourceGroupUri: Union[str, QueryItems] = None,
-                 ignoreAuthorUri: Union[str, QueryItems] = None,
-                 ignoreLocationUri: Union[str, QueryItems] = None,
-                 ignoreLang: Union[str, QueryItems] = None,
+                 minArticlesInEvent: Union[int, None] = None,
+                 maxArticlesInEvent: Union[int, None] = None,
+                 dateMentionStart: Union[datetime.datetime, datetime.date, str, None] = None,
+                 dateMentionEnd: Union[datetime.datetime, datetime.date, str, None] = None,
                  keywordsLoc: str = "body",
+                 keywordSearchMode: Literal["simple", "exact", "phrase"] = "phrase",
+
+                 ignoreKeywords: Union[str, QueryItems, None] = None,
+                 ignoreConceptUri: Union[str, QueryItems, None] = None,
+                 ignoreCategoryUri: Union[str, QueryItems, None] = None,
+                 ignoreSourceUri: Union[str, QueryItems, None] = None,
+                 ignoreSourceLocationUri: Union[str, QueryItems, None] = None,
+                 ignoreSourceGroupUri: Union[str, QueryItems, None] = None,
+                 ignoreAuthorUri: Union[str, QueryItems, None] = None,
+                 ignoreLocationUri: Union[str, QueryItems, None] = None,
+                 ignoreLang: Union[str, QueryItems, None] = None,
                  ignoreKeywordsLoc: str = "body",
-                 requestedResult: "RequestEvents" = None):
+                 ignoreKeywordSearchMode: Literal["simple", "exact", "phrase"] = "phrase",
+
+                 requestedResult: Union["RequestEvents", None] = None):
         """
         Query class for searching for events in the Event Registry.
         The resulting events have to match all specified conditions. If a parameter value equals "" or [], then it is ignored.
@@ -84,6 +88,9 @@ class QueryEvents(Query):
         @param maxArticlesInEvent: find events that have not been reported in more than maxArticlesInEvent articles (regardless of language)
         @param dateMentionStart: find events where articles explicitly mention a date that is equal or greater than dateMentionStart.
         @param dateMentionEnd: find events where articles explicitly mention a date that is lower or equal to dateMentionEnd.
+        @param keywordsLoc: what data should be used when searching using the keywords provided by "keywords" parameter. "body" (default), "title", or "body,title"
+        @param keywordSearchMode: what search mode to use when specifying keywords. Possible values are: simple, exact, phrase
+
         @param ignoreKeywords: ignore events where articles about the event mention any of the provided keywords
         @param ignoreConceptUri: ignore events that are about any of the provided concepts
         @param ignoreCategoryUri: ignore events that are about any of the provided categories
@@ -93,8 +100,9 @@ class QueryEvents(Query):
         @param ignoreAuthorUri: ignore articles that were written by *any* of the specified authors
         @param ignoreLocationUri: ignore events that occurred in any of the provided locations. A location can be a city or a place
         @param ignoreLang: ignore events that are reported in any of the provided languages
-        @param keywordsLoc: what data should be used when searching using the keywords provided by "keywords" parameter. "body" (default), "title", or "body,title"
         @param ignoreKeywordsLoc: what data should be used when searching using the keywords provided by "ignoreKeywords" parameter. "body" (default), "title", or "body,title"
+        @param ignoreKeywordSearchMode: what search mode to use when specifying ignoreKeywords. Possible values are: simple, exact, phrase
+
         @param requestedResult: the information to return as the result of the query. By default return the list of matching events
         """
         super(QueryEvents, self).__init__()
@@ -112,13 +120,13 @@ class QueryEvents(Query):
 
         self._setQueryArrVal(lang, "lang", None, "or")                      # a single lang or list (possible: eng, deu, spa, zho, slv)
 
-        if (dateStart != None):
+        if dateStart is not None:
             self._setDateVal("dateStart", dateStart)        # e.g. 2014-05-02
-        if (dateEnd != None):
+        if dateEnd is not None:
             self._setDateVal("dateEnd", dateEnd)            # e.g. 2014-05-02
-        if (reportingDateStart != None):
+        if reportingDateStart is not None:
             self._setDateVal("reportingDateStart", reportingDateStart)        # e.g. 2014-05-02
-        if (reportingDateEnd != None):
+        if reportingDateEnd is not None:
             self._setDateVal("reportingDateEnd", reportingDateEnd)            # e.g. 2014-05-02
         if minSentiment != -1:
             assert minSentiment >= -1 and minSentiment <= 1
@@ -130,10 +138,13 @@ class QueryEvents(Query):
         self._setValIfNotDefault("minArticlesInEvent", minArticlesInEvent, None)
         self._setValIfNotDefault("maxArticlesInEvent", maxArticlesInEvent, None)
 
-        if (dateMentionStart != None):
+        if dateMentionStart is not None:
             self._setDateVal("dateMentionStart", dateMentionStart)      # e.g. 2014-05-02
-        if (dateMentionEnd != None):
+        if dateMentionEnd is not None:
             self._setDateVal("dateMentionEnd", dateMentionEnd)          # e.g. 2014-05-02
+
+        self._setValIfNotDefault("keywordLoc", keywordsLoc, "body")
+        self._setValIfNotDefault("keywordSearchMode", keywordSearchMode, "phrase")
 
 
         # for the negative conditions, only the OR is a valid operator type
@@ -148,8 +159,8 @@ class QueryEvents(Query):
 
         self._setQueryArrVal(ignoreLang, "ignoreLang", None, "or")
 
-        self._setValIfNotDefault("keywordLoc", keywordsLoc, "body")
         self._setValIfNotDefault("ignoreKeywordLoc", ignoreKeywordsLoc, "body")
+        self._setValIfNotDefault("ignoreKeywordSearchMode", ignoreKeywordSearchMode, "phrase")
 
         self.setRequestedResult(requestedResult or RequestEventsInfo())
 
@@ -240,7 +251,7 @@ class QueryEventsIter(QueryEvents, six.Iterator):
     def execQuery(self, eventRegistry: EventRegistry,
                   sortBy: str = "rel",
                   sortByAsc: bool = False,
-                  returnInfo: ReturnInfo = None,
+                  returnInfo: Union[ReturnInfo, None] = None,
                   maxItems: int = -1,
                   **kwargs):
         """
@@ -288,17 +299,17 @@ class QueryEventsIter(QueryEvents, six.Iterator):
         """download next batch of events based on the event uris in the uri list"""
         self._eventPage += 1
         # if we have already obtained all pages, then exit
-        if self._totalPages != None and self._eventPage > self._totalPages:
+        if self._totalPages is not None and self._eventPage > self._totalPages:
             return
         self.setRequestedResult(RequestEventsInfo(page=self._eventPage, count=self._eventBatchSize,
             sortBy= self._sortBy, sortByAsc=self._sortByAsc,
             returnInfo = self._returnInfo))
         # download articles and make sure that we set the same archive flag as it was returned when we were processing the uriList request
         if self._er._verboseOutput:
-            logger.debug("Downloading event page %d..." % (self._eventPage))
+            logger.debug("Downloading event page %d...", self._eventPage)
         res = self._er.execQuery(self)
         if "error" in res:
-            logger.error("Error while obtaining a list of events: " + res["error"])
+            logger.error("Error while obtaining a list of events: %s", res["error"])
         else:
             self._totalPages = res.get("events", {}).get("pages", 0)
         results = res.get("events", {}).get("results", [])
@@ -337,7 +348,7 @@ class RequestEventsInfo(RequestEvents):
     def __init__(self, page: int = 1,
                  count: int = 50,
                  sortBy: str = "rel", sortByAsc: bool = False,
-                 returnInfo: ReturnInfo = None):
+                 returnInfo: Union[ReturnInfo, None] = None):
         """
         return event details for resulting events
         @param page: page of the results to return (1, 2, ...)
@@ -347,6 +358,7 @@ class RequestEventsInfo(RequestEvents):
         @param sortByAsc: should the results be sorted in ascending order (True) or descending (False)
         @param returnInfo: what details should be included in the returned information
         """
+        super(RequestEvents, self).__init__()
         assert page >= 1, "page has to be >= 1"
         assert count <= 50, "at most 50 events can be returned per call"
         self.resultType = "events"
@@ -354,7 +366,7 @@ class RequestEventsInfo(RequestEvents):
         self.eventsCount = count
         self.eventsSortBy = sortBy
         self.eventsSortByAsc = sortByAsc
-        if returnInfo != None:
+        if returnInfo is not None:
             self.__dict__.update(returnInfo.getParams("events"))
 
 
@@ -381,6 +393,7 @@ class RequestEventsUriWgtList(RequestEvents):
             socialScore (amount of shares in social media), none (no specific sorting)
         @param sortByAsc: should the events be sorted in ascending order (True) or descending (False)
         """
+        super(RequestEvents, self).__init__()
         assert page >= 1, "page has to be >= 1"
         assert count <= 100000
         self.resultType = "uriWgtList"
@@ -388,6 +401,7 @@ class RequestEventsUriWgtList(RequestEvents):
         self.uriWgtListCount = count
         self.uriWgtListSortBy = sortBy
         self.uriWgtListSortByAsc = sortByAsc
+
 
     def setPage(self, page):
         assert page >= 1, "page has to be >= 1"
@@ -400,18 +414,20 @@ class RequestEventsTimeAggr(RequestEvents):
         """
         return time distribution of resulting events
         """
+        super(RequestEvents, self).__init__()
         self.resultType = "timeAggr"
 
 
 
 class RequestEventsKeywordAggr(RequestEvents):
-    def __init__(self, lang: str = None):
+    def __init__(self, lang: Union[str, None] = None):
         """
         return keyword aggregate (tag cloud) on words in articles in resulting events
         @param lang: in which language to produce the list of top keywords. If None, then compute on all articles
         """
+        super(RequestEvents, self).__init__()
         self.resultType = "keywordAggr"
-        if lang != None:
+        if lang is not None:
             self.keywordAggrLang = lang
 
 
@@ -425,6 +441,7 @@ class RequestEventsLocAggr(RequestEvents):
         @param eventsSampleSize: sample of events to use to compute the location aggregate (at most 100000)
         @param returnInfo: what details (about locations) should be included in the returned information
         """
+        super(RequestEvents, self).__init__()
         assert eventsSampleSize <= 100000
         self.resultType = "locAggr"
         self.locAggrSampleSize = eventsSampleSize
@@ -442,6 +459,7 @@ class RequestEventsLocTimeAggr(RequestEvents):
         @param eventsSampleSize: sample of events to use to compute the location aggregate (at most 100000)
         @param returnInfo: what details (about locations) should be included in the returned information
         """
+        super(RequestEvents, self).__init__()
         assert eventsSampleSize <= 100000
         self.resultType = "locTimeAggr"
         self.locTimeAggrSampleSize = eventsSampleSize
@@ -460,6 +478,7 @@ class RequestEventsConceptAggr(RequestEvents):
         @param eventsSampleSize: on what sample of results should the aggregate be computed (at most 1000000)
         @param returnInfo: what details about the concepts should be included in the returned information
         """
+        super(RequestEvents, self).__init__()
         assert conceptCount <= 200
         assert eventsSampleSize <= 1000000
         self.resultType = "conceptAggr"
@@ -482,6 +501,7 @@ class RequestEventsConceptGraph(RequestEvents):
         @param eventsSampleSize: on what sample of results should the aggregate be computed (at most 100000)
         @param returnInfo: what details about the concepts should be included in the returned information
         """
+        super(RequestEvents, self).__init__()
         assert conceptCount <= 1000
         assert linkCount <= 2000
         assert eventsSampleSize <= 300000
@@ -508,6 +528,7 @@ class RequestEventsConceptMatrix(RequestEvents):
         @param eventsSampleSize: on what sample of results should the aggregate be computed (at most 300000)
         @param returnInfo: what details about the concepts should be included in the returned information
         """
+        super(RequestEvents, self).__init__()
         assert conceptCount <= 200
         assert eventsSampleSize <= 300000
         self.resultType = "conceptMatrix"
@@ -520,7 +541,7 @@ class RequestEventsConceptMatrix(RequestEvents):
 
 class RequestEventsConceptTrends(RequestEvents):
     def __init__(self,
-                 conceptUris: Union[str, List[str]] = None,
+                 conceptUris: Union[str, List[str], None] = None,
                  conceptCount: int = 10,
                  returnInfo: ReturnInfo = ReturnInfo()):
         """
@@ -529,9 +550,10 @@ class RequestEventsConceptTrends(RequestEvents):
         @param count: if the concepts are not provided, what should be the number of automatically determined concepts to return (at most 50)
         @param returnInfo: what details about the concepts should be included in the returned information
         """
+        super(RequestEvents, self).__init__()
         assert conceptCount <= 50
         self.resultType = "conceptTrends"
-        if conceptUris != None:
+        if conceptUris is not None:
             self.conceptTrendsConceptUri = conceptUris
         self.conceptTrendsConceptCount = conceptCount
         self.__dict__.update(returnInfo.getParams("conceptTrends"))
@@ -549,6 +571,7 @@ class RequestEventsSourceAggr(RequestEvents):
         @param eventsSampleSize: on what sample of results should the aggregate be computed (at most 300000)
         @param returnInfo: what details about the sources should be included in the returned information
         """
+        super(RequestEvents, self).__init__()
         assert sourceCount <= 200
         assert eventsSampleSize <= 100000
         self.resultType = "sourceAggr"
@@ -569,6 +592,7 @@ class RequestEventsDateMentionAggr(RequestEvents):
         @param minDateMentionCount: report only dates that are mentioned at least this number of times
         @param eventsSampleSize: on what sample of results should the aggregate be computed (at most 300000)
         """
+        super(RequestEvents, self).__init__()
         assert eventsSampleSize <= 300000
         self.resultType = "dateMentionAggr"
         self.dateMentionAggrMinDaysApart = minDaysApart
@@ -588,6 +612,7 @@ class RequestEventsEventClusters(RequestEvents):
         @param maxEventsToCluster: try to cluster at most this number of events (at most 10000)
         @param returnInfo: what details about the concepts should be included in the returned information
         """
+        super(RequestEvents, self).__init__()
         assert keywordCount <= 100
         assert maxEventsToCluster <= 10000
         self.resultType = "eventClusters"
@@ -604,6 +629,7 @@ class RequestEventsCategoryAggr(RequestEvents):
         return distribution of events into dmoz categories
         @param returnInfo: what details about the categories should be included in the returned information
         """
+        super(RequestEvents, self).__init__()
         self.resultType = "categoryAggr"
         self.__dict__.update(returnInfo.getParams("categoryAggr"))
 
@@ -612,11 +638,11 @@ class RequestEventsCategoryAggr(RequestEvents):
 class RequestEventsRecentActivity(RequestEvents):
     def __init__(self,
                  maxEventCount: int = 50,
-                 updatesAfterTm: Union[datetime.datetime, datetime.date, str] = None,
-                 updatesAfterMinsAgo: int = None,
-                 mandatoryLocation: bool = True,
+                 updatesAfterTm: Union[datetime.datetime, str, None] = None,
+                 updatesAfterMinsAgo: Union[int, None] = None,
+                 mandatoryLocation: Union[bool, None] = True,
                  minAvgCosSim: float = 0,
-                 returnInfo: ReturnInfo = None):
+                 returnInfo: Union[ReturnInfo, None] = None):
         """
         return a list of recently changed events that match search conditions
         @param maxEventCount: max events to return (at most 200)
@@ -626,17 +652,18 @@ class RequestEventsRecentActivity(RequestEvents):
         @param minAvgCosSim: the minimum avg cos sim of the events to be returned (events with lower quality should not be included)
         @param returnInfo: what details should be included in the returned information
         """
+        super(RequestEvents, self).__init__()
         assert maxEventCount <= 2000
-        assert updatesAfterTm == None or updatesAfterMinsAgo == None, "You should specify either updatesAfterTm or updatesAfterMinsAgo parameter, but not both"
+        assert updatesAfterTm is None or updatesAfterMinsAgo is None, "You should specify either updatesAfterTm or updatesAfterMinsAgo parameter, but not both"
         self.resultType = "recentActivityEvents"
         self.recentActivityEventsMaxEventCount = maxEventCount
         self.recentActivityEventsMandatoryLocation = mandatoryLocation
-        if updatesAfterTm != None:
+        if updatesAfterTm is not None:
             self.recentActivityEventsUpdatesAfterTm = QueryParamsBase.encodeDateTime(updatesAfterTm)
-        if updatesAfterMinsAgo != None:
+        if updatesAfterMinsAgo is not None:
             self.recentActivityEventsUpdatesAfterMinsAgo = updatesAfterMinsAgo
         self.recentActivityEventsMinAvgCosSim = minAvgCosSim
-        if returnInfo != None:
+        if returnInfo is not None:
             self.__dict__.update(returnInfo.getParams("recentActivityEvents"))
 
 
@@ -645,7 +672,7 @@ class RequestEventsBreakingEvents(RequestEvents):
                  page: int = 1,
                  count: int = 50,
                  minBreakingScore: float = 0.2,
-                 returnInfo: ReturnInfo = None):
+                 returnInfo: Union[ReturnInfo, None] = None):
         """
         return a list of events that are currently breaking
         @param page: max events to return (at most 50)
@@ -653,13 +680,14 @@ class RequestEventsBreakingEvents(RequestEvents):
         @param minBreakingScore: the minimum score of "breakingness" of the events to be returned
         @param returnInfo: what details should be included in the returned information
         """
+        super(RequestEvents, self).__init__()
         assert page >= 1
         assert count <= 50
         self.resultType = "breakingEvents"
         self.breakingEventsPage = page
         self.breakingEventsCount = count
         self.breakingEventsMinBreakingScore = minBreakingScore
-        if returnInfo != None:
+        if returnInfo is not None:
             self.__dict__.update(returnInfo.getParams("breakingEvents"))
 
 

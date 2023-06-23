@@ -24,7 +24,7 @@ class Analytics:
         self._er = eventRegistry
 
 
-    def annotate(self, text: str, lang: str = None, customParams: dict = None):
+    def annotate(self, text: str, lang: Union[str, None] = None, customParams: Union[dict, None] = None):
         """
         identify the list of entities and nonentities mentioned in the text
         @param text: input text to annotate
@@ -38,7 +38,7 @@ class Analytics:
         return self._er.jsonRequestAnalytics("/api/v1/annotate", params)
 
 
-    def categorize(self, text: str, taxonomy: str = "dmoz", concepts: List[str] = None):
+    def categorize(self, text: str, taxonomy: str = "dmoz", concepts: Union[List[str], None] = None):
         """
         determine the set of up to 5 categories the text is about. Currently, only English text can be categorized!
         @param text: input text to categorize
@@ -86,7 +86,7 @@ class Analytics:
         return self._er.jsonRequestAnalytics("/api/v1/detectLanguage", { "text": text })
 
 
-    def extractArticleInfo(self, url: str, proxyUrl: str = None, headers: Union[str, dict] = None, cookies: Union[dict, str] = None):
+    def extractArticleInfo(self, url: str, proxyUrl: Union[str, None] = None, headers: Union[str, dict, None] = None, cookies: Union[dict, str, None] = None):
         """
         extract all available information about an article available at url `url`. Returned information will include
         article title, body, authors, links in the articles, ...
@@ -120,8 +120,8 @@ class Analytics:
 
 
     def trainTopicOnTweets(self, twitterQuery: str, useTweetText: bool = True, useIdfNormalization: bool = True,
-            normalization: bool = "linear", maxTweets: int = 2000, maxUsedLinks: int = 500, ignoreConceptTypes: Union[str, List[str]] = [],
-            maxConcepts: int = 20, maxCategories: int = 10, notifyEmailAddress: str = None):
+            normalization: str = "linear", maxTweets: int = 2000, maxUsedLinks: int = 500, ignoreConceptTypes: Union[str, List[str]] = [],
+            maxConcepts: int = 20, maxCategories: int = 10, notifyEmailAddress: Union[str, None] = None):
         """
         create a new topic and train it using the tweets that match the twitterQuery
         @param twitterQuery: string containing the content to search for. It can be a Twitter user account (using "@" prefix or user's Twitter url),
@@ -175,14 +175,12 @@ class Analytics:
         return self._er.jsonRequestAnalytics("/api/v1/trainTopic", { "action": "addDocument", "uri": uri, "text": text})
 
 
-    def trainTopicGetTrainedTopic(self, uri: str, maxConcepts: int = 20, maxCategories: int = 10,
-            ignoreConceptTypes: Union[str, List[str]] = [], idfNormalization: bool = True):
+    def trainTopicGetTrainedTopic(self, uri: str, maxConcepts: int = 20, maxCategories: int = 10, idfNormalization: bool = True):
         """
         retrieve topic for the topic for which you have already finished training
         @param uri: uri of the topic (obtained by calling trainTopicCreateTopic method)
         @param maxConcepts: number of top concepts to retrieve in the topic
         @param maxCategories: number of top categories to retrieve in the topic
-        @param ignoreConceptTypes: what types of concepts you would like to ignore in the profile. options: person, org, loc, wiki or an array with those
         @param idfNormalization: should the concepts be normalized by punishing the commonly mentioned concepts
         @param returns: returns the trained topic: { concepts: [], categories: [] }
         """

@@ -459,7 +459,7 @@ class ReturnInfo:
         @param fileName: filename that contains the json configuration to use in the ReturnInfo
         """
         assert os.path.exists(fileName), "File " + fileName + " does not exist"
-        conf = json.load(open(fileName))
+        conf = json.load(open(fileName, encoding="utf8"))
         return ReturnInfo(
             articleInfo=ArticleInfoFlags(**conf.get("articleInfo", {})),
             eventInfo=EventInfoFlags(**conf.get("eventInfo", {})),

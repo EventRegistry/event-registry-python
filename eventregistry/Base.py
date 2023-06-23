@@ -4,7 +4,7 @@ utility classes for Event Registry
 
 import six, warnings, os, sys, re, datetime, time
 from eventregistry.Logger import logger
-from typing import Union, List
+from typing import Union, List, Dict
 
 mainLangs = ["eng", "deu", "zho", "slv", "spa"]
 allLangs = [ "eng", "deu", "spa", "cat", "por", "ita", "fra", "rus", "ara", "tur", "zho", "slv", "hrv", "srp" ]
@@ -123,7 +123,7 @@ class QueryParamsBase(object):
         elif isinstance(val, datetime.date):
             return val.isoformat()
         elif isinstance(val, six.string_types):
-            assert re.match("^\d{4}-\d{2}-\d{2}$", val), "date value '%s' was not provided in the 'YYYY-MM-DD' format" % (val)
+            assert re.match(r"^\d{4}-\d{2}-\d{2}$", val), f"date value '{val}' was not provided in the 'YYYY-MM-DD' format"
             return val
         raise AssertionError("date was not in the expected format")
 
@@ -133,12 +133,12 @@ class QueryParamsBase(object):
         """encode datetime into UTC ISO format which can be sent to ER"""
         if isinstance(val, datetime.datetime):
             # if we have a datetime in some tz, we convert it first to UTC
-            if val.utcoffset() != None:
+            if val.utcoffset() is not None:
                 import pytz
                 val = val.astimezone(pytz.utc)
             return val.isoformat()
         elif isinstance(val, six.string_types):
-            assert re.match("^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?$", val), "datetime value '%s' was not provided in the 'YYYY-MM-DDTHH:MM:SS.SSSS' format" % (val)
+            assert re.match(r"^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?$", val), f"datetime value '{val}' was not provided in the 'YYYY-MM-DDTHH:MM:SS.SSSS' format"
             return val
         raise AssertionError("datetime was not in the recognizable data type. Use datetime or string in ISO format")
 
@@ -149,7 +149,7 @@ class QueryParamsBase(object):
             del self.queryParams[propName]
 
 
-    def _hasVal(self, propName: str):
+    def _hasVal(self, propName: str) -> bool:
         """do we have in the query property named propName"""
         return propName in self.queryParams
 
@@ -188,16 +188,16 @@ class QueryParamsBase(object):
         self.queryParams[propName].append(val)
 
 
-    def _update(self, object: dict):
+    def _update(self, object: Dict):
         self.queryParams.update(object)
 
 
-    def _getQueryParams(self):
+    def _getQueryParams(self) -> Dict:
         """return the parameters."""
         return dict(self.queryParams)
 
 
-    def _setQueryArrVal(self, value: Union[str, QueryItems, list], propName: str, propOperName: str, defaultOperName: str):
+    def _setQueryArrVal(self, value: Union[str, QueryItems, List, None], propName: str, propOperName: Union[str, None], defaultOperName: str):
         """
         parse the value "value" and use it to set the property propName and the operator with name propOperName
         @param value: None, string, QueryItems or list. Values to be set using property name propName
@@ -211,10 +211,10 @@ class QueryParamsBase(object):
         if isinstance(value, QueryItems):
             self.queryParams[propName] = value.getItems()
             # if we need to specify the operator for the property
-            if propOperName != None:
+            if propOperName is not None:
                 self.queryParams[propOperName] = value.getOper().replace("$", "")
             # if the user specified the QueryItems class but used the invalid operator type then raise an error
-            assert propOperName != None or value.getOper().replace("$", "") == defaultOperName, "An invalid operator type '%s' was used for property '%s'" % (value.getOper().replace("$", ""), propName)
+            assert propOperName is not None or value.getOper().replace("$", "") == defaultOperName, "An invalid operator type '%s' was used for property '%s'" % (value.getOper().replace("$", ""), propName)
 
         # if we have a string value, just use it
         elif isinstance(value, six.string_types):
@@ -224,14 +224,14 @@ class QueryParamsBase(object):
         elif isinstance(value, list):
             self.queryParams[propName] = value
             # if we need to specify the operator for the property
-            if propOperName != None:
+            if propOperName is not None:
                 self.queryParams[propOperName] = defaultOperName
                 if len(value) > 1:
-                    logger.warning("Warning: The value of parameter '%s' was provided as a list and '%s' operator was used implicitly between the items. We suggest specifying the list using the QueryItems.AND() or QueryItems.OR() to ensure the appropriate operator is used." % (propName, defaultOperName))
+                    logger.warning("Warning: The value of parameter '%s' was provided as a list and '%s' operator was used implicitly between the items. We suggest specifying the list using the QueryItems.AND() or QueryItems.OR() to ensure the appropriate operator is used.", propName, defaultOperName)
 
         # there should be no other valid types
         else:
-            assert False, "Parameter '%s' was of unsupported type. It should either be None, a string or an instance of QueryItems" % (propName)
+            assert False, f"Parameter '{propName}' was of unsupported type. It should either be None, a string or an instance of QueryItems"
 
 
 

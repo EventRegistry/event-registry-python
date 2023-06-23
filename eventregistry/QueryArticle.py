@@ -5,7 +5,7 @@ from typing import List, Union
 class QueryArticle(Query):
     def __init__(self,
                  articleUriOrUriList: Union[str, List[str]],
-                 requestedResult: "RequestArticle" = None):
+                 requestedResult: Union["RequestArticle", None] = None):
         """
         Class for obtaining available info for one or more articles in the Event Registry
         @param articleUriOrUriList: a single article uri or a list of article uris
@@ -58,6 +58,7 @@ class RequestArticleInfo(RequestArticle):
         return details about the article
         @param returnInfo: what details should be included in the returned information
         """
+        super(RequestArticle, self).__init__()
         self.resultType = "info"
         self.__dict__.update(returnInfo.getParams("info"))
 
@@ -78,6 +79,7 @@ class RequestArticleSimilarArticles(RequestArticle):
         @param limitPerLang: max number of articles per language to return (-1 for no limit)
         @param returnInfo: what details should be included in the returned information
         """
+        super(RequestArticle, self).__init__()
         assert page >= 1, "page has to be >= 1"
         assert count <= 200, "at most 200 articles can be returned per call"
         self.resultType = "similarArticles"
@@ -103,6 +105,7 @@ class RequestArticleDuplicatedArticles(RequestArticle):
         @param sortByAsc: should the results be sorted in ascending order (True) or descending (False)
         @param returnInfo: what details should be included in the returned information
         """
+        super(RequestArticle, self).__init__()
         assert page >= 1, "page has to be >= 1"
         assert count <= 200, "at most 200 articles can be returned per call"
         self.resultType = "duplicatedArticles"
@@ -121,5 +124,6 @@ class RequestArticleOriginalArticle(RequestArticle):
         return the article that is the original of the given article (the current article is a duplicate)
         @param returnInfo: what details should be included in the returned information
         """
+        super(RequestArticle, self).__init__()
         self.resultType = "originalArticle"
         self.__dict__.update(returnInfo.getParams("originalArticle"))

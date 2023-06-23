@@ -1,6 +1,6 @@
 from eventregistry import *
 
-er = EventRegistry(host = "http://eventregistry.org")
+er = EventRegistry()
 
 def getMyTopicPages():
     """

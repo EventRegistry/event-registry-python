@@ -12,7 +12,7 @@ class QueryStory(Query):
 
     @param storyUriOrList: a single story uri or a list of story uris
     """
-    def __init__(self, storyUriOrList: Union[str, List[str]] = None):
+    def __init__(self, storyUriOrList: Union[str, List[str], None] = None):
         super(QueryStory, self).__init__()
         self._setVal("action", "getStory")
         if storyUriOrList != None:
@@ -53,6 +53,7 @@ class RequestStoryInfo(RequestStory):
     return details about a story
     """
     def __init__(self, returnInfo: ReturnInfo = ReturnInfo()):
+        super(RequestStory, self).__init__()
         self.resultType = "info"
         self.__dict__.update(returnInfo.getParams("info"))
 
@@ -75,6 +76,7 @@ class RequestStoryArticles(RequestStory):
         @param sortByAsc: should the articles be sorted in ascending order (True) or descending (False) based on sortBy value
         @param returnInfo: what details should be included in the returned information
         """
+        super(RequestStory, self).__init__()
         assert page >= 1, "page has to be >= 1"
         assert count <= 100
         self.resultType = "articles"
@@ -98,6 +100,7 @@ class RequestStoryArticleUris(RequestStory):
         @param sortBy: order in which articles are sorted. Options: id (internal id), date (published date), cosSim (closeness to event centroid), sourceImportanceRank (importance of the news source, custom set), sourceAlexaGlobalRank (global rank of the news source), sourceAlexaCountryRank (country rank of the news source), socialScore (total shares in social media)
         @param sortByAsc: should the articles be sorted in ascending order (True) or descending (False) based on sortBy value
         """
+        super(RequestStory, self).__init__()
         self.articleUrisSortBy = sortBy
         self.articleUrisSortByAsc = sortByAsc
         self.resultType = "articleUris"
@@ -112,6 +115,7 @@ class RequestStoryArticleTrend(RequestStory):
                  lang: Union[str, List[str]] = mainLangs,
                  minArticleCosSim: float = -1,
                  returnInfo: ReturnInfo = ReturnInfo(articleInfo = ArticleInfoFlags(bodyLen = 0))):
+        super(RequestStory, self).__init__()
         self.resultType = "articleTrend"
         self.articleTrendLang = lang
         self.articleTrendMinArticleCosSim = minArticleCosSim
@@ -132,19 +136,20 @@ class RequestStorySimilarStories(RequestStory):
         """
     def __init__(self,
                 conceptInfoList: Union[str, List[str]],
-                count: int = 50,                                    # number of similar stories to return
-                dateStart: Union[datetime.date, str] = None,        # what can be the oldest date of the similar stories
-                dateEnd: Union[datetime.date, str] = None,          # what can be the newest date of the similar stories
+                count: int = 50,                                          # number of similar stories to return
+                dateStart: Union[datetime.date, str, None] = None,        # what can be the oldest date of the similar stories
+                dateEnd: Union[datetime.date, str, None] = None,          # what can be the newest date of the similar stories
                 lang: Union[str, List[str]] = [],
                 returnInfo: ReturnInfo = ReturnInfo()):
+        super(RequestStory, self).__init__()
         assert count <= 50
         assert isinstance(conceptInfoList, list)
         self.action = "getSimilarStories"
         self.concepts = json.dumps(conceptInfoList)
         self.storiesCount = count
-        if dateStart != None:
+        if dateStart is not None:
             self.dateStart = QueryParamsBase.encodeDate(dateStart)
-        if dateEnd != None:
+        if dateEnd is not None:
             self.dateEnd = QueryParamsBase.encodeDate(dateEnd)
         if len(lang) > 0:
             self.lang = lang

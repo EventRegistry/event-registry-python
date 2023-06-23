@@ -3,7 +3,7 @@ examples that download information about the individual news articles
 """
 from eventregistry import *
 
-er = EventRegistry(host = "https://eventregistry.org")
+er = EventRegistry()
 
 #
 # search article by uri
