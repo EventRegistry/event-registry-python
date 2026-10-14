@@ -3,9 +3,12 @@ provides classes for obtaining information about how frequently individual conce
 have been mentioned in news articles (if source == "news") of in social media (if source == "social")
 """
 
-from eventregistry.Base import *
-from eventregistry.ReturnInfo import *
+from eventregistry.Base import QueryParamsBase
+from eventregistry.ReturnInfo import ReturnInfo
 from typing import Union, List
+
+# the names exported by "from eventregistry import *"
+__all__ = ["CountsBase", "GetCounts", "GetCountsEx"]
 
 
 class CountsBase(QueryParamsBase):
@@ -47,9 +50,10 @@ class GetCounts(CountsBase):
                 ]
             }
 
-        @param uriOrUriList: concept/category uri or a list of uris
-        @param type: what do the uris represent? "concept" or "category"
-        @param returnInfo: what details should be included in the returned information
+        Args:
+            uriOrUriList: concept/category uri or a list of uris
+            type: what do the uris represent? "concept" or "category"
+            returnInfo: what details should be included in the returned information
         """
         CountsBase.__init__(self)
         self._setVal("action", "getCounts")
@@ -94,9 +98,10 @@ class GetCountsEx(CountsBase):
                 ]
             }
 
-        @param uriOrUriList: concept/category uri or a list of uris
-        @param type: what do the uris represent? "concept" or "category"
-        @param returnInfo: what details should be included in the returned information
+        Args:
+            uriOrUriList: concept/category uri or a list of uris
+            type: what do the uris represent? "concept" or "category"
+            returnInfo: what details should be included in the returned information
         """
         CountsBase.__init__(self)
         self._setVal("action", "getCountsEx")

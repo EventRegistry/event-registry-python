@@ -1,5 +1,6 @@
-# Runtime dependencies (kept in sync with install_requires in setup.py)
+# Runtime dependencies (kept in sync with "dependencies" in pyproject.toml)
 requests>=2.20
 
-# Additional dependencies needed only for running the test suite
-jmespath
+# The additional dependencies are defined as extras in pyproject.toml:
+#   pip install -e ".[test]"    what is needed to run the test suite (jmespath)
+#   pip install -e ".[dev]"     tools for development and for making a release (pyflakes, mypy, build, twine)

@@ -3,12 +3,16 @@ class that provides the ability to use topic pages (monitoring functionality)
 through the API
 """
 
+import datetime
 import os
 import json
-from eventregistry.Base import *
-from eventregistry.ReturnInfo import *
+from eventregistry.Base import QueryParamsBase
+from eventregistry.ReturnInfo import ReturnInfo
 from eventregistry.EventRegistry import EventRegistry
 from typing import Union, List
+
+# the names exported by "from eventregistry import *"
+__all__ = ["TopicPages", "TopicPage"]
 
 
 class TopicPages(QueryParamsBase):
@@ -19,7 +23,8 @@ class TopicPages(QueryParamsBase):
         """
         create an instance of a topic page
 
-        @param eventRegistry: instance of class EventRegistry
+        Args:
+            eventRegistry: instance of class EventRegistry
         """
         super().__init__()
         self.eventRegistry = eventRegistry
@@ -39,13 +44,14 @@ class TopicPage(QueryParamsBase):
         """
         create an instance of a topic page
 
-        @param eventRegistry: instance of class EventRegistry
+        Args:
+            eventRegistry: instance of class EventRegistry
         """
         super().__init__()
         self.eventRegistry = eventRegistry
         # topic page definition
         self.topicPage = self._createEmptyTopicPage()
-        self.concept = {}
+        self.concept: dict = {}
 
 
     def _createEmptyTopicPage(self):
@@ -79,7 +85,9 @@ class TopicPage(QueryParamsBase):
     def loadTopicPageFromER(self, uri: str):
         """
         load an existing topic page from Event Registry based on the topic page URI
-        @param uri: uri of the topic page saved in your Event Registry account
+
+        Args:
+            uri: uri of the topic page saved in your Event Registry account
         """
         params = {
             "action": "getTopicPageJson",
@@ -100,7 +108,9 @@ class TopicPage(QueryParamsBase):
         """
         if not (isinstance(definitionDict, dict)):
             raise TypeError("definitionDict should be of type dict")
-        self.topicPage = definitionDict
+        # start from the default definition, so that the properties missing in the provided definition have a value
+        self.topicPage = self._createEmptyTopicPage()
+        self.topicPage.update(definitionDict)
 
 
     def loadTopicPageFromFile(self, fname: str):
@@ -110,7 +120,7 @@ class TopicPage(QueryParamsBase):
         if not (os.path.exists(fname)):
             raise FileNotFoundError(f"file {fname} does not exist")
         with open(fname, "r", encoding="utf-8") as f:
-            self.topicPage = json.load(f)
+            self.loadTopicPageFromDefinition(json.load(f))
 
 
     def saveTopicPageDefinition(self):
@@ -134,7 +144,9 @@ class TopicPage(QueryParamsBase):
     def setArticleThreshold(self, value: int):
         """
         what is the minimum total weight that an article has to have in order to get it among the results?
-        @param value: threshold to use
+
+        Args:
+            value: threshold to use
         """
         if not (isinstance(value, int)):
             raise TypeError("value should be of type int")
@@ -146,7 +158,9 @@ class TopicPage(QueryParamsBase):
     def setEventThreshold(self, value: int):
         """
         what is the minimum total weight that an event has to have in order to get it among the results?
-        @param value: threshold to use
+
+        Args:
+            value: threshold to use
         """
         if not (isinstance(value, int)):
             raise TypeError("value should be of type int")
@@ -157,10 +171,11 @@ class TopicPage(QueryParamsBase):
 
     def setArticleIsDuplicateFilter(self, value: str):
         """
-        @param value: some articles can be duplicates of other articles. What should be done with them. Possible values are:
-            "skipDuplicates" (skip the resulting articles that are duplicates of other articles)
-            "keepOnlyDuplicates" (return only the duplicate articles)
-            "keepAll" (no filtering, default)
+        Args:
+            value: some articles can be duplicates of other articles. What should be done with them. Possible values are:
+                "skipDuplicates" (skip the resulting articles that are duplicates of other articles)
+                "keepOnlyDuplicates" (return only the duplicate articles)
+                "keepAll" (no filtering, default)
         """
         if not (value == "skipDuplicates" or value == "keepOnlyDuplicates" or value == "keepAll"):
             raise ValueError("value should be one of: skipDuplicates, keepOnlyDuplicates, keepAll")
@@ -169,11 +184,12 @@ class TopicPage(QueryParamsBase):
 
     def setArticleHasEventFilter(self, value: str):
         """
-        @param value: some articles describe a known event and some don't. This filter allows you to filter the resulting articles based on this criteria.
-            Possible values are:
-            "skipArticlesWithoutEvent" (skip articles that are not describing any known event in ER)
-            "keepOnlyArticlesWithoutEvent" (return only the articles that are not describing any known event in ER)
-            "keepAll" (no filtering, default)
+        Args:
+            value: some articles describe a known event and some don't. This filter allows you to filter the resulting articles based on this criteria.
+                Possible values are:
+                "skipArticlesWithoutEvent" (skip articles that are not describing any known event in ER)
+                "keepOnlyArticlesWithoutEvent" (return only the articles that are not describing any known event in ER)
+                "keepAll" (no filtering, default)
         """
         if not (value == "skipArticlesWithoutEvent" or value == "keepOnlyArticlesWithoutEvent" or value == "keepAll"):
             raise ValueError("value should be one of: skipArticlesWithoutEvent, keepOnlyArticlesWithoutEvent, keepAll")
@@ -182,10 +198,11 @@ class TopicPage(QueryParamsBase):
 
     def setArticleHasDuplicateFilter(self, value: str):
         """
-        @param value: some articles are later copied by others. What should be done with such articles. Possible values are:
-            "skipHasDuplicates" (skip the articles that have been later copied by others)
-            "keepOnlyHasDuplicates" (return only the articles that have been later copied by others)
-            "keepAll" (no filtering, default)
+        Args:
+            value: some articles are later copied by others. What should be done with such articles. Possible values are:
+                "skipHasDuplicates" (skip the articles that have been later copied by others)
+                "keepOnlyHasDuplicates" (return only the articles that have been later copied by others)
+                "keepAll" (no filtering, default)
         """
         if not (value == "skipHasDuplicates" or value == "keepOnlyHasDuplicates" or value == "keepAll"):
             raise ValueError("value should be one of: skipHasDuplicates, keepOnlyHasDuplicates, keepAll")
@@ -269,10 +286,12 @@ class TopicPage(QueryParamsBase):
     def addConcept(self, conceptUri: str, weight: float, label: Union[str, None] = None, conceptType: Union[str, None] = None, required: bool = False, excluded: bool = False):
         """
         add a relevant concept to the topic page
-        @param conceptUri: uri of the concept to be added
-        @param weight: importance of the provided concept (typically in range 1 - 50)
-        @param required: if true, then all results will HAVE TO be annotated with this concept
-        @param excluded: if true, then all results annotated with this concept will be ignored
+
+        Args:
+            conceptUri: uri of the concept to be added
+            weight: importance of the provided concept (typically in range 1 - 50)
+            required: if true, then all results will HAVE TO be annotated with this concept
+            excluded: if true, then all results annotated with this concept will be ignored
         """
         if not (isinstance(weight, (float, int))):
             raise TypeError("weight value has to be a positive or negative integer")
@@ -293,10 +312,12 @@ class TopicPage(QueryParamsBase):
     def addKeyword(self, keyword: str, weight: float, required: bool = False, excluded: bool = False):
         """
         add a relevant keyword to the topic page
-        @param keyword: keyword or phrase to be added
-        @param weight: importance of the provided keyword (typically in range 1 - 50)
-        @param required: if true, then all results will HAVE TO mention this keyword to appear in the results
-        @param excluded: if true, then no results that mention this keyword will be returned
+
+        Args:
+            keyword: keyword or phrase to be added
+            weight: importance of the provided keyword (typically in range 1 - 50)
+            required: if true, then all results will HAVE TO mention this keyword to appear in the results
+            excluded: if true, then no results that mention this keyword will be returned
         """
         if not (isinstance(weight, (float, int))):
             raise TypeError("weight value has to be a positive or negative integer")
@@ -312,10 +333,12 @@ class TopicPage(QueryParamsBase):
     def addCategory(self, categoryUri: str, weight: float, required: bool = False, excluded: bool = False):
         """
         add a relevant category to the topic page
-        @param categoryUri: uri of the category to be added
-        @param weight: importance of the provided category (typically in range 1 - 50)
-        @param required: if true, then all results will HAVE TO be annotated with this category to appear in the results
-        @param excluded: if true, then no results with this category will be returned
+
+        Args:
+            categoryUri: uri of the category to be added
+            weight: importance of the provided category (typically in range 1 - 50)
+            required: if true, then all results will HAVE TO be annotated with this category to appear in the results
+            excluded: if true, then no results with this category will be returned
         """
         if not (isinstance(weight, (float, int))):
             raise TypeError("weight value has to be a positive or negative integer")
@@ -331,9 +354,11 @@ class TopicPage(QueryParamsBase):
     def addSource(self, sourceUri: str, weight: float, excluded: bool = False):
         """
         add a news source to the topic page
-        @param sourceUri: uri of the news source to add to the topic page
-        @param weight: importance of the news source (typically in range 1 - 50)
-        @param excluded: if true, then the results from these sources will be ignored
+
+        Args:
+            sourceUri: uri of the news source to add to the topic page
+            weight: importance of the news source (typically in range 1 - 50)
+            excluded: if true, then the results from these sources will be ignored
         """
         if not (isinstance(weight, (float, int))):
             raise TypeError("weight value has to be a positive or negative integer")
@@ -347,9 +372,11 @@ class TopicPage(QueryParamsBase):
     def addSourceLocation(self, sourceLocationUri: str, weight: float, excluded: bool = False):
         """
         add a list of relevant sources by identifying them by their geographic location
-        @param sourceLocationUri: uri of the location where the sources should be geographically located
-        @param weight: importance of the provided list of sources (typically in range 1 - 50)
-        @param excluded: if true, then the results from the sources from this location will be ignored
+
+        Args:
+            sourceLocationUri: uri of the location where the sources should be geographically located
+            weight: importance of the provided list of sources (typically in range 1 - 50)
+            excluded: if true, then the results from the sources from this location will be ignored
         """
         if not (isinstance(weight, (float, int))):
             raise TypeError("weight value has to be a positive or negative integer")
@@ -363,9 +390,11 @@ class TopicPage(QueryParamsBase):
     def addSourceGroup(self, sourceGroupUri: str, weight: float, excluded: bool = False):
         """
         add a list of relevant sources by specifying a whole source group to the topic page
-        @param sourceGroupUri: uri of the source group to add
-        @param weight: importance of the provided list of sources (typically in range 1 - 50)
-        @param excluded: if true, then the results from sources from this group will be ignored
+
+        Args:
+            sourceGroupUri: uri of the source group to add
+            weight: importance of the provided list of sources (typically in range 1 - 50)
+            excluded: if true, then the results from sources from this group will be ignored
         """
         if not (isinstance(weight, (float, int))):
             raise TypeError("weight value has to be a positive or negative integer")
@@ -379,8 +408,10 @@ class TopicPage(QueryParamsBase):
     def addLocation(self, locationUri: str, weight: float):
         """
         add relevant location to the topic page
-        @param locationUri: uri of the location to add
-        @param weight: importance of the provided location (typically in range 1 - 50)
+
+        Args:
+            locationUri: uri of the location to add
+            weight: importance of the provided location (typically in range 1 - 50)
         """
         if not (isinstance(weight, (float, int))):
             raise TypeError("weight value has to be a positive or negative integer")
@@ -445,20 +476,50 @@ class TopicPage(QueryParamsBase):
     #
 
 
+    def _getContentParams(self, uri: Union[str, None], onlyAfterTm, maxDaysBack: Union[int, None]) -> dict:
+        """
+        the parameters that specify for which topic page and what time period we want the content
+        """
+        params: dict = {}
+        if uri is not None:
+            # use the topic page that is saved on the server
+            params["uri"] = uri
+        else:
+            params["dataType"] = self.topicPage["dataType"]
+            params["topicPage"] = json.dumps(self.topicPage)
+        if onlyAfterTm is not None:
+            params["onlyAfterTm"] = QueryParamsBase.encodeDateTime(onlyAfterTm)
+        if maxDaysBack is not None:
+            params["maxDaysBack"] = maxDaysBack
+        return params
+
+
     def getArticles(self,
                 page: int = 1,
                 count: int = 100,
                 sortBy: str = "rel",
                 sortByAsc: bool = False,
                 returnInfo: Union[ReturnInfo, None] = None,
+                uri: Union[str, None] = None,
+                onlyAfterTm: Union[datetime.datetime, str, None] = None,
+                maxDaysBack: Union[int, None] = None,
                 **kwargs):
         """
         return a list of articles that match the topic page
-        @param page: which page of the results to return (default: 1)
-        @param count: number of articles to return (default: 100)
-        @param sortBy: how are articles sorted. Options: id (internal id), date (publishing date), cosSim (closeness to the event centroid), rel (relevance to the query), sourceImportance (manually curated score of source importance - high value, high importance), sourceImportanceRank (reverse of sourceImportance), sourceAlexaGlobalRank (global rank of the news source), sourceAlexaCountryRank (country rank of the news source), socialScore (total shares on social media), facebookShares (shares on Facebook only)
-        @param sortByAsc: should the results be sorted in ascending order (True) or descending (False)
-        @param returnInfo: what details should be included in the returned information
+
+        Args:
+            page: which page of the results to return (default: 1)
+            count: number of articles to return (default: 100)
+            sortBy: how are articles sorted. Options: date (publishing date), cosSim (closeness to the event centroid), rel (relevance to the query), sourceImportance (manually curated score of source importance - high value, high importance), sourceImportanceRank (reverse of sourceImportance), sourceAlexaGlobalRank (global rank of the news source), sourceAlexaCountryRank (country rank of the news source)
+            sortByAsc: should the results be sorted in ascending order (True) or descending (False)
+            returnInfo: what details should be included in the returned information
+            uri: the uri of a topic page saved in your Event Registry account. If given, the articles that match the saved
+                topic page are returned, instead of the ones that match the definition in this object (which is then not sent to the server)
+            onlyAfterTm: return only the articles that were added to Event Registry after the given time (a datetime or
+                a string in the 'YYYY-MM-DDTHH:MM:SS' format, in UTC). Useful to repeatedly get just the new articles: remember
+                the time of the previous call and use it in the next one
+            maxDaysBack: the returned articles should not be older than this number of days. If None, the value set
+                in the topic page is used
         """
         if not (page >= 1):
             raise ValueError("page should be at least 1")
@@ -467,13 +528,12 @@ class TopicPage(QueryParamsBase):
         params = {
             "action": "getArticlesForTopicPage",
             "resultType": "articles",
-            "dataType": self.topicPage["dataType"],
             "articlesCount": count,
             "articlesSortBy": sortBy,
             "articlesSortByAsc": sortByAsc,
-            "articlesPage": page,
-            "topicPage": json.dumps(self.topicPage)
+            "articlesPage": page
         }
+        params.update(self._getContentParams(uri, onlyAfterTm, maxDaysBack))
         params.update((returnInfo if returnInfo is not None else ReturnInfo()).getParams("articles"))
         params.update(kwargs)
         return self.eventRegistry.jsonRequest("/api/v1/article", params)
@@ -485,14 +545,25 @@ class TopicPage(QueryParamsBase):
                 sortBy: str = "rel",
                 sortByAsc: bool = False,
                 returnInfo: Union[ReturnInfo, None] = None,
+                uri: Union[str, None] = None,
+                onlyAfterTm: Union[datetime.datetime, str, None] = None,
+                maxDaysBack: Union[int, None] = None,
                 **kwargs):
         """
         return a list of events that match the topic page
-        @param page: which page of the results to return (default: 1)
-        @param count: number of articles to return (default: 50)
-        @param sortBy: how are articles sorted. Options: id (internal id), date (publishing date), cosSim (closeness to the event centroid), rel (relevance to the query), sourceImportance (manually curated score of source importance - high value, high importance), sourceImportanceRank (reverse of sourceImportance), sourceAlexaGlobalRank (global rank of the news source), sourceAlexaCountryRank (country rank of the news source), socialScore (total shares on social media), facebookShares (shares on Facebook only)
-        @param sortByAsc: should the results be sorted in ascending order (True) or descending (False)
-        @param returnInfo: what details should be included in the returned information
+
+        Args:
+            page: which page of the results to return (default: 1)
+            count: number of events to return (default: 50)
+            sortBy: how are events sorted. Options: date (by event date), rel (relevance to the query), size (number of articles), none (no specific sorting)
+            sortByAsc: should the results be sorted in ascending order (True) or descending (False)
+            returnInfo: what details should be included in the returned information
+            uri: the uri of a topic page saved in your Event Registry account. If given, the events that match the saved
+                topic page are returned, instead of the ones that match the definition in this object (which is then not sent to the server)
+            onlyAfterTm: return only the events that were added or updated after the given time (a datetime or
+                a string in the 'YYYY-MM-DDTHH:MM:SS' format, in UTC)
+            maxDaysBack: the returned events should not be older than this number of days. If None, the value set
+                in the topic page is used
         """
         if not (page >= 1):
             raise ValueError("page should be at least 1")
@@ -501,13 +572,12 @@ class TopicPage(QueryParamsBase):
         params = {
             "action": "getEventsForTopicPage",
             "resultType": "events",
-            "dataType": self.topicPage["dataType"],
             "eventsCount": count,
             "eventsPage": page,
             "eventsSortBy": sortBy,
-            "eventsSortByAsc": sortByAsc,
-            "topicPage": json.dumps(self.topicPage)
+            "eventsSortByAsc": sortByAsc
         }
+        params.update(self._getContentParams(uri, onlyAfterTm, maxDaysBack))
         params.update((returnInfo if returnInfo is not None else ReturnInfo()).getParams("events"))
         params.update(kwargs)
         return self.eventRegistry.jsonRequest("/api/v1/event", params)

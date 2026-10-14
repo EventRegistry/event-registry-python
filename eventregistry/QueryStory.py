@@ -1,7 +1,12 @@
-﻿from eventregistry.Base import *
-from eventregistry.ReturnInfo import *
-from eventregistry.EventRegistry import EventRegistry
+﻿import datetime
+import json
+from eventregistry.Base import Query, QueryParamsBase, mainLangs
+from eventregistry.ReturnInfo import ArticleInfoFlags, ReturnInfo
 from typing import Union, List
+
+# the names exported by "from eventregistry import *"
+__all__ = ["QueryStory", "RequestStory", "RequestStoryInfo", "RequestStoryArticles", "RequestStoryArticleUris",
+           "RequestStoryArticleTrend", "RequestStorySimilarStories"]
 
 
 class QueryStory(Query):
@@ -10,7 +15,8 @@ class QueryStory(Query):
     NOTE: Story in our terminology is a cluster of articles (and not a single article). An event is
     then something that consists of one or more stories (typically in different languages).
 
-    @param storyUriOrList: a single story uri or a list of story uris
+    Args:
+        storyUriOrList: a single story uri or a list of story uris
     """
     def __init__(self, storyUriOrList: Union[str, List[str], None] = None):
         super().__init__()
@@ -71,11 +77,13 @@ class RequestStoryArticles(RequestStory):
                  returnInfo: Union[ReturnInfo, None] = None):
         """
         return articles in the story (cluster)
-        @param page: page of the articles to return (1, 2, ...)
-        @param count: number of articles to return per page (at most 100)
-        @param sortBy: order in which articles are sorted. Options: id (internal id), date (published date), cosSim (closeness to event centroid), sourceImportanceRank (importance of the news source, custom set), sourceAlexaGlobalRank (global rank of the news source), sourceAlexaCountryRank (country rank of the news source), socialScore (total shares in social media)
-        @param sortByAsc: should the articles be sorted in ascending order (True) or descending (False) based on sortBy value
-        @param returnInfo: what details should be included in the returned information
+
+        Args:
+            page: page of the articles to return (1, 2, ...)
+            count: number of articles to return per page (at most 100)
+            sortBy: order in which articles are sorted. Options: date (published date), cosSim (closeness to event centroid), sourceImportanceRank (importance of the news source, custom set), sourceAlexaGlobalRank (global rank of the news source), sourceAlexaCountryRank (country rank of the news source)
+            sortByAsc: should the articles be sorted in ascending order (True) or descending (False) based on sortBy value
+            returnInfo: what details should be included in the returned information
         """
         super().__init__()
         if not (page >= 1):
@@ -96,12 +104,14 @@ class RequestStoryArticleUris(RequestStory):
     return a list of article uris
     """
     def __init__(self,
-                 sortBy: str = "cosSim", sortByAsc: bool = False  # order in which story articles are sorted. Options: id (internal id), date (published date), cosSim (closeness to story centroid), socialScore (total shares in social media), facebookShares (shares on fb), twitterShares (shares on twitter)
+                 sortBy: str = "cosSim", sortByAsc: bool = False  # order in which story articles are sorted. Options: date (published date), cosSim (closeness to story centroid)
                  ):
         """
         return articles in the story (cluster)
-        @param sortBy: order in which articles are sorted. Options: id (internal id), date (published date), cosSim (closeness to event centroid), sourceImportanceRank (importance of the news source, custom set), sourceAlexaGlobalRank (global rank of the news source), sourceAlexaCountryRank (country rank of the news source), socialScore (total shares in social media)
-        @param sortByAsc: should the articles be sorted in ascending order (True) or descending (False) based on sortBy value
+
+        Args:
+            sortBy: order in which articles are sorted. Options: date (published date), cosSim (closeness to event centroid), sourceImportanceRank (importance of the news source, custom set), sourceAlexaGlobalRank (global rank of the news source), sourceAlexaCountryRank (country rank of the news source)
+            sortByAsc: should the articles be sorted in ascending order (True) or descending (False) based on sortBy value
         """
         super().__init__()
         self.articleUrisSortBy = sortBy
@@ -136,12 +146,14 @@ class RequestStorySimilarStories(RequestStory):
                 returnInfo: Union[ReturnInfo, None] = None):
         """
         compute and return a list of similar stories
-        @param conceptInfoList: list of concepts and their importance, e.g. [{ "uri": "http://en.wikipedia.org/wiki/Barack_Obama", "wgt": 100 }, ...]
-        @param count: number of similar stories to return (at most 50)
-        @param dateStart: what can be the oldest date of the similar stories
-        @param dateEnd: what can be the newest date of the similar stories
-        @param lang: in which language(s) should be the similar stories
-        @param returnInfo: what details should be included in the returned information
+
+        Args:
+            conceptInfoList: list of concepts and their importance, e.g. [{ "uri": "http://en.wikipedia.org/wiki/Barack_Obama", "wgt": 100 }, ...]
+            count: number of similar stories to return (at most 50)
+            dateStart: what can be the oldest date of the similar stories
+            dateEnd: what can be the newest date of the similar stories
+            lang: in which language(s) should be the similar stories
+            returnInfo: what details should be included in the returned information
         """
         super().__init__()
         if not (count <= 50):

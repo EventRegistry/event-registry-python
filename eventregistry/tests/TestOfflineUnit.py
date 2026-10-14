@@ -7,11 +7,17 @@ Run with:
     python -m unittest eventregistry.tests.TestOfflineUnit -v
 """
 import datetime
+import inspect
 import json
+import logging
 import os
+import subprocess
+import sys
 import tempfile
 import unittest
 from unittest import mock
+
+import requests
 
 from eventregistry import *
 
@@ -161,6 +167,9 @@ class TestQueryArticlesConstruction(unittest.TestCase):
         self.assertEqual(q.queryParams["articleUri"], ["uri1", "uri2"])
         self.assertEqual(q.queryParams["dataType"], ["news", "blog", "pr"])
         self.assertRaises(TypeError, QueryArticles.initWithArticleUriList, 123)
+        # the iterator gets the returnInfo in execQuery()
+        self.assertEqual(QueryArticlesIter.initWithArticleUriList(["uri1"])._getQueryParams()["articleUri"], ["uri1"])
+        self.assertRaises(TypeError, QueryArticlesIter.initWithArticleUriList, ["uri1"], returnInfo = ReturnInfo())
 
     def testInitWithArticleUriWgtList(self):
         q = QueryArticles.initWithArticleUriWgtList(["u1:10", "u2:20"])
@@ -368,14 +377,14 @@ class TestEventRegistryRequests(unittest.TestCase):
 
     def testErrorMessageContainsStatusCodeAndMeaning(self):
         er = makeER()
-        er._reqSession.post = mock.Mock(return_value = FakeResponse(status_code = 429, text = "slow down"))
+        er._reqSession.post = mock.Mock(return_value = FakeResponse(status_code = 503, text = "maintenance"))
         with mock.patch("eventregistry.EventRegistry.time.sleep"):
             with self.assertRaises(Exception) as ctx:
                 er.jsonRequest("/api/v1/test", {})
         msg = str(ctx.exception)
-        self.assertIn("429", msg)
-        self.assertIn("Too many requests", msg)
-        self.assertIn("slow down", msg)
+        self.assertIn("503", msg)
+        self.assertIn("Service unavailable", msg)
+        self.assertIn("maintenance", msg)
 
     def testRateLimitHeadersParsed(self):
         er = makeER()
@@ -446,11 +455,85 @@ class TestIterators(unittest.TestCase):
         it = QueryArticlesIter(keywords = "x").execQuery(er, maxItems = 2)
         self.assertEqual([a["uri"] for a in it], ["a1", "a2"])
 
-    def testArticleIteratorErrorResponse(self):
+    def testIteratorsRaiseErrorReturnedByServer(self):
+        # an error returned by the server must not look like a query without results
+        for query in [QueryArticlesIter(keywords = "x"), QueryEventsIter(keywords = "x"), QueryMentionsIter(keywords = "x"), QueryEventArticlesIter("eng-1")]:
+            er = makeER()
+            er.execQuery = mock.Mock(return_value = {"error": "something went wrong"})
+            with self.assertRaises(QueryError) as ctx:
+                list(query.execQuery(er))
+            self.assertIn("something went wrong", str(ctx.exception))
+            self.assertIsInstance(ctx.exception, EventRegistryError)
+            self.assertRaises(QueryError, query.count, er)
+
+    def testExecQueryRaiseOnError(self):
         er = makeER()
-        er.execQuery = mock.Mock(return_value = {"error": "something went wrong"})
-        it = QueryArticlesIter(keywords = "x").execQuery(er)
-        self.assertEqual(list(it), [])
+        er._reqSession.post = mock.Mock(return_value = FakeResponse(data = {"error": "invalid uri"}))
+        # by default the response with the error is returned
+        self.assertEqual(er.execQuery(QueryArticles(keywords = "x")), {"error": "invalid uri"})
+        self.assertRaises(QueryError, er.execQuery, QueryArticles(keywords = "x"), raiseOnError = True)
+
+    def testIteratorDoesNotChangeTheQuery(self):
+        er = makeER()
+        er.execQuery = mock.Mock(side_effect = [self._makeArticlePage(["a1", "a2"], 2), self._makeArticlePage(["a3"], 2)])
+        q = QueryArticlesIter(keywords = "x")
+        before = (repr(q), list(q.resultTypeList))
+        self.assertEqual(len(list(q.execQuery(er))), 3)
+        self.assertEqual((repr(q), list(q.resultTypeList)), before, "iterating must not change the query")
+        # each page was requested with its own copy of the query
+        pages = [c.args[0]._getQueryParams()["articlesPage"] for c in er.execQuery.call_args_list]
+        self.assertEqual(pages, [1, 2])
+
+    def testIteratorsOfTheSameQueryAreIndependent(self):
+        er = makeER()
+        def respond(query, *args, **kwargs):
+            page = query._getQueryParams()["articlesPage"]
+            return self._makeArticlePage(["p%d-a" % page, "p%d-b" % page], 2)
+        er.execQuery = mock.Mock(side_effect = respond)
+        q = QueryArticlesIter(keywords = "x")
+        it1, it2 = q.execQuery(er), q.execQuery(er)
+        self.assertIsNot(it1, it2)
+        expected = ["p1-a", "p1-b", "p2-a", "p2-b"]
+        # interleave the two iterations: start the first one, run the second one to the end, then finish the first one
+        got1 = [next(it1)["uri"]]
+        got2 = [a["uri"] for a in it2]
+        got1 += [next(it1)["uri"] for _ in range(3)]
+        self.assertEqual(got1, expected)
+        self.assertEqual(got2, expected)
+        self.assertRaises(StopIteration, next, it1)
+
+    def testIteratingOverTheQueryStillWorks(self):
+        # compatibility: after execQuery() the query object itself can be iterated
+        er = makeER()
+        er.execQuery = mock.Mock(return_value = self._makeArticlePage(["a1", "a2"], 1))
+        q = QueryArticlesIter(keywords = "x")
+        q.execQuery(er)
+        self.assertEqual([a["uri"] for a in q], ["a1", "a2"])
+
+    def testExecQueryRejectsUnknownArguments(self):
+        er = makeER()
+        for query in [QueryArticlesIter(keywords = "x"), QueryEventsIter(keywords = "x"), QueryMentionsIter(keywords = "x"), QueryEventArticlesIter("eng-1")]:
+            self.assertRaises(TypeError, query.execQuery, er, sortby = "date")
+        self.assertRaises(TypeError, RequestEventArticles, keyword = "x")
+
+    def testEventArticlesIteratorKeepsOperatorsAndConditions(self):
+        er = makeER()
+        er.execQuery = mock.Mock(return_value = {"eng-1": {"articles": {"results": [{"uri": "a1"}], "pages": 1, "totalResults": 1}}})
+        q = QueryEventArticlesIter("eng-1", conceptUri = QueryItems.OR(["c1", "c2"]), categoryUri = QueryItems.AND(["cat1", "cat2"]),
+                                   keywords = "tesla", lang = "eng")
+        with self.assertLogs("eventregistry", level = "WARNING") as logs:
+            logging.getLogger("eventregistry").warning("marker")
+            list(q.execQuery(er, sortBy = "date"))
+            q.count(er)
+        self.assertEqual(len(logs.output), 1, "no warning about the operators should be logged: %s" % logs.output)
+        for call in er.execQuery.call_args_list:
+            params = call.args[0]._getQueryParams()
+            self.assertEqual(params["conceptUri"], ["c1", "c2"])
+            self.assertEqual(params["conceptOper"], "or", "the OR operator must not be replaced by the default AND")
+            self.assertEqual(params["categoryOper"], "and")
+            self.assertEqual(params["keyword"], "tesla")
+            self.assertEqual(params["articlesLang"], "eng")
+        self.assertEqual(er.execQuery.call_args_list[0].args[0]._getQueryParams()["articlesSortBy"], "date")
 
     def testArticleIteratorCount(self):
         er = makeER()
@@ -632,6 +715,356 @@ class TestAnalyticsParamAssembly(unittest.TestCase):
         url, params = er.jsonRequestAnalytics.call_args.args
         self.assertEqual(json.loads(params["headers"]), {"User-Agent": "test"})
         self.assertEqual(json.loads(params["cookies"]), {"a": "b"})
+
+
+class InvalidJsonResponse(FakeResponse):
+    def json(self):
+        raise ValueError("Expecting value: line 1 column 1 (char 0)")
+
+
+class TestRequestErrorsAndRetries(unittest.TestCase):
+
+    def testStatusCodesRaiseTypedErrors(self):
+        expected = {204: NoDataError, 400: InvalidRequestError, 404: InvalidRequestError, 401: UnauthorizedError,
+                    403: ForbiddenError, 500: ServerError, 503: ServerError}
+        # 429 is repeated until the request succeeds, so it is never raised by jsonRequest
+        self.assertIsInstance(makeER()._getErrorForResponse(FakeResponse(status_code = 429, text = "slow down"), "url"), RateLimitError)
+        for code, errorClass in expected.items():
+            er = makeER()
+            er._reqSession.post = mock.Mock(return_value = FakeResponse(status_code = code, text = "server says no"))
+            with mock.patch("eventregistry.EventRegistry.time.sleep"):
+                with self.assertRaises(errorClass) as ctx:
+                    er.jsonRequest("/api/v1/test", {})
+            err = ctx.exception
+            self.assertIsInstance(err, EventRegistryError)
+            self.assertEqual(err.statusCode, code)
+            self.assertEqual(err.responseText, "server says no")
+            self.assertEqual(err.url, "https://eventregistry.org/api/v1/test")
+            self.assertIs(er.getLastException(), err)
+        self.assertTrue(issubclass(UnauthorizedError, AccessError) and issubclass(ForbiddenError, AccessError))
+
+    def testPermanentErrorsAreNotRetried(self):
+        for code in [204, 400, 401, 403, 404, 405, 413, 422]:
+            er = makeER(repeatFailedRequestCount = 5)
+            er._reqSession.post = mock.Mock(return_value = FakeResponse(status_code = code, text = "err"))
+            with mock.patch("eventregistry.EventRegistry.time.sleep") as sleep:
+                self.assertRaises(EventRegistryError, er.jsonRequest, "/api/v1/test", {})
+            self.assertEqual(er._reqSession.post.call_count, 1, "%d responses must not be retried" % code)
+            self.assertFalse(sleep.called)
+
+    def testNetworkErrorIsRetriedAndRaisedAsNetworkError(self):
+        er = makeER(repeatFailedRequestCount = 2)
+        er._reqSession.post = mock.Mock(side_effect = requests.exceptions.ConnectionError("connection refused"))
+        with mock.patch("eventregistry.EventRegistry.time.sleep"):
+            with self.assertRaises(NetworkError) as ctx:
+                er.jsonRequest("/api/v1/test", {})
+        self.assertEqual(er._reqSession.post.call_count, 3)
+        self.assertIsInstance(ctx.exception.__cause__, requests.exceptions.ConnectionError)
+        # a timeout is a network error too and the request succeeds when it is repeated
+        er = makeER(repeatFailedRequestCount = 2)
+        er._reqSession.post = mock.Mock(side_effect = [requests.exceptions.ReadTimeout("timed out"), FakeResponse(data = {"ok": 1})])
+        with mock.patch("eventregistry.EventRegistry.time.sleep"):
+            self.assertEqual(er.jsonRequest("/api/v1/test", {}), {"ok": 1})
+
+    def testInvalidJsonIsRetriedAndRaisedAsInvalidResponseError(self):
+        er = makeER(repeatFailedRequestCount = 1)
+        er._reqSession.post = mock.Mock(return_value = InvalidJsonResponse(text = "<html>truncated"))
+        with mock.patch("eventregistry.EventRegistry.time.sleep"):
+            self.assertRaises(InvalidResponseError, er.jsonRequest, "/api/v1/test", {})
+        self.assertEqual(er._reqSession.post.call_count, 2)
+
+    def testRetriesAreLimitedAndUseExponentialBackoff(self):
+        er = makeER(repeatFailedRequestCount = 3)
+        er._reqSession.post = mock.Mock(return_value = FakeResponse(status_code = 503, text = "down"))
+        with mock.patch("eventregistry.EventRegistry.time.sleep") as sleep:
+            self.assertRaises(ServerError, er.jsonRequest, "/api/v1/test", {})
+        self.assertEqual(er._reqSession.post.call_count, 4)
+        # no sleep after the last attempt
+        self.assertEqual([c.args[0] for c in sleep.call_args_list], [2, 4, 8])
+
+    def testRetryAfterHeaderIsUsed(self):
+        er = makeER(repeatFailedRequestCount = 1)
+        er._reqSession.post = mock.Mock(side_effect = [FakeResponse(status_code = 429, text = "slow down", headers = {"Retry-After": "7"}),
+                                                       FakeResponse(data = {"ok": 1})])
+        with mock.patch("eventregistry.EventRegistry.time.sleep") as sleep:
+            self.assertEqual(er.jsonRequest("/api/v1/test", {}), {"ok": 1})
+        self.assertEqual(sleep.call_args.args[0], 7)
+
+    def testTooManySimultaneousRequestsAreAlwaysRepeated(self):
+        # 429 is repeated until it succeeds, also when the other errors are not repeated at all
+        er = makeER(repeatFailedRequestCount = 0)
+        er._reqSession.post = mock.Mock(side_effect = [FakeResponse(status_code = 429, text = "slow down")] * 6 + [FakeResponse(data = {"ok": 1})])
+        with mock.patch("eventregistry.EventRegistry.time.sleep") as sleep:
+            with self.assertLogs("eventregistry", level = "WARNING"):
+                self.assertEqual(er.jsonRequest("/api/v1/test", {}), {"ok": 1})
+        self.assertEqual(er._reqSession.post.call_count, 7)
+        self.assertEqual([c.args[0] for c in sleep.call_args_list], [2, 4, 8, 16, 32, 60])
+        # the repeats of 429 don't count towards repeatFailedRequestCount
+        er = makeER(repeatFailedRequestCount = 1)
+        er._reqSession.post = mock.Mock(side_effect = [FakeResponse(status_code = 503, text = "down"), FakeResponse(status_code = 429, text = "slow down"),
+                                                       FakeResponse(status_code = 429, text = "slow down"), FakeResponse(data = {"ok": 1})])
+        with mock.patch("eventregistry.EventRegistry.time.sleep"):
+            self.assertEqual(er.jsonRequest("/api/v1/test", {}), {"ok": 1})
+        er = makeER(repeatFailedRequestCount = 1)
+        er._reqSession.post = mock.Mock(side_effect = [FakeResponse(status_code = 503, text = "down"), FakeResponse(status_code = 429, text = "slow down"),
+                                                       FakeResponse(status_code = 503, text = "down")])
+        with mock.patch("eventregistry.EventRegistry.time.sleep"):
+            self.assertRaises(ServerError, er.jsonRequest, "/api/v1/test", {})
+        self.assertEqual(er._reqSession.post.call_count, 3)
+
+    def testIterationContinuesAfterTooManySimultaneousRequests(self):
+        er = makeER(repeatFailedRequestCount = 0)
+        page = lambda uris: FakeResponse(data = {"articles": {"results": [{"uri": u} for u in uris], "totalResults": 4, "pages": 2}})
+        er._reqSession.post = mock.Mock(side_effect = [page(["1", "2"]), FakeResponse(status_code = 429, text = "slow down"), page(["3", "4"])])
+        q = QueryArticlesIter(keywords = "x")
+        with mock.patch("eventregistry.EventRegistry.time.sleep"), self.assertLogs("eventregistry", level = "WARNING"):
+            uris = [a["uri"] for a in q.execQuery(er, maxItems = 4)]
+        self.assertEqual(uris, ["1", "2", "3", "4"])
+
+    def testDefaultRetryCountIsLimited(self):
+        default = inspect.signature(EventRegistry.__init__).parameters["repeatFailedRequestCount"].default
+        self.assertEqual(default, 3, "failed requests should not be repeated indefinitely by default")
+
+    def testLockIsNotHeldWhileWaitingToRetry(self):
+        er = makeER(repeatFailedRequestCount = 1)
+        er._reqSession.post = mock.Mock(side_effect = [FakeResponse(status_code = 503, text = "down"), FakeResponse(data = {"ok": 1})])
+        lockFreeDuringSleep = []
+        def fakeSleep(secs):
+            gotLock = er._lock.acquire(blocking = False)
+            lockFreeDuringSleep.append(gotLock)
+            if gotLock:
+                er._lock.release()
+        with mock.patch("eventregistry.EventRegistry.time.sleep", side_effect = fakeSleep):
+            er.jsonRequest("/api/v1/test", {})
+        self.assertEqual(lockFreeDuringSleep, [True])
+
+    def testApiKeyIsMaskedInVerboseLogs(self):
+        er = makeER(verboseOutput = True, apiKey = "SECRETKEY123")
+        er._reqSession.post = mock.Mock(return_value = FakeResponse(status_code = 400, text = "bad"))
+        with self.assertLogs("eventregistry", level = "ERROR") as logs:
+            self.assertRaises(InvalidRequestError, er.jsonRequest, "/api/v1/test", {"keyword": "x"})
+        output = "\n".join(logs.output)
+        self.assertNotIn("SECRETKEY123", output)
+        self.assertIn('"apiKey": "***"', output)
+        self.assertIn('"keyword": "x"', output)
+        # the key is still sent to the server
+        self.assertEqual(er._reqSession.post.call_args.kwargs["json"]["apiKey"], "SECRETKEY123")
+
+    def testProxyCredentialsAreMaskedInVerboseLogs(self):
+        er = makeER(verboseOutput = True)
+        er._reqSession.post = mock.Mock(return_value = FakeResponse(status_code = 400, text = "bad"))
+        with self.assertLogs("eventregistry", level = "ERROR") as logs:
+            self.assertRaises(InvalidRequestError, er.jsonRequestAnalytics, "/api/v1/extractArticleInfo", {"proxyUrl": "http://user:pass@1.2.3.4:8080"})
+        output = "\n".join(logs.output)
+        self.assertNotIn("user:pass", output)
+        self.assertIn("http://***@1.2.3.4:8080", output)
+        self.assertNotIn("TESTKEY", output)
+
+
+class TestSmallFixes(unittest.TestCase):
+
+    def testEmptyListIsIgnored(self):
+        params = QueryArticles(keywords = "x", conceptUri = [], sourceUri = QueryItems.OR([]), categoryUri = QueryItems.AND([])).queryParams
+        for name in ["conceptUri", "conceptOper", "sourceUri", "sourceOper", "categoryUri", "categoryOper"]:
+            self.assertNotIn(name, params)
+        self.assertEqual(params["keyword"], "x")
+
+    def testTopicPageDefinitionIsMergedWithDefaults(self):
+        er = makeER()
+        er.jsonRequest = mock.Mock(return_value = {"articles": {"results": []}, "events": {"results": []}})
+        definition = {"concepts": [{"uri": "http://en.wikipedia.org/wiki/Tesla,_Inc.", "wgt": 50}]}
+        topic = TopicPage(er)
+        topic.loadTopicPageFromDefinition(definition)
+        topic.getArticles()
+        topic.getEvents()
+        self.assertEqual(er.jsonRequest.call_args_list[0].args[1]["dataType"], ["news"])
+        self.assertEqual(topic.topicPage["concepts"], definition["concepts"])
+        self.assertNotIn("dataType", definition, "the provided definition must not be changed")
+        # the same for a definition loaded from a file
+        fname = os.path.join(tempfile.gettempdir(), "er-test-topicpage.json")
+        with open(fname, "w", encoding = "utf-8") as f:
+            json.dump(definition, f)
+        topic = TopicPage(er)
+        topic.loadTopicPageFromFile(fname)
+        topic.getArticles()
+        os.remove(fname)
+
+    def testDateTimesAreSentAsUtcWithoutOffset(self):
+        encode = QueryParamsBase.encodeDateTime
+        tz = datetime.timezone(datetime.timedelta(hours = -5))
+        self.assertEqual(encode(datetime.datetime(2026, 10, 1, 23, 30, tzinfo = tz)), "2026-10-02T04:30:00")
+        self.assertEqual(encode(datetime.datetime(2026, 10, 1, 23, 30, tzinfo = datetime.timezone.utc)), "2026-10-01T23:30:00")
+        # without a timezone the value is considered to be in UTC
+        self.assertEqual(encode(datetime.datetime(2026, 10, 1, 23, 30)), "2026-10-01T23:30:00")
+        self.assertEqual(encode("2026-10-01T10:00:00"), "2026-10-01T10:00:00")
+        self.assertEqual(encode("2026-10-01T10:00:00.123"), "2026-10-01T10:00:00.123")
+        self.assertEqual(encode("2026-10-01T10:00:00Z"), "2026-10-01T10:00:00")
+        self.assertEqual(encode("2026-10-01T10:00:00+02:00"), "2026-10-01T08:00:00")
+        self.assertEqual(encode("2026-10-01T01:00:00+0200"), "2026-09-30T23:00:00")
+        self.assertRaises(ValueError, encode, "2026-10-01 10:00:00")
+
+    def testDateOfDateTimeWithTimezoneIsInUtc(self):
+        tz = datetime.timezone(datetime.timedelta(hours = -5))
+        self.assertEqual(QueryParamsBase.encodeDate(datetime.datetime(2026, 10, 1, 23, 30, tzinfo = tz)), "2026-10-02")
+        self.assertEqual(QueryParamsBase.encodeDate(datetime.datetime(2026, 10, 1, 23, 30)), "2026-10-01")
+        self.assertEqual(QueryParamsBase.encodeDate(datetime.date(2026, 10, 1)), "2026-10-01")
+
+    def testReturnInfoFlagsRejectMisspelledNames(self):
+        self.assertRaises(TypeError, ArticleInfoFlags, bodylen = -1)
+        self.assertRaises(TypeError, EventInfoFlags, Title = True)
+        # unknown names are still sent to the server (new flags), but with a warning
+        with self.assertLogs("eventregistry", level = "WARNING") as logs:
+            flags = ArticleInfoFlags(someNewFlag = True)
+        self.assertEqual(flags._getFlags().get("someNewFlag"), True)
+        self.assertIn("someNewFlag", " ".join(logs.output))
+
+    def testImportingDoesNotDependOnLogLevelVariable(self):
+        env = dict(os.environ, LOGLEVEL = "debug")
+        res = subprocess.run([sys.executable, "-c", "import eventregistry, logging; print(len(logging.getLogger('eventregistry').handlers))"],
+                             capture_output = True, text = True, env = env)
+        self.assertEqual(res.returncode, 0, res.stderr)
+        self.assertEqual(res.stdout.strip(), "0", "the package should not add its own log handlers")
+
+    def testStarImportExportsOnlyPublicNames(self):
+        import eventregistry
+        namespace = {}
+        exec("from datetime import datetime; from eventregistry import *", namespace)
+        self.assertIs(namespace["datetime"], datetime.datetime, "the star import must not overwrite the user's names")
+        for name in ["os", "json", "re", "time", "requests", "threading", "logger", "urlencode", "copy", "inspect"]:
+            self.assertNotIn(name, namespace, "'%s' should not be exported by the package" % name)
+        for name in ["EventRegistry", "QueryArticles", "QueryArticlesIter", "QueryItems", "ReturnInfo", "ArticleInfoFlags", "RequestArticlesInfo",
+                     "ComplexArticleQuery", "BaseQuery", "TopicPage", "Analytics", "GetTrendingConcepts", "EventRegistryError", "QueryError", "allLangs"]:
+            self.assertIn(name, namespace, "'%s' should be exported by the package" % name)
+        self.assertEqual(len(eventregistry.__all__), len(set(eventregistry.__all__)), "a name is exported by more than one module")
+
+
+class TestNewFeatures(unittest.TestCase):
+
+    def testApiKeyFromEnvironment(self):
+        noSettings = os.path.join(tempfile.gettempdir(), "er-no-such-settings.json")
+        with mock.patch.dict(os.environ, {"EVENTREGISTRY_API_KEY": "ENVKEY"}):
+            self.assertEqual(EventRegistry(settingsFName = noSettings)._apiKey, "ENVKEY")
+            # the key given as the argument wins
+            self.assertEqual(EventRegistry(apiKey = "ARGKEY", settingsFName = noSettings)._apiKey, "ARGKEY")
+
+    def testNewArticleAggregates(self):
+        expected = {
+            RequestArticlesLangAggr: {"resultType": "langAggr"},
+            RequestArticlesSentimentAggr: {"resultType": "sentimentAggr"},
+            RequestArticlesAuthorAggr: {"resultType": "authorAggr", "authorAggrAuthorCount": 50, "authorAggrIncludePeople": True, "authorAggrIncludeAgencies": True, "authorAggrSampleSize": 500000},
+            RequestArticlesLocAggr: {"resultType": "locAggr", "locAggrSampleSize": 500000},
+            RequestArticlesSourceExAggr: {"resultType": "sourceExAggr", "sourceExAggrSourceCount": 50, "sourceExAggrTimeWindow": "day", "sourceExAggrSampleSize": 20000},
+        }
+        for cls, params in expected.items():
+            q = QueryArticles(keywords = "x", requestedResult = cls())
+            sent = q._getQueryParams()
+            self.assertEqual(sent["resultType"], [params["resultType"]])
+            for name, val in params.items():
+                if name != "resultType":
+                    self.assertEqual(sent[name], val, "%s.%s" % (cls.__name__, name))
+        self.assertRaises(ValueError, RequestArticlesAuthorAggr, articlesSampleSize = 2000000)
+        self.assertRaises(ValueError, RequestArticlesSourceExAggr, articlesSampleSize = 60000)
+
+    def testNewEventAggregates(self):
+        sent = QueryEvents(keywords = "x", requestedResult = RequestEventsSentimentAggr())._getQueryParams()
+        self.assertEqual(sent["resultType"], ["sentimentAggr"])
+        sent = QueryEvents(keywords = "x", requestedResult = RequestEventsAuthorAggr(authorCount = 10, includeAgencies = False))._getQueryParams()
+        self.assertEqual(sent["resultType"], ["authorAggr"])
+        self.assertEqual((sent["authorAggrAuthorCount"], sent["authorAggrIncludeAgencies"], sent["authorAggrSampleSize"]), (10, False, 50000))
+        self.assertRaises(ValueError, RequestEventsAuthorAggr, eventsSampleSize = 200000)
+
+    def testEventsQueryUsesIgnoreKeyword(self):
+        params = QueryEvents(keywords = "x", ignoreKeywords = "y").queryParams
+        self.assertEqual(params["ignoreKeyword"], "y")
+        self.assertNotIn("ignoreKeywords", params)
+
+    def testBaseQueryKeywordSearchMode(self):
+        self.assertEqual(BaseQuery(keyword = "x", keywordSearchMode = "exact").getQuery(), {"keyword": "x", "keywordSearchMode": "exact"})
+        self.assertEqual(BaseQuery(keyword = "x").getQuery(), {"keyword": "x"})
+        # the conditions can be a string or QueryItems, a plain list is not accepted
+        self.assertEqual(BaseQuery(sourceLocationUri = QueryItems.OR(["a", "b"])).getQuery(), {"sourceLocationUri": {"$or": ["a", "b"]}})
+        self.assertRaises(TypeError, BaseQuery, authorUri = ["a", "b"])
+
+    def testTopicPageBySavedUri(self):
+        er = makeER()
+        er.jsonRequest = mock.Mock(return_value = {"articles": {"results": []}})
+        topic = TopicPage(er)
+        topic.getArticles(uri = "my-topic-uri", onlyAfterTm = datetime.datetime(2026, 10, 1, 12, 0, tzinfo = datetime.timezone.utc), maxDaysBack = 3)
+        path, params = er.jsonRequest.call_args.args
+        self.assertEqual(path, "/api/v1/article")
+        self.assertEqual((params["action"], params["uri"], params["onlyAfterTm"], params["maxDaysBack"]), ("getArticlesForTopicPage", "my-topic-uri", "2026-10-01T12:00:00", 3))
+        # the definition in the object is not sent when a saved topic page is used
+        self.assertNotIn("topicPage", params)
+        self.assertNotIn("dataType", params)
+        topic.getEvents(uri = "my-topic-uri", onlyAfterTm = "2026-10-01T12:00:00")
+        path, params = er.jsonRequest.call_args.args
+        self.assertEqual((path, params["action"], params["uri"], params["onlyAfterTm"]), ("/api/v1/event", "getEventsForTopicPage", "my-topic-uri", "2026-10-01T12:00:00"))
+        # without the uri the definition is sent, as before
+        topic.getArticles()
+        params = er.jsonRequest.call_args.args[1]
+        self.assertIn("topicPage", params)
+        self.assertNotIn("uri", params)
+        self.assertNotIn("onlyAfterTm", params)
+
+    def testRecentArticlesNamedFilters(self):
+        er = makeER()
+        recent = GetRecentArticles(er, keywords = QueryItems.OR(["a", "b"]), sourceUri = "bbc.com", lang = "eng", maxArticleCount = 50,
+                                   updatesAfterMinsAgo = 10, isDuplicateFilter = "skipDuplicates", minSentiment = 0.2, dataType = ["news", "pr"])
+        params = recent.queryParams
+        self.assertEqual((params["keyword"], params["keywordOper"]), (["a", "b"], "or"))
+        self.assertEqual((params["sourceUri"], params["lang"], params["isDuplicateFilter"], params["minSentiment"], params["dataType"]),
+                         ("bbc.com", "eng", "skipDuplicates", 0.2, ["news", "pr"]))
+        self.assertEqual((params["recentActivityArticlesMaxArticleCount"], params["recentActivityArticlesUpdatesAfterMinsAgo"]), (50, 10))
+        self.assertNotIn("action", params)
+        self.assertEqual(recent._getPath(), "/api/v1/minuteStreamArticles")
+        # without filters only the parameters of the feed are sent
+        plain = GetRecentArticles(er, returnInfo = ReturnInfo()).queryParams
+        self.assertNotIn("keyword", plain)
+        self.assertNotIn("recentActivityArticlesMaxArticleCount", plain)
+        # other parameters can still be passed as they are
+        self.assertEqual(GetRecentArticles(er, someNewParam = 1).queryParams["someNewParam"], 1)
+
+    def testMentionsAcceptComplexMentionQuery(self):
+        cq = ComplexMentionQuery(BaseQuery(keyword = "Tesla"))
+        for cls in (QueryMentions, QueryMentionsIter):
+            q = cls.initWithComplexQuery(cq)
+            self.assertIsInstance(q, cls)
+            self.assertEqual(json.loads(q.queryParams["query"]), {"$query": {"keyword": "Tesla"}})
+            self.assertRaises(TypeError, cls.initWithComplexQuery, 123)
+        # a single mention uri is accepted by the iterator as well
+        self.assertEqual(QueryMentionsIter.initWithMentionUriList("m1").queryParams["mentionUri"], "m1")
+
+    def testMentionAggregates(self):
+        sent = QueryMentions(keywords = "x", requestedResult = RequestMentionsEventTypeAggr())._getQueryParams()
+        self.assertEqual((sent["resultType"], sent["eventTypeAggrSampleSize"]), (["eventTypeAggr"], 100000))
+        self.assertRaises(ValueError, RequestMentionsEventTypeAggr, mentionsSampleSize = 500000)
+        sent = QueryMentions(keywords = "x", requestedResult = RequestMentionsCategoryAggr())._getQueryParams()
+        self.assertEqual((sent["resultType"], sent["categoryAggrSampleSize"]), (["categoryAggr"], 20000))
+        # the concept graph of mentions was never supported by the server and was removed
+        import eventregistry
+        self.assertFalse(hasattr(eventregistry, "RequestMentionsConceptGraph"))
+
+    def testRecentEventsNamedFilters(self):
+        er = makeER()
+        recent = GetRecentEvents(er, conceptUri = "c1", maxEventCount = 20, updatesAfterTm = "2026-10-01T10:00:00+02:00", minArticlesInEvent = 5)
+        params = recent.queryParams
+        self.assertEqual((params["conceptUri"], params["recentActivityEventsMaxEventCount"], params["recentActivityEventsUpdatesAfterTm"], params["minArticlesInEvent"]),
+                         ("c1", 20, "2026-10-01T08:00:00", 5))
+        self.assertNotIn("action", params)
+
+
+class TestQueryRepr(unittest.TestCase):
+
+    def testQueryReprShowsParams(self):
+        q = QueryArticles(keywords = QueryItems.OR(["Tesla", "SpaceX"]), lang = "eng", dateStart = datetime.date(2026, 9, 1))
+        self.assertEqual(repr(q), "QueryArticles(action='getArticles', keyword=['Tesla', 'SpaceX'], keywordOper='or', lang='eng', "
+                                  "dateStart='2026-09-01', resultType=['articles'])")
+
+    def testReprWithoutResultType(self):
+        q = QueryArticles(keywords = "Tesla")
+        q.resultTypeList = []
+        self.assertEqual(repr(q), "QueryArticles(action='getArticles', keyword='Tesla')")
+        self.assertEqual(repr(GetSourceInfo("bbc.com")).split("(")[0], "GetSourceInfo")
 
 
 if __name__ == "__main__":

@@ -1,9 +1,8 @@
-import unittest, math
+import datetime, unittest, math
 from eventregistry import *
-from eventregistry.tests.DataValidator import DataValidator
 
 
-class TestQueryParamsBase(DataValidator):
+class TestQueryParamsBase(unittest.TestCase):
 
     def testDateConversion(self):
         self.assertEqual("2015-01-01", QueryParamsBase.encodeDate(datetime.datetime(2015, 1, 1, 12, 0, 0)))

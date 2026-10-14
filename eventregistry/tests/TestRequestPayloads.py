@@ -255,23 +255,6 @@ class TestOtherEndpointPayloads(PayloadCaptureTestCase):
         self.assertEqual(body["action"], "getCountsEx")
         self.assertEqual(body["type"], "category")
 
-    def testTopSharedArticles(self):
-        path, body = self.execPayload(GetTopSharedArticles(date = "2024-03-01", count = 10))
-        self.assertEqual(path, "/api/v1/article")
-        self.assertEqual(body["action"], "getArticles")
-        self.assertEqual(body["resultType"], "articles")
-        self.assertEqual(body["articlesCount"], 10)
-        self.assertEqual(body["articlesSortBy"], "socialScore")
-        self.assertEqual(body["dateStart"], "2024-03-01")
-        self.assertEqual(body["dateEnd"], "2024-03-01")
-
-    def testTopSharedEvents(self):
-        path, body = self.execPayload(GetTopSharedEvents(date = datetime.date(2024, 3, 1), count = 5))
-        self.assertEqual(path, "/api/v1/event")
-        self.assertEqual(body["eventsCount"], 5)
-        self.assertEqual(body["eventsSortBy"], "socialScore")
-        self.assertEqual(body["dateStart"], "2024-03-01")
-
     def testTrendingConcepts(self):
         path, body = self.execPayload(GetTrendingConcepts(source = "news", count = 10, conceptType = ["person"]))
         self.assertEqual(path, "/api/v1/trends")

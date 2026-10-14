@@ -1,10 +1,17 @@
 ﻿import json
-from eventregistry.Base import *
-from eventregistry.ReturnInfo import *
-from eventregistry.Query import *
-from eventregistry.Logger import logger
+import datetime
+from eventregistry.Query import ComplexMentionQuery
+from eventregistry.Base import IterableQuery, Query, QueryItems, QueryParamsBase, QueryResultsIter
+from eventregistry.Exceptions import QueryError
+from eventregistry.ReturnInfo import ReturnInfo
 from eventregistry.EventRegistry import EventRegistry
 from typing import Union, List
+
+# the names exported by "from eventregistry import *"
+__all__ = ["QueryMentions", "QueryMentionsIter", "RequestMentions", "RequestMentionsInfo", "RequestMentionsUriWgtList",
+           "RequestMentionsTimeAggr", "RequestMentionsConceptAggr", "RequestMentionsCategoryAggr",
+           "RequestMentionsSourceAggr", "RequestMentionsKeywordAggr", "RequestMentionsEventTypeAggr",
+           "RequestMentionsRecentActivity"]
 
 
 class QueryMentions(Query):
@@ -52,80 +59,79 @@ class QueryMentions(Query):
         The resulting mentions (objects, containing sentence, article information, mentioned entities, etc.) have to match all specified conditions.
         If a parameter value equals "" or [], then it is ignored.
         In order for query to be valid, it has to have at least one positive condition (condition that does not start with ignore*).
-        @param eventTypeUri: find mentions that express a certain type of a relation.
-            A single event type can be provided as a string, multiple event types can be provided as a list of strings.
-            Since each mention can only have one event type, if multiple event types are provided, an *or* condition is used between them.
-        @param keywords: find mentions that mention the specified keywords.
-            A single keyword/phrase can be provided as a string, multiple keywords/phrases can be provided as a list of strings.
-            Use QueryItems.AND() if *all* provided keywords/phrases should be mentioned, or QueryItems.OR() if *any* of the keywords/phrases should be mentioned.
-            or QueryItems.OR() to specify a list of keywords where any of the keywords have to appear
-        @param conceptUri: find mentions where the concept with concept uri is mentioned.
-            A single concept uri can be provided as a string, multiple concept uris can be provided as a list of strings.
-            Use QueryItems.AND() if *all* provided concepts should be mentioned, or QueryItems.OR() if *any* of the concepts should be mentioned.
-            To obtain a concept uri using a concept label use EventRegistry.getConceptUri().
-        @param categoryUri: find mentions that are assigned into a particular category.
-            A single category can be provided as a string, while multiple categories can be provided as a list in QueryItems.AND() or QueryItems.OR().
-            A category uri can be obtained from a category name using EventRegistry.getCategoryUri().
-        @param sourceUri: find mentions that were written by a news source sourceUri.
-            If multiple sources should be considered use QueryItems.OR() to provide the list of sources.
-            Source uri for a given news source name can be obtained using EventRegistry.getNewsSourceUri().
-        @param sourceLocationUri: find mentions that were written by news sources located in the given geographic location.
-            If multiple source locations are provided, then put them into a list inside QueryItems.OR().
-            Location uri can either be a city or a country. Location uri for a given name can be obtained using EventRegistry.getLocationUri().
-        @param sourceGroupUri: find mentions that were written by news sources that are assigned to the specified source group.
-            If multiple source groups are provided, then put them into a list inside QueryItems.OR().
-            Source group uri for a given name can be obtained using EventRegistry.getSourceGroupUri().
-        @param industryUri: find mentions that relate to companies in a certain industry.
-            A single industry can be provided as a string, while multiple industries can be provided as a list in QueryItems.AND() or QueryItems.OR().
-            Industry uri for a given industry name can be obtained using EventRegistry.suggestIndustries().
-        @param sdgUri: find mentions that are about event types that are associated with a particular SDG.
-            If multiple SDGs are provided, then put them into a list inside QueryItems.OR().
-            SDG uri for a given SDG can be obtained using EventRegistry.getSdgUris().
-        @param sasbUri: find mentions that are about event types that are associated with a particular SASB category.
-            If multiple SASB categories are provided, then put them into a list inside QueryItems.OR().
-            SASB uri for a given SASB category can be obtained using EventRegistry.getSasbUris().
-        @param esgUri: find mentions that are about event types that are associated with a particular ESG category.
-            If multiple ESGs are provided, then put them into a list inside QueryItems.OR().
-            Possible values are "esg/environment", "esg/social", "esg/governance".
-        @param locationUri: find mentions that describe something that occurred at a particular location.
-            If value can be a string or a list of strings provided in QueryItems.OR().
-            Location uri can either be a city or a country. Location uri for a given name can be obtained using EventRegistry.getLocationUri().
-        @param lang: find mentions that are written in the specified language.
-            If more than one language is specified, resulting mentions has to be written in *any* of the languages.
-        @param dateStart: find mentions that were written on or after dateStart. Date should be provided in YYYY-MM-DD format, datetime.time or datetime.datetime.
-        @param dateEnd: find mentions that occurred before or on dateEnd. Date should be provided in YYYY-MM-DD format, datetime.time or datetime.datetime.
-        @param dateMentionStart: find mentions that explicitly mention a date that is equal or greater than dateMentionStart.
-        @param dateMentionEnd: find mentions that explicitly mention a date that is lower or equal to dateMentionEnd.
-        @param keywordsLoc: where should we look when searching using the keywords provided by "keywords" parameter. "body" (default), "title", or "body,title"
 
-        @param ignoreEventTypeUri: ignore mentions that belong to certain event types
-        @param ignoreKeywords: ignore mentions that mention all provided keywords
-        @param ignoreConceptUri: ignore mentions that mention all provided concepts
-        @param ignoreCategoryUri: ignore mentions that are assigned to a particular category
-        @param ignoreSourceUri: ignore mentions that have been written by *any* of the specified news sources
-        @param ignoreSourceLocationUri: ignore mentions that have been written by sources located at *any* of the specified locations
-        @param ignoreSourceGroupUri: ignore mentions that have been written by sources in *any* of the specified source groups
-        @param ignoreIndustryUri: ignore mentions that refer to companies in any of the provided industries
-        @param ignoreSdgUri: ignore mentions that are about event types that are associated with a particular SDG.
-        @param ignoreSasbUri: ignore mentions that are about event types that are associated with a particular SASB category.
-        @param ignoreEsgUri: ignore mentions that are about event types that are associated with a particular ESG.
-        @param ignoreLocationUri: ignore mentions that occurred in any of the provided locations. A location can be a city or a place
-        @param ignoreLang: ignore mentions that are written in *any* of the provided languages
-
-        @param showDuplicates: should we show return duplicate mentions? (default: False)
-        @param startSourceRankPercentile: starting percentile of the sources to consider in the results (default: 0). Value should be in range 0-90 and divisible by 10.
-        @param endSourceRankPercentile: ending percentile of the sources to consider in the results (default: 100). Value should be in range 10-100 and divisible by 10.
-        @param minSentiment: minimum value of the sentiment, that the returned mentions should have. Range [-1, 1]. Note: setting the value will remove all mentions that don't have
+        Args:
+            eventTypeUri: find mentions that express a certain type of a relation.
+                A single event type can be provided as a string, multiple event types can be provided as a list of strings.
+                Since each mention can only have one event type, if multiple event types are provided, an *or* condition is used between them.
+            keywords: find mentions that mention the specified keywords.
+                A single keyword/phrase can be provided as a string, multiple keywords/phrases can be provided as a list of strings.
+                Use QueryItems.AND() if *all* provided keywords/phrases should be mentioned, or QueryItems.OR() if *any* of the keywords/phrases should be mentioned.
+                or QueryItems.OR() to specify a list of keywords where any of the keywords have to appear
+            conceptUri: find mentions where the concept with concept uri is mentioned.
+                A single concept uri can be provided as a string, multiple concept uris can be provided as a list of strings.
+                Use QueryItems.AND() if *all* provided concepts should be mentioned, or QueryItems.OR() if *any* of the concepts should be mentioned.
+                To obtain a concept uri using a concept label use EventRegistry.getConceptUri().
+            categoryUri: find mentions that are assigned into a particular category.
+                A single category can be provided as a string, while multiple categories can be provided as a list in QueryItems.AND() or QueryItems.OR().
+                A category uri can be obtained from a category name using EventRegistry.getCategoryUri().
+            sourceUri: find mentions that were written by a news source sourceUri.
+                If multiple sources should be considered use QueryItems.OR() to provide the list of sources.
+                Source uri for a given news source name can be obtained using EventRegistry.getNewsSourceUri().
+            sourceLocationUri: find mentions that were written by news sources located in the given geographic location.
+                If multiple source locations are provided, then put them into a list inside QueryItems.OR().
+                Location uri can either be a city or a country. Location uri for a given name can be obtained using EventRegistry.getLocationUri().
+            sourceGroupUri: find mentions that were written by news sources that are assigned to the specified source group.
+                If multiple source groups are provided, then put them into a list inside QueryItems.OR().
+                Source group uri for a given name can be obtained using EventRegistry.getSourceGroupUri().
+            industryUri: find mentions that relate to companies in a certain industry.
+                A single industry can be provided as a string, while multiple industries can be provided as a list in QueryItems.AND() or QueryItems.OR().
+                Industry uri for a given industry name can be obtained using EventRegistry.suggestIndustries().
+            sdgUri: find mentions that are about event types that are associated with a particular SDG.
+                If multiple SDGs are provided, then put them into a list inside QueryItems.OR().
+                SDG uri for a given SDG can be obtained using EventRegistry.getSdgUris().
+            sasbUri: find mentions that are about event types that are associated with a particular SASB category.
+                If multiple SASB categories are provided, then put them into a list inside QueryItems.OR().
+                SASB uri for a given SASB category can be obtained using EventRegistry.getSasbUris().
+            esgUri: find mentions that are about event types that are associated with a particular ESG category.
+                If multiple ESGs are provided, then put them into a list inside QueryItems.OR().
+                Possible values are "esg/environment", "esg/social", "esg/governance".
+            locationUri: find mentions that describe something that occurred at a particular location.
+                If value can be a string or a list of strings provided in QueryItems.OR().
+                Location uri can either be a city or a country. Location uri for a given name can be obtained using EventRegistry.getLocationUri().
+            lang: find mentions that are written in the specified language.
+                If more than one language is specified, resulting mentions has to be written in *any* of the languages.
+            dateStart: find mentions that were written on or after dateStart. Date should be provided in YYYY-MM-DD format, datetime.time or datetime.datetime.
+            dateEnd: find mentions that occurred before or on dateEnd. Date should be provided in YYYY-MM-DD format, datetime.time or datetime.datetime.
+            dateMentionStart: find mentions that explicitly mention a date that is equal or greater than dateMentionStart.
+            dateMentionEnd: find mentions that explicitly mention a date that is lower or equal to dateMentionEnd.
+            keywordsLoc: where should we look when searching using the keywords provided by "keywords" parameter. "body" (default), "title", or "body,title"
+            ignoreEventTypeUri: ignore mentions that belong to certain event types
+            ignoreKeywords: ignore mentions that mention all provided keywords
+            ignoreConceptUri: ignore mentions that mention all provided concepts
+            ignoreCategoryUri: ignore mentions that are assigned to a particular category
+            ignoreSourceUri: ignore mentions that have been written by *any* of the specified news sources
+            ignoreSourceLocationUri: ignore mentions that have been written by sources located at *any* of the specified locations
+            ignoreSourceGroupUri: ignore mentions that have been written by sources in *any* of the specified source groups
+            ignoreIndustryUri: ignore mentions that refer to companies in any of the provided industries
+            ignoreSdgUri: ignore mentions that are about event types that are associated with a particular SDG.
+            ignoreSasbUri: ignore mentions that are about event types that are associated with a particular SASB category.
+            ignoreEsgUri: ignore mentions that are about event types that are associated with a particular ESG.
+            ignoreLocationUri: ignore mentions that occurred in any of the provided locations. A location can be a city or a place
+            ignoreLang: ignore mentions that are written in *any* of the provided languages
+            showDuplicates: should we show return duplicate mentions? (default: False)
+            startSourceRankPercentile: starting percentile of the sources to consider in the results (default: 0). Value should be in range 0-90 and divisible by 10.
+            endSourceRankPercentile: ending percentile of the sources to consider in the results (default: 100). Value should be in range 10-100 and divisible by 10.
+            minSentiment: minimum value of the sentiment, that the returned mentions should have. Range [-1, 1]. Note: setting the value will remove all mentions that don't have
                 a computed value for the sentiment (all non-English mentions)
-        @param maxSentiment: maximum value of the sentiment, that the returned mentions should have. Range [-1, 1]. Note: setting the value will remove all mentions that don't have
+            maxSentiment: maximum value of the sentiment, that the returned mentions should have. Range [-1, 1]. Note: setting the value will remove all mentions that don't have
                 a computed value for the sentiment (all non-English mentions)
-        @param minSentenceIndex: what should be the minimum index of the sentence in the article in order to be included in the results.
-        @param maxSentenceIndex: what should be the maximum index of the sentence in the article in order to be included in the results.
-        @param showDuplicates: include duplicate mentions in the results. By default, duplicates are removed.
-
-        @param requestedResult: the information to return as the result of the query. By default return the list of matching mentions
+            minSentenceIndex: what should be the minimum index of the sentence in the article in order to be included in the results.
+            maxSentenceIndex: what should be the maximum index of the sentence in the article in order to be included in the results.
+            showDuplicates: include duplicate mentions in the results. By default, duplicates are removed.
+            requestedResult: the information to return as the result of the query. By default return the list of matching mentions
         """
-        super(QueryMentions, self).__init__()
+        super().__init__()
         self._setVal("action", "getMentions")
 
         self._setQueryArrVal(eventTypeUri, "eventTypeUri", None, "or")
@@ -241,13 +247,19 @@ class QueryMentions(Query):
 
 
     @staticmethod
-    def initWithComplexQuery(query: Union[str, dict]):
+    def initWithComplexQuery(query: Union[ComplexMentionQuery, str, dict]):
         """
         create a query using a complex mention query
+
+        Args:
+            query: complex query as ComplexMentionQuery instance, string or a python dict
         """
         q = QueryMentions()
+        # provided an instance of ComplexMentionQuery
+        if isinstance(query, ComplexMentionQuery):
+            q._setVal("query", json.dumps(query.getQuery()))
         # provided query as a string containing the json object
-        if isinstance(query, str):
+        elif isinstance(query, str):
             try:
                 json.loads(query)
             except ValueError:
@@ -257,12 +269,12 @@ class QueryMentions(Query):
         elif isinstance(query, dict):
             q._setVal("query", json.dumps(query))
         else:
-            raise TypeError("The instance of query parameter was not a string or a python dict")
+            raise TypeError("The instance of query parameter was not a ComplexMentionQuery, a string or a python dict")
         return q
 
 
 
-class QueryMentionsIter(QueryMentions):
+class QueryMentionsIter(IterableQuery, QueryMentions):
     """
     class that simplifies and combines functionality from QueryMentions and RequestMentionsInfo. It provides an iterator
     over the list of mentions that match the specified conditions
@@ -271,54 +283,49 @@ class QueryMentionsIter(QueryMentions):
         """
         return the number of mentions that match the criteria
         """
-        # remember the currently requested result type so that calling count() does not change the query
-        prevResultTypeList = self.resultTypeList
-        self.setRequestedResult(RequestMentionsInfo())
-        res = eventRegistry.execQuery(self)
-        self.resultTypeList = prevResultTypeList
+        # use a copy of the query so that calling count() does not change the requested results of the query
+        res = eventRegistry.execQuery(self._copyWithRequest(RequestMentionsInfo()))
         if "error" in res:
-            logger.error(res["error"])
-        count = res.get("mentions", {}).get("totalResults", 0)
-        return count
+            raise QueryError(str(res["error"]), statusCode = 200, responseText = str(res["error"]))
+        return res.get("mentions", {}).get("totalResults", 0)
 
 
     def execQuery(self, eventRegistry: EventRegistry,
                   sortBy: str = "rel",
                   sortByAsc: bool = False,
                   returnInfo: Union[ReturnInfo, None] = None,
-                  maxItems: int = -1,
-                  **kwargs):
+                  maxItems: int = -1) -> QueryResultsIter:
         """
-        @param eventRegistry: instance of EventRegistry class. used to query new mention list and uris
-        @param sortBy: how are mentions sorted. Options: date (publishing date), rel (relevance to the query), sourceImportance (manually curated score of source importance - high value, high importance), sourceImportanceRank (reverse of sourceImportance), sourceAlexaGlobalRank (global rank of the news source), sourceAlexaCountryRank (country rank of the news source)
-        @param sortByAsc: should the results be sorted in ascending order (True) or descending (False)
-        @param returnInfo: what details should be included in the returned information
-        @param maxItems: maximum number of items to be returned. Used to stop iteration sooner than results run out
+        Args:
+            eventRegistry: instance of EventRegistry class. used to query new mention list and uris
+            sortBy: how are mentions sorted. Options: date (publishing date), rel (relevance to the query), sourceImportance (manually curated score of source importance - high value, high importance), sourceImportanceRank (reverse of sourceImportance), sourceAlexaGlobalRank (global rank of the news source), sourceAlexaCountryRank (country rank of the news source)
+            sortByAsc: should the results be sorted in ascending order (True) or descending (False)
+            returnInfo: what details should be included in the returned information
+            maxItems: maximum number of items to be returned. Used to stop iteration sooner than results run out
+
+        Returns:
+            iterator over the mentions that match the query. Each call returns a new, independent iterator and the query itself is not changed
         """
-        self._er = eventRegistry
-        self._sortBy = sortBy
-        self._sortByAsc = sortByAsc
-        self._returnInfo = returnInfo
-        self._mentionBatchSize = 100    # always download 100 - best for the user since it uses his token and we want to download as much as possible in a single search
-        self._mentionPage = 0
-        self._totalPages = None
-        # if we want to return only a subset of items:
-        self._maxItems = maxItems
-        self._currItem = 0
-        # list of cached mentions that are yet to be returned by the iterator
-        self._mentionList = []
-        return self
+        batchSize = 100    # always download 100 - best for the user since it uses his token and we want to download as much as possible in a single search
+        return self._setResultsIter(QueryResultsIter(eventRegistry, self,
+            createRequest = lambda page: RequestMentionsInfo(page = page, count = batchSize, sortBy = sortBy, sortByAsc = sortByAsc, returnInfo = returnInfo),
+            getResults = lambda res: res.get("mentions", {}),
+            maxItems = maxItems))
 
 
     @staticmethod
-    def initWithComplexQuery(query: Union[str, dict]):
+    def initWithComplexQuery(query: Union[ComplexMentionQuery, str, dict]):
         """
-        @param query: complex query as ComplexMentionQuery instance, string or a python dict
+        Args:
+            query: complex query as ComplexMentionQuery instance, string or a python dict
         """
         q = QueryMentionsIter()
 
+        # provided an instance of ComplexMentionQuery
+        if isinstance(query, ComplexMentionQuery):
+            q._setVal("query", json.dumps(query.getQuery()))
         # provided query as a string containing the json object
-        if isinstance(query, str):
+        elif isinstance(query, str):
             try:
                 json.loads(query)
             except ValueError:
@@ -328,7 +335,7 @@ class QueryMentionsIter(QueryMentions):
         elif isinstance(query, dict):
             q._setVal("query", json.dumps(query))
         else:
-            raise TypeError("The instance of query parameter was not a string or a python dict")
+            raise TypeError("The instance of query parameter was not a ComplexMentionQuery, a string or a python dict")
         return q
 
 
@@ -338,55 +345,10 @@ class QueryMentionsIter(QueryMentions):
         instead of making a query, provide a list of Mention URIs manually, and then produce the desired results on top of them
         """
         q = QueryMentionsIter()
-        if not (isinstance(uriList, list)):
+        if not (isinstance(uriList, (list, str))):
             raise TypeError("uriList has to be a list of strings that represent mention uris")
         q.queryParams = { "action": "getMentions", "mentionUri": uriList }
         return q
-
-
-    def _getNextMentionBatch(self):
-        """download next batch of mentions based on the mention uris in the uri list"""
-        # try to get more uris, if none
-        self._mentionPage += 1
-        # if we have already obtained all pages, then exit
-        if self._totalPages is not None and self._mentionPage > self._totalPages:
-            return
-        self.setRequestedResult(RequestMentionsInfo(page=self._mentionPage, count=self._mentionBatchSize,
-            sortBy=self._sortBy, sortByAsc=self._sortByAsc,
-            returnInfo = self._returnInfo))
-        if self._er._verboseOutput:
-            logger.debug("Downloading mention page %d...", self._mentionPage)
-        res = self._er.execQuery(self)
-        if "error" in res:
-            logger.error("Error while obtaining a list of mentions: %s", res["error"])
-        else:
-            self._totalPages = res.get("mentions", {}).get("pages", 0)
-        results = res.get("mentions", {}).get("results", [])
-        self._mentionList.extend(results)
-
-
-    def __iter__(self):
-        if not hasattr(self, "_er"):
-            raise RuntimeError("Iterating is only possible after calling the execQuery() method first")
-        # reset the paging state so that a new iteration starts from the first result again
-        self._mentionPage = 0
-        self._totalPages = None
-        self._currItem = 0
-        self._mentionList = []
-        return self
-
-
-    def __next__(self):
-        """iterate over the available mentions"""
-        self._currItem += 1
-        # if we want to return only the first X items, then finish once reached
-        if self._maxItems >= 0 and self._currItem > self._maxItems:
-            raise StopIteration
-        if len(self._mentionList) == 0:
-            self._getNextMentionBatch()
-        if len(self._mentionList) > 0:
-            return self._mentionList.pop(0)
-        raise StopIteration
 
 
 
@@ -408,11 +370,13 @@ class RequestMentionsInfo(RequestMentions):
                  returnInfo: Union[ReturnInfo, None] = None):
         """
         return mention details for resulting mentions
-        @param page: page of the mentions to return
-        @param count: number of mentions to return for the given page (at most 100)
-        @param sortBy: how are mentions sorted. Options: id (internal id), date (publishing date), rel (relevance to the query), sourceImportance (manually curated score of source importance - high value, high importance), sourceImportanceRank (reverse of sourceImportance), sourceAlexaGlobalRank (global rank of the news source), sourceAlexaCountryRank (country rank of the news source)
-        @param sortByAsc: should the results be sorted in ascending order (True) or descending (False)
-        @param returnInfo: what details should be included in the returned information
+
+        Args:
+            page: page of the mentions to return
+            count: number of mentions to return for the given page (at most 100)
+            sortBy: how are mentions sorted. Options: date (publishing date), rel (relevance to the query), sourceImportance (manually curated score of source importance - high value, high importance), sourceImportanceRank (reverse of sourceImportance), sourceAlexaGlobalRank (global rank of the news source), sourceAlexaCountryRank (country rank of the news source)
+            sortByAsc: should the results be sorted in ascending order (True) or descending (False)
+            returnInfo: what details should be included in the returned information
         """
         super().__init__()
         if not (page >= 1):
@@ -445,10 +409,12 @@ class RequestMentionsUriWgtList(RequestMentions):
                  sortBy: str = "fq", sortByAsc: bool = False):
         """
         return a list of mention uris together with the scores
-        @param page: page of the results (1, 2, ...)
-        @param count: number of items to return in a single query (at most 50000)
-        @param sortBy: how are mentions sorted. Options: id (internal id), date (publishing date), cosSim (closeness to the event centroid), rel (relevance to the query), sourceImportance (manually curated score of source importance - high value, high importance), sourceImportanceRank (reverse of sourceImportance), sourceAlexaGlobalRank (global rank of the news source), sourceAlexaCountryRank (country rank of the news source), socialScore (total shares on social media), facebookShares (shares on Facebook only)
-        @param sortByAsc: should the results be sorted in ascending order (True) or descending (False) according to the sortBy criteria
+
+        Args:
+            page: page of the results (1, 2, ...)
+            count: number of items to return in a single query (at most 50000)
+            sortBy: how are mentions sorted. Options: date (publishing date), cosSim (closeness to the event centroid), rel (relevance to the query), sourceImportance (manually curated score of source importance - high value, high importance), sourceImportanceRank (reverse of sourceImportance), sourceAlexaGlobalRank (global rank of the news source), sourceAlexaCountryRank (country rank of the news source)
+            sortByAsc: should the results be sorted in ascending order (True) or descending (False) according to the sortBy criteria
         """
         super().__init__()
         if not (page >= 1):
@@ -488,15 +454,17 @@ class RequestMentionsConceptAggr(RequestMentions):
                  returnInfo: Union[ReturnInfo, None] = None):
         """
         get aggreate of concepts of resulting mentions
-        @param conceptCount: number of top concepts to return (at most 500)
-        @param conceptCountPerType: if you wish to limit the number of top concepts per type (person, org, loc, wiki) then set this to some number.
-            If you want to get equal number of concepts for each type then set conceptCountPerType to conceptCount/4 (since there are 4 concept types)
-        @param conceptScoring: how should the top concepts be computed. Possible values are
-            "importance" (takes into account how frequently a concept is mentioned and how relevant it is in an mention),
-            "frequency" (ranks the concepts simply by how frequently the concept is mentioned in the results) and
-            "uniqueness" (computes what are the top concepts that are frequently mentioned in the results of your search query but less frequently mentioned in the news in general)
-        @param mentionsSampleSize: on what sample of results should the aggregate be computed (at most 20000)
-        @param returnInfo: what details about the concepts should be included in the returned information
+
+        Args:
+            conceptCount: number of top concepts to return (at most 500)
+            conceptCountPerType: if you wish to limit the number of top concepts per type (person, org, loc, wiki) then set this to some number.
+                If you want to get equal number of concepts for each type then set conceptCountPerType to conceptCount/4 (since there are 4 concept types)
+            conceptScoring: how should the top concepts be computed. Possible values are
+                "importance" (takes into account how frequently a concept is mentioned and how relevant it is in an mention),
+                "frequency" (ranks the concepts simply by how frequently the concept is mentioned in the results) and
+                "uniqueness" (computes what are the top concepts that are frequently mentioned in the results of your search query but less frequently mentioned in the news in general)
+            mentionsSampleSize: on what sample of results should the aggregate be computed (at most 20000)
+            returnInfo: what details about the concepts should be included in the returned information
         """
         super().__init__()
         if not (conceptCount <= 500):
@@ -519,8 +487,10 @@ class RequestMentionsCategoryAggr(RequestMentions):
                  returnInfo: Union[ReturnInfo, None] = None):
         """
         return aggreate of categories of resulting mentions
-        @param mentionsSampleSize: on what sample of results should the aggregate be computed (at most 50000)
-        @param returnInfo: what details about the categories should be included in the returned information
+
+        Args:
+            mentionsSampleSize: on what sample of results should the aggregate be computed (at most 50000)
+            returnInfo: what details about the categories should be included in the returned information
         """
         super().__init__()
         if not (mentionsSampleSize <= 50000):
@@ -537,8 +507,10 @@ class RequestMentionsSourceAggr(RequestMentions):
                  returnInfo: Union[ReturnInfo, None] = None):
         """
         get aggreate of news sources of resulting mentions
-        @param sourceCount: the number of top sources to return
-        @param returnInfo: what details about the sources should be included in the returned information
+
+        Args:
+            sourceCount: the number of top sources to return
+            returnInfo: what details about the sources should be included in the returned information
         """
         super().__init__()
         self.resultType = "sourceAggr"
@@ -551,7 +523,9 @@ class RequestMentionsKeywordAggr(RequestMentions):
                  mentionsSampleSize: int = 2000):
         """
         get top keywords in the resulting mentions
-        @param mentionsSampleSize: on what sample of results should the aggregate be computed (at most 20000)
+
+        Args:
+            mentionsSampleSize: on what sample of results should the aggregate be computed (at most 20000)
         """
         super().__init__()
         if not (mentionsSampleSize <= 20000):
@@ -561,33 +535,23 @@ class RequestMentionsKeywordAggr(RequestMentions):
 
 
 
-class RequestMentionsConceptGraph(RequestMentions):
+class RequestMentionsEventTypeAggr(RequestMentions):
     def __init__(self,
-                 conceptCount: int = 25,
-                 linkCount: int = 50,
-                 mentionsSampleSize: int = 10000,
-                 skipQueryConcepts: bool = True,
+                 mentionsSampleSize: int = 100000,
                  returnInfo: Union[ReturnInfo, None] = None):
         """
-        get concept graph of resulting mentions. Identify concepts that frequently co-occur with other concepts
-        @param conceptCount: how many concepts should be returned (at most 1000)
-        @param linkCount: how many top links between the concepts should be returned (at most 2000)
-        @param mentionsSampleSize: on what sample of results should the aggregate be computed (at most 50000)
-        @param returnInfo: what details about the concepts should be included in the returned information
+        return the event types of the resulting mentions, with the number of mentions of each event type
+
+        Args:
+            mentionsSampleSize: on what sample of results should the aggregate be computed (at most 300000)
+            returnInfo: what details about the event types should be included in the returned information
         """
         super().__init__()
-        if not (conceptCount <= 1000):
-            raise ValueError("conceptCount should be at most 1000")
-        if not (linkCount <= 2000):
-            raise ValueError("linkCount should be at most 2000")
-        if not (mentionsSampleSize <= 50000):
-            raise ValueError("mentionsSampleSize should be at most 50000")
-        self.resultType = "conceptGraph"
-        self.conceptGraphConceptCount = conceptCount
-        self.conceptGraphLinkCount = linkCount
-        self.conceptGraphSampleSize = mentionsSampleSize
-        self.conceptGraphSkipQueryConcepts = skipQueryConcepts
-        self.__dict__.update((returnInfo if returnInfo is not None else ReturnInfo()).getParams("conceptGraph"))
+        if not (mentionsSampleSize <= 300000):
+            raise ValueError("mentionsSampleSize should be at most 300000")
+        self.resultType = "eventTypeAggr"
+        self.eventTypeAggrSampleSize = mentionsSampleSize
+        self.__dict__.update((returnInfo if returnInfo is not None else ReturnInfo()).getParams("eventTypeAggr"))
 
 
 
@@ -603,14 +567,16 @@ class RequestMentionsRecentActivity(RequestMentions):
                  returnInfo: Union[ReturnInfo, None] = None):
         """
         get the list of mentions that were recently added to the Event Registry and match the selected criteria
-        @param maxMentionCount: the maximum number of mentions to return in the call (the number can be even higher than 100 but in case more mentions
-            are returned, the call will also use more tokens)
-        @param updatesAfterTm: the time after which the mentions were added (returned by previous call to the same method)
-        @param updatesAfterMinsAgo: how many minutes into the past should we check (set either this or updatesAfterTm property, but not both)
-        @param updatesUntilTm: what is the latest time when the mentions were added (in case you don't want the most recent mentions)
-        @param updatesUntilMinsAgo: how many minutes ago was the latest time when the mentions were added
-        @param mandatorySourceLocation: return only mentions for which we know the source's geographic location
-        @param returnInfo: what details should be included in the returned information
+
+        Args:
+            maxMentionCount: the maximum number of mentions to return in the call (the number can be even higher than 100 but in case more mentions
+                are returned, the call will also use more tokens)
+            updatesAfterTm: the time after which the mentions were added (returned by previous call to the same method)
+            updatesAfterMinsAgo: how many minutes into the past should we check (set either this or updatesAfterTm property, but not both)
+            updatesUntilTm: what is the latest time when the mentions were added (in case you don't want the most recent mentions)
+            updatesUntilMinsAgo: how many minutes ago was the latest time when the mentions were added
+            mandatorySourceLocation: return only mentions for which we know the source's geographic location
+            returnInfo: what details should be included in the returned information
         """
         super().__init__()
         if not (maxMentionCount <= 2000):

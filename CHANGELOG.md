@@ -1,5 +1,57 @@
 # Change Log
 
+## [v11.0]() (2026-10-14)
+
+See the [migration guide](https://github.com/EventRegistry/event-registry-python/wiki/Migration-guide) for how to update your code.
+
+**Breaking changes**
+- the package requires Python 3.9 or newer.
+- removed `GetTopSharedArticles` and `GetTopSharedEvents` (the `DailyShares` module). The data about the shares on social media is no longer collected and the server ignores sorting by the social score, so they only returned the content of the given day in no particular order.
+- removed the `RequestMentionsConceptGraph` result type. It was never supported by the server (the request returned an `unrecognized resultType` error).
+- `from eventregistry import *` now imports only the public classes, functions and constants of the package (each module defines `__all__`). Before, it also imported the modules that the package uses itself (`datetime`, `json`, `os`, `time`, `re`, `requests`, ...), which could overwrite names in your code (for example `datetime` imported with `from datetime import datetime`). Scripts that relied on getting these modules from the package have to import them themselves, e.g. `import datetime`.
+- the iterator classes (`QueryArticlesIter`, `QueryEventsIter`, `QueryMentionsIter`, `QueryEventArticlesIter`) raise a `QueryError` when the server returns an error, both while iterating and in `count()`. Before, the error was only logged and the iteration ended as if there were no (more) results, and `count()` returned 0.
+- `execQuery()` of the iterator classes no longer accepts arbitrary keyword arguments - they were silently ignored, so a misspelled argument (e.g. `sortby`) had no effect. `RequestEventArticles` no longer accepts them either. A misspelled argument now raises a `TypeError`.
+- the `*InfoFlags` classes raise a `TypeError` for an argument that differs from a known one only in the letter case (e.g. `bodylen`) and log a warning for other unknown arguments (they are still sent to the server), except for the full names of the API parameters (starting with `include`).
+- the package no longer configures the logging: it does not add a handler to the `eventregistry` logger and ignores the `LOGLEVEL` environment variable. Warnings and errors are still printed by default; use the `logging` module to change the level or the output.
+- datetimes with a timezone are sent as UTC without the offset (`2026-10-02T04:30:00` instead of `2026-10-02T04:30:00+00:00`).
+
+**Changed**
+- `execQuery()` of the iterator classes returns a separate iterator object (`QueryResultsIter`) instead of the query itself. The query is not changed by iterating, so it can be executed again or iterated several times at once. Iterating over the query object after calling `execQuery()` still works.
+- the sort options `socialScore`, `facebookShares`, `twitterShares` and `id` were removed from the documentation, since the server ignores them (the data about the shares on social media is no longer collected): with `socialScore` and `facebookShares` the results are returned unsorted, with the other two they are sorted by date. A warning is logged when one of them is used.
+- the docstrings were converted from the epydoc format (`@param name:`) to the Google style (`Args:` / `Returns:`), which IDEs and documentation tools understand.
+- the examples in `eventregistry/examples` are now functions that can be run individually (`python QueryArticlesExamples.py` lists them, `python QueryArticlesExamples.py <name>` runs one). Running or importing an example file no longer makes any requests by itself. `examples/QueryMentions.py` was renamed to `QueryMentionsExamples.py`.
+- packaging moved to `pyproject.toml`; the tests are run and the API reference is built by GitHub Actions. The tests that make requests to the live API are no longer part of the repository - it contains the tests that run without an API key.
+- `EventRegistry.execQuery()` has a new `raiseOnError` parameter: if True, a `QueryError` is raised when the server returns an error.
+- failed requests now raise typed exceptions that derive from the new `EventRegistryError` (and still from `Exception`): `NoDataError` (204), `InvalidRequestError` (400 and other 4xx), `UnauthorizedError` (401) and `ForbiddenError` (403) (both `AccessError`), `RateLimitError` (429), `ServerError` (5xx), `InvalidResponseError` (invalid json) and `NetworkError` (connection problems and timeouts). The exceptions carry `statusCode`, `responseText`, `url` and `retryAfter`.
+- the default `repeatFailedRequestCount` changed from -1 (repeat indefinitely) to 3. Use -1 to get the old behavior.
+- only temporary errors (429, 5xx, invalid json, connection problems, timeouts) are repeated. Before, every status code except 204, 400, 401 and 403 was repeated, e.g. 404 and 422. Requests rejected with 429 (too many simultaneous requests) are repeated until they succeed, regardless of `repeatFailedRequestCount`, so an iteration over the results is not interrupted by them.
+- the delay before repeating a request grows exponentially (2, 4, 8, ... seconds, at most 60) instead of a fixed 5 seconds, and follows the server's `Retry-After` header when present. There is no more delay after the last failed attempt.
+- the requests of other threads are no longer blocked while a failed request waits to be repeated.
+- `jsonRequest()` and `jsonRequestAnalytics()` share the same request code, so analytics requests now also raise the typed exceptions.
+
+**Fixed**
+- wrong type hints: the `suggest*()` methods return a list (not a dict), `jsonRequest()` can return a list or a dict, and the `sourceLocationUri`, `sourceGroupUri` and `authorUri` parameters of `BaseQuery` accept a string or `QueryItems` (a plain list was annotated, but raises a `TypeError`). The package now passes `mypy`.
+- `QueryMentions.initWithComplexQuery()` and `QueryMentionsIter.initWithComplexQuery()` rejected a `ComplexMentionQuery` instance (only a dict or a JSON string worked), and `QueryMentionsIter.initWithMentionUriList()` rejected a single uri given as a string.
+- `QueryEvents` sent the keywords to ignore as `ignoreKeywords` instead of `ignoreKeyword`, the name used by the article and mention queries.
+- `QueryEventArticlesIter` replaced the `QueryItems.OR()` / `QueryItems.AND()` operators of the conditions (concepts, categories, sources, authors) with the default ones when requesting the articles, and logged a wrong warning about a list used without an operator.
+- `import eventregistry` failed with `ValueError: Unknown level` when the `LOGLEVEL` environment variable was set to a lowercase value.
+- `TopicPage.getArticles()` and `getEvents()` raised a `KeyError` after `loadTopicPageFromDefinition()` or `loadTopicPageFromFile()` with a definition that did not contain all the properties. The definition is now merged with the default values.
+- an empty list (or an empty `QueryItems`) given as a condition was sent to the server instead of being ignored.
+- `encodeDate()` used the local date of a datetime with a timezone instead of its date in UTC, and `encodeDateTime()` rejected strings with `Z` or a timezone offset.
+- with `verboseOutput=True` the API key (and the credentials in a `proxyUrl`) were written to the log. They are now masked.
+
+**Added**
+- new result types for article searches: `RequestArticlesLangAggr` (number of articles per language), `RequestArticlesSentimentAggr` (distribution of the sentiment), `RequestArticlesAuthorAggr` (top authors), `RequestArticlesLocAggr` (locations of the reported events) and `RequestArticlesSourceExAggr` (top sources with their article counts over time).
+- new result types for event searches: `RequestEventsSentimentAggr` and `RequestEventsAuthorAggr`.
+- new result type for mention searches: `RequestMentionsEventTypeAggr` (the event types of the mentions with their counts).
+- `TopicPage.getArticles()` and `getEvents()` have the new parameters `uri` (get the content of a topic page saved in your account without loading its definition), `onlyAfterTm` (only the content added after the given time - useful for polling for new content) and `maxDaysBack`.
+- `GetRecentArticles` and `GetRecentEvents` accept the conditions as named parameters (`keywords`, `conceptUri`, `categoryUri`, `sourceUri`, `sourceLocationUri`, `sourceGroupUri`, `authorUri`, `locationUri`, `lang`, ...), together with `maxArticleCount` / `maxEventCount`, `updatesAfterMinsAgo` and `updatesAfterTm`. Before, they could only be passed as raw API parameters.
+- the API key can be provided with the `EVENTREGISTRY_API_KEY` environment variable. It is used when the `apiKey` argument is not given, before looking into the settings file.
+- `BaseQuery` (used in `ComplexArticleQuery`, `ComplexEventQuery` and `ComplexMentionQuery`) has the `keywordSearchMode` parameter.
+- the package is distributed with type information (`py.typed`), so type checkers use its type hints.
+- an API reference generated from the docstrings: https://eventregistry.github.io/event-registry-python/
+- `repr()` of a query shows its parameters and requested result types, e.g. `QueryArticles(action='getArticles', keyword='Tesla', resultType=['articles'])`.
+
 ## [v10.0]() (2026-09-03)
 
 **Breaking changes**

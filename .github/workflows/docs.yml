@@ -1,0 +1,61 @@
+name: API reference
+
+# builds the API reference from the docstrings with pdoc and publishes it to GitHub Pages
+# (https://eventregistry.github.io/event-registry-python/). In the repository settings, Pages has to be enabled
+# with "GitHub Actions" as the source.
+
+on:
+  push:
+    branches: [master]
+    paths:
+      - "eventregistry/*.py"
+      - ".github/workflows/docs.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.13"
+
+      - name: Install the package and pdoc
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e . pdoc
+
+      - name: Build the API reference
+        # pdoc documents the package and the modules whose names are in the package's __all__ (the modules named like
+        # their main class). The other modules are listed explicitly
+        run: >
+          python -m pdoc -d google -o site
+          eventregistry
+          eventregistry.Base eventregistry.Counts eventregistry.EventForText
+          eventregistry.Exceptions eventregistry.Info eventregistry.Recent eventregistry.Trends
+
+      - uses: actions/upload-pages-artifact@v5
+        with:
+          path: site
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v5

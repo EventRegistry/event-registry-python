@@ -1,11 +1,15 @@
 ﻿import json
-from eventregistry.Base import *
-from eventregistry.ReturnInfo import *
-from eventregistry.QueryArticles import QueryArticles, RequestArticlesInfo
-from eventregistry.Query import *
-from eventregistry.Logger import logger
+import datetime
+from eventregistry.Base import IterableQuery, Query, QueryItems, QueryParamsBase, QueryResultsIter
+from eventregistry.Exceptions import QueryError
+from eventregistry.ReturnInfo import ArticleInfoFlags, ReturnInfo
 from eventregistry.EventRegistry import EventRegistry
 from typing import Union, List, Literal
+
+# the names exported by "from eventregistry import *"
+__all__ = ["QueryEvent", "QueryEventArticlesIter", "RequestEvent", "RequestEventInfo", "RequestEventArticles",
+           "RequestEventArticleUriWgts", "RequestEventKeywordAggr", "RequestEventSourceAggr",
+           "RequestEventDateMentionAggr", "RequestEventArticleTrend", "RequestEventSimilarEvents"]
 
 
 class QueryEvent(Query):
@@ -16,10 +20,11 @@ class QueryEvent(Query):
                  eventUriOrList: Union[str, List[str]],
                  requestedResult: Union["RequestEvent", None] = None):
         """
-        @param eventUriOrUriList: a single event uri or a list of event uris (max 50)
-        @param requestedResult: the information to return as the result of the query. By default return the details of the event
+        Args:
+            eventUriOrUriList: a single event uri or a list of event uris (max 50)
+            requestedResult: the information to return as the result of the query. By default return the details of the event
         """
-        super(QueryEvent, self).__init__()
+        super().__init__()
         self._setVal("action", "getEvent")
         self._setVal("eventUri", eventUriOrList)
         self.setRequestedResult(requestedResult or RequestEventInfo())
@@ -40,7 +45,7 @@ class QueryEvent(Query):
 
 
 
-class QueryEventArticlesIter(QueryEvent):
+class QueryEventArticlesIter(IterableQuery, QueryEvent):
     """
     Class for obtaining an iterator over all articles in the event
     """
@@ -66,51 +71,50 @@ class QueryEventArticlesIter(QueryEvent):
                 minSentiment: float = -1,
                 maxSentiment: float = 1):
         """
-        @param eventUri: a single event for which we want to obtain the list of articles in it
-        @param lang: find articles that are written in the specified language.
-            If more than one language is specified, resulting articles has to be written in *any* of the languages.
-        @param keywords: limit the event articles to those that mention the specified keywords.
-            A single keyword/phrase can be provided as a string, multiple keywords/phrases can be provided as a list of strings.
-            Use QueryItems.AND() if *all* provided keywords/phrases should be mentioned, or QueryItems.OR() if *any* of the keywords/phrases should be mentioned.
-            or QueryItems.OR() to specify a list of keywords where any of the keywords have to appear
-        @param conceptUri: limit the event articles to those where the concept with concept uri is mentioned.
-            A single concept uri can be provided as a string, multiple concept uris can be provided as a list of strings.
-            Use QueryItems.AND() if *all* provided concepts should be mentioned, or QueryItems.OR() if *any* of the concepts should be mentioned.
-            To obtain a concept uri using a concept label use EventRegistry.getConceptUri().
-        @param categoryUri: limit the event articles to those that are assigned into a particular category.
-            A single category can be provided as a string, while multiple categories can be provided as a list in QueryItems.AND() or QueryItems.OR().
-            A category uri can be obtained from a category name using EventRegistry.getCategoryUri().
-        @param sourceUri: limit the event articles to those that were written by a news source sourceUri.
-            If multiple sources should be considered use QueryItems.OR() to provide the list of sources.
-            Source uri for a given news source name can be obtained using EventRegistry.getNewsSourceUri().
-        @param sourceLocationUri: limit the event articles to those that were written by news sources located in the given geographic location.
-            If multiple source locations are provided, then put them into a list inside QueryItems.OR()
-            Location uri can either be a city or a country. Location uri for a given name can be obtained using EventRegistry.getLocationUri().
-        @param sourceGroupUri: limit the event articles to those that were written by news sources that are assigned to the specified source group.
-            If multiple source groups are provided, then put them into a list inside QueryItems.OR()
-            Source group uri for a given name can be obtained using EventRegistry.getSourceGroupUri().
-        @param authorUri: find articles that were written by a specific author.
-            If multiple authors should be considered use QueryItems.OR() to provide the list of authors.
-            Author uri for a given author name can be obtained using EventRegistry.getAuthorUri().
-        @param locationUri: find articles that describe something that occurred at a particular location.
-            If value can be a string or a list of strings provided in QueryItems.OR().
-            Location uri can either be a city or a country. Location uri for a given name can be obtained using EventRegistry.getLocationUri().
-        @param dateStart: find articles that were written on or after dateStart. Date should be provided in YYYY-MM-DD format, datetime.time or datetime.datetime.
-        @param dateEnd: find articles that occurred before or on dateEnd. Date should be provided in YYYY-MM-DD format, datetime.time or datetime.datetime.
-
-        @param dateMentionStart: limit the event articles to those that explicitly mention a date that is equal or greater than dateMentionStart.
-        @param dateMentionEnd: limit the event articles to those that explicitly mention a date that is lower or equal to dateMentionEnd.
-        @param keywordsLoc: where should we look when searching using the keywords provided by "keywords" parameter. "body" (default), "title", or "body,title"
-        @param keywordSearchMode: what search mode to use when specifying keywords. Possible values are: simple, exact, phrase
-
-        @param startSourceRankPercentile: starting percentile of the sources to consider in the results (default: 0). Value should be in range 0-90 and divisible by 10.
-        @param endSourceRankPercentile: ending percentile of the sources to consider in the results (default: 100). Value should be in range 10-100 and divisible by 10.
-        @param minSentiment: minimum value of the sentiment, that the returned articles should have. Range [-1, 1]. Note: setting the value will remove all articles that don't have
+        Args:
+            eventUri: a single event for which we want to obtain the list of articles in it
+            lang: find articles that are written in the specified language.
+                If more than one language is specified, resulting articles has to be written in *any* of the languages.
+            keywords: limit the event articles to those that mention the specified keywords.
+                A single keyword/phrase can be provided as a string, multiple keywords/phrases can be provided as a list of strings.
+                Use QueryItems.AND() if *all* provided keywords/phrases should be mentioned, or QueryItems.OR() if *any* of the keywords/phrases should be mentioned.
+                or QueryItems.OR() to specify a list of keywords where any of the keywords have to appear
+            conceptUri: limit the event articles to those where the concept with concept uri is mentioned.
+                A single concept uri can be provided as a string, multiple concept uris can be provided as a list of strings.
+                Use QueryItems.AND() if *all* provided concepts should be mentioned, or QueryItems.OR() if *any* of the concepts should be mentioned.
+                To obtain a concept uri using a concept label use EventRegistry.getConceptUri().
+            categoryUri: limit the event articles to those that are assigned into a particular category.
+                A single category can be provided as a string, while multiple categories can be provided as a list in QueryItems.AND() or QueryItems.OR().
+                A category uri can be obtained from a category name using EventRegistry.getCategoryUri().
+            sourceUri: limit the event articles to those that were written by a news source sourceUri.
+                If multiple sources should be considered use QueryItems.OR() to provide the list of sources.
+                Source uri for a given news source name can be obtained using EventRegistry.getNewsSourceUri().
+            sourceLocationUri: limit the event articles to those that were written by news sources located in the given geographic location.
+                If multiple source locations are provided, then put them into a list inside QueryItems.OR()
+                Location uri can either be a city or a country. Location uri for a given name can be obtained using EventRegistry.getLocationUri().
+            sourceGroupUri: limit the event articles to those that were written by news sources that are assigned to the specified source group.
+                If multiple source groups are provided, then put them into a list inside QueryItems.OR()
+                Source group uri for a given name can be obtained using EventRegistry.getSourceGroupUri().
+            authorUri: find articles that were written by a specific author.
+                If multiple authors should be considered use QueryItems.OR() to provide the list of authors.
+                Author uri for a given author name can be obtained using EventRegistry.getAuthorUri().
+            locationUri: find articles that describe something that occurred at a particular location.
+                If value can be a string or a list of strings provided in QueryItems.OR().
+                Location uri can either be a city or a country. Location uri for a given name can be obtained using EventRegistry.getLocationUri().
+            dateStart: find articles that were written on or after dateStart. Date should be provided in YYYY-MM-DD format, datetime.time or datetime.datetime.
+            dateEnd: find articles that occurred before or on dateEnd. Date should be provided in YYYY-MM-DD format, datetime.time or datetime.datetime.
+            dateMentionStart: limit the event articles to those that explicitly mention a date that is equal or greater than dateMentionStart.
+            dateMentionEnd: limit the event articles to those that explicitly mention a date that is lower or equal to dateMentionEnd.
+            keywordsLoc: where should we look when searching using the keywords provided by "keywords" parameter. "body" (default), "title", or "body,title"
+            keywordSearchMode: what search mode to use when specifying keywords. Possible values are: simple, exact, phrase
+            startSourceRankPercentile: starting percentile of the sources to consider in the results (default: 0). Value should be in range 0-90 and divisible by 10.
+            endSourceRankPercentile: ending percentile of the sources to consider in the results (default: 100). Value should be in range 10-100 and divisible by 10.
+            minSentiment: minimum value of the sentiment, that the returned articles should have. Range [-1, 1]. Note: setting the value will remove all articles that don't have
                 a computed value for the sentiment (all articles that are not reported in English language)
-        @param maxSentiment: maximum value of the sentiment, that the returned articles should have. Range [-1, 1]. Note: setting the value will remove all articles that don't have
+            maxSentiment: maximum value of the sentiment, that the returned articles should have. Range [-1, 1]. Note: setting the value will remove all articles that don't have
                 a computed value for the sentiment (all articles that are not reported in English language)
         """
-        super(QueryEventArticlesIter, self).__init__(eventUri)
+        super().__init__(eventUri)
         self._setQueryArrVal(keywords, "keyword", "keywordOper", "and")
         self._setQueryArrVal(conceptUri, "conceptUri", "conceptOper", "and")
         self._setQueryArrVal(categoryUri, "categoryUri", "categoryOper", "or")
@@ -162,94 +166,40 @@ class QueryEventArticlesIter(QueryEvent):
     def count(self, eventRegistry: EventRegistry):
         """
         return the number of articles that match the criteria
-        @param eventRegistry: instance of EventRegistry class. used to obtain the necessary data
+
+        Args:
+            eventRegistry: instance of EventRegistry class. used to obtain the necessary data
         """
-        # remember the currently requested result type so that calling count() does not change the query
-        prevResultTypeList = self.resultTypeList
-        self.setRequestedResult(RequestEventArticles(**self.queryParams))
-        res = eventRegistry.execQuery(self)
-        self.resultTypeList = prevResultTypeList
+        # use a copy of the query so that calling count() does not change the requested results of the query.
+        # the conditions are already in the query parameters, so the request only asks for the articles
+        res = eventRegistry.execQuery(self._copyWithRequest(RequestEventArticles()))
         if "error" in res:
-            logger.error(res["error"])
-        count = res.get(self.queryParams["eventUri"], {}).get("articles", {}).get("totalResults", 0)
-        return count
+            raise QueryError(str(res["error"]), statusCode = 200, responseText = str(res["error"]))
+        return res.get(self.queryParams["eventUri"], {}).get("articles", {}).get("totalResults", 0)
 
 
     def execQuery(self, eventRegistry: EventRegistry,
             sortBy: str = "cosSim", sortByAsc: bool = False,
             returnInfo: Union[ReturnInfo, None] = None,
-            maxItems: int = -1):
+            maxItems: int = -1) -> QueryResultsIter:
         """
-        @param eventRegistry: instance of EventRegistry class. used to obtain the necessary data
+        Args:
+            eventRegistry: instance of EventRegistry class. used to obtain the necessary data
+            sortBy: order in which event articles are sorted. Options: none (no specific sorting), date (published date), cosSim (closeness to event centroid), sourceImportance (manually curated score of source importance - high value, high importance), sourceImportanceRank (reverse of sourceImportance), sourceAlexaGlobalRank (global rank of the news source), sourceAlexaCountryRank (country rank of the news source)
+            sortByAsc: should the results be sorted in ascending order (True) or descending (False)
+            returnInfo: what details should be included in the returned information
+            maxItems: maximum number of items to be returned. Used to stop iteration sooner than results run out
 
-        @param sortBy: order in which event articles are sorted. Options: none (no specific sorting), id (internal id), date (published date), cosSim (closeness to event centroid), sourceImportance (manually curated score of source importance - high value, high importance), sourceImportanceRank (reverse of sourceImportance), sourceAlexaGlobalRank (global rank of the news source), sourceAlexaCountryRank (country rank of the news source), socialScore (total shares on social media), facebookShares (shares on Facebook only)
-        @param sortByAsc: should the results be sorted in ascending order (True) or descending (False)
-        @param returnInfo: what details should be included in the returned information
-        @param maxItems: maximum number of items to be returned. Used to stop iteration sooner than results run out
+        Returns:
+            iterator over the articles of the event that match the conditions. Each call returns a new, independent iterator and the query itself is not changed
         """
-        self._er = eventRegistry
-        self._articlePage = 0
-        self._totalPages = None
-        # if we want to return only a subset of items:
-        self._maxItems = maxItems
-        self._currItem = 0
-
-        self._articlesSortBy = sortBy
-        self._articlesSortByAsc = sortByAsc
-        self._returnInfo = returnInfo
-
-        # download the list of article uris
-        self._articleList = []
-        return self
-
-
-    def _getNextArticleBatch(self):
-        """download next batch of events based on the event uris in the uri list"""
         eventUri = self.queryParams["eventUri"]
-        # move to the next page to download
-        self._articlePage += 1
-        # if we have already obtained all pages, then exit
-        if self._totalPages is not None and self._articlePage > self._totalPages:
-            return
-        if self._er._verboseOutput:
-            logger.debug("Downloading article page %d from event %s", self._articlePage, eventUri)
-
-        self.setRequestedResult(RequestEventArticles(
-            page = self._articlePage,
-            sortBy = self._articlesSortBy, sortByAsc = self._articlesSortByAsc,
-            returnInfo = self._returnInfo,
-            **self.queryParams))
-        res = self._er.execQuery(self)
-        if "error" in res:
-            logger.error(res["error"])
-        else:
-            self._totalPages = res.get(eventUri, {}).get("articles", {}).get("pages", 0)
-        arts = res.get(eventUri, {}).get("articles", {}).get("results", [])
-        self._articleList.extend(arts)
-
-
-    def __iter__(self):
-        if not hasattr(self, "_er"):
-            raise RuntimeError("Iterating is only possible after calling the execQuery() method first")
-        # reset the paging state so that a new iteration starts from the first result again
-        self._articlePage = 0
-        self._totalPages = None
-        self._currItem = 0
-        self._articleList = []
-        return self
-
-
-    def __next__(self):
-        """iterate over the available events"""
-        self._currItem += 1
-        # if we want to return only the first X items, then finish once reached
-        if self._maxItems >= 0 and self._currItem > self._maxItems:
-            raise StopIteration
-        if len(self._articleList) == 0:
-            self._getNextArticleBatch()
-        if len(self._articleList) > 0:
-            return self._articleList.pop(0)
-        raise StopIteration
+        # the conditions (keywords, concepts, ...) are already in the query parameters. They must not be passed again
+        # to RequestEventArticles, since it would encode them again and replace their operators with the default ones
+        return self._setResultsIter(QueryResultsIter(eventRegistry, self,
+            createRequest = lambda page: RequestEventArticles(page = page, sortBy = sortBy, sortByAsc = sortByAsc, returnInfo = returnInfo),
+            getResults = lambda res: res.get(eventUri, {}).get("articles", {}),
+            maxItems = maxItems))
 
 
 
@@ -298,55 +248,52 @@ class RequestEventArticles(RequestEvent, QueryParamsBase):
                 endSourceRankPercentile: int = 100,
 
                 sortBy: str = "cosSim", sortByAsc: bool = False,
-                returnInfo: Union[ReturnInfo, None] = None,
-                **kwds):
+                returnInfo: Union[ReturnInfo, None] = None):
         """
         return articles about the event
-        @param page: page of the articles to return (1, 2, ...)
-        @param count: number of articles to return per page (at most 100)
 
-        @param keywords: limit the event articles to those that mention the specified keywords.
-            A single keyword/phrase can be provided as a string, multiple keywords/phrases can be provided as a list of strings.
-            Use QueryItems.AND() if *all* provided keywords/phrases should be mentioned, or QueryItems.OR() if *any* of the keywords/phrases should be mentioned.
-            or QueryItems.OR() to specify a list of keywords where any of the keywords have to appear
-        @param conceptUri: limit the event articles to those where the concept with concept uri is mentioned.
-            A single concept uri can be provided as a string, multiple concept uris can be provided as a list of strings.
-            Use QueryItems.AND() if *all* provided concepts should be mentioned, or QueryItems.OR() if *any* of the concepts should be mentioned.
-            To obtain a concept uri using a concept label use EventRegistry.getConceptUri().
-        @param categoryUri: limit the event articles to those that are assigned into a particular category.
-            A single category can be provided as a string, while multiple categories can be provided as a list in QueryItems.AND() or QueryItems.OR().
-            A category uri can be obtained from a category name using EventRegistry.getCategoryUri().
-        @param sourceUri: limit the event articles to those that were written by a news source sourceUri.
-            If multiple sources should be considered use QueryItems.OR() to provide the list of sources.
-            Source uri for a given news source name can be obtained using EventRegistry.getNewsSourceUri().
-        @param sourceLocationUri: limit the event articles to those that were written by news sources located in the given geographic location.
-            If multiple source locations are provided, then put them into a list inside QueryItems.OR()
-            Location uri can either be a city or a country. Location uri for a given name can be obtained using EventRegistry.getLocationUri().
-        @param sourceGroupUri: limit the event articles to those that were written by news sources that are assigned to the specified source group.
-            If multiple source groups are provided, then put them into a list inside QueryItems.OR()
-            Source group uri for a given name can be obtained using EventRegistry.getSourceGroupUri().
-        @param authorUri: find articles that were written by a specific author.
-            If multiple authors should be considered use QueryItems.OR() to provide the list of authors.
-            Author uri for a given author name can be obtained using EventRegistry.getAuthorUri().
-        @param locationUri: find articles that describe something that occurred at a particular location.
-            If value can be a string or a list of strings provided in QueryItems.OR().
-            Location uri can either be a city or a country. Location uri for a given name can be obtained using EventRegistry.getLocationUri().
-        @param lang: find articles that are written in the specified language.
-            If more than one language is specified, resulting articles has to be written in *any* of the languages.
-        @param dateStart: find articles that were written on or after dateStart. Date should be provided in YYYY-MM-DD format, datetime.time or datetime.datetime.
-        @param dateEnd: find articles that occurred before or on dateEnd. Date should be provided in YYYY-MM-DD format, datetime.time or datetime.datetime.
-
-        @param dateMentionStart: limit the event articles to those that explicitly mention a date that is equal or greater than dateMentionStart.
-        @param dateMentionEnd: limit the event articles to those that explicitly mention a date that is lower or equal to dateMentionEnd.
-        @param keywordsLoc: where should we look when searching using the keywords provided by "keywords" parameter. "body" (default), "title", or "body,title"
-        @param keywordSearchMode: what search mode to use when specifying keywords. Possible values are: simple, exact, phrase
-
-        @param startSourceRankPercentile: starting percentile of the sources to consider in the results (default: 0). Value should be in range 0-100 and divisible by 10.
-        @param endSourceRankPercentile: ending percentile of the sources to consider in the results (default: 100). Value should be in range 0-100 and divisible by 10.
-
-        @param sortBy: order in which event articles are sorted. Options: id (internal id), date (published date), cosSim (closeness to event centroid), sourceImportanceRank (importance of the news source, custom set), sourceAlexaGlobalRank (global rank of the news source), sourceAlexaCountryRank (country rank of the news source), socialScore (total shares in social media)
-        @param sortByAsc: should the articles be sorted in ascending order (True) or descending (False) based on sortBy value
-        @param returnInfo: what details should be included in the returned information. Use None to get the default information.
+        Args:
+            page: page of the articles to return (1, 2, ...)
+            count: number of articles to return per page (at most 100)
+            keywords: limit the event articles to those that mention the specified keywords.
+                A single keyword/phrase can be provided as a string, multiple keywords/phrases can be provided as a list of strings.
+                Use QueryItems.AND() if *all* provided keywords/phrases should be mentioned, or QueryItems.OR() if *any* of the keywords/phrases should be mentioned.
+                or QueryItems.OR() to specify a list of keywords where any of the keywords have to appear
+            conceptUri: limit the event articles to those where the concept with concept uri is mentioned.
+                A single concept uri can be provided as a string, multiple concept uris can be provided as a list of strings.
+                Use QueryItems.AND() if *all* provided concepts should be mentioned, or QueryItems.OR() if *any* of the concepts should be mentioned.
+                To obtain a concept uri using a concept label use EventRegistry.getConceptUri().
+            categoryUri: limit the event articles to those that are assigned into a particular category.
+                A single category can be provided as a string, while multiple categories can be provided as a list in QueryItems.AND() or QueryItems.OR().
+                A category uri can be obtained from a category name using EventRegistry.getCategoryUri().
+            sourceUri: limit the event articles to those that were written by a news source sourceUri.
+                If multiple sources should be considered use QueryItems.OR() to provide the list of sources.
+                Source uri for a given news source name can be obtained using EventRegistry.getNewsSourceUri().
+            sourceLocationUri: limit the event articles to those that were written by news sources located in the given geographic location.
+                If multiple source locations are provided, then put them into a list inside QueryItems.OR()
+                Location uri can either be a city or a country. Location uri for a given name can be obtained using EventRegistry.getLocationUri().
+            sourceGroupUri: limit the event articles to those that were written by news sources that are assigned to the specified source group.
+                If multiple source groups are provided, then put them into a list inside QueryItems.OR()
+                Source group uri for a given name can be obtained using EventRegistry.getSourceGroupUri().
+            authorUri: find articles that were written by a specific author.
+                If multiple authors should be considered use QueryItems.OR() to provide the list of authors.
+                Author uri for a given author name can be obtained using EventRegistry.getAuthorUri().
+            locationUri: find articles that describe something that occurred at a particular location.
+                If value can be a string or a list of strings provided in QueryItems.OR().
+                Location uri can either be a city or a country. Location uri for a given name can be obtained using EventRegistry.getLocationUri().
+            lang: find articles that are written in the specified language.
+                If more than one language is specified, resulting articles has to be written in *any* of the languages.
+            dateStart: find articles that were written on or after dateStart. Date should be provided in YYYY-MM-DD format, datetime.time or datetime.datetime.
+            dateEnd: find articles that occurred before or on dateEnd. Date should be provided in YYYY-MM-DD format, datetime.time or datetime.datetime.
+            dateMentionStart: limit the event articles to those that explicitly mention a date that is equal or greater than dateMentionStart.
+            dateMentionEnd: limit the event articles to those that explicitly mention a date that is lower or equal to dateMentionEnd.
+            keywordsLoc: where should we look when searching using the keywords provided by "keywords" parameter. "body" (default), "title", or "body,title"
+            keywordSearchMode: what search mode to use when specifying keywords. Possible values are: simple, exact, phrase
+            startSourceRankPercentile: starting percentile of the sources to consider in the results (default: 0). Value should be in range 0-100 and divisible by 10.
+            endSourceRankPercentile: ending percentile of the sources to consider in the results (default: 100). Value should be in range 0-100 and divisible by 10.
+            sortBy: order in which event articles are sorted. Options: date (published date), cosSim (closeness to event centroid), sourceImportanceRank (importance of the news source, custom set), sourceAlexaGlobalRank (global rank of the news source), sourceAlexaCountryRank (country rank of the news source)
+            sortByAsc: should the articles be sorted in ascending order (True) or descending (False) based on sortBy value
+            returnInfo: what details should be included in the returned information. Use None to get the default information.
         """
         RequestEvent.__init__(self)
         QueryParamsBase.__init__(self)
@@ -414,10 +361,12 @@ class RequestEventArticleUriWgts(RequestEvent):
                  **kwds):
         """
         return just a list of article uris and their associated weights
-        @param lang: a single language or a list of languages in which to return the articles. Set None to return all articles
-        @param sortBy: order in which event articles are sorted. Options: id (internal id), date (published date), cosSim (closeness to event centroid), sourceImportanceRank (importance of the news source, custom set), sourceAlexaGlobalRank (global rank of the news source), sourceAlexaCountryRank (country rank of the news source), socialScore (total shares in social media)
-        @param sortByAsc: should the articles be sorted in ascending order (True) or descending (False) based on sortBy value
-        @param kwds: any other potential query parameters - can be any of the parameters used in RequestEventArticles() constructor
+
+        Args:
+            lang: a single language or a list of languages in which to return the articles. Set None to return all articles
+            sortBy: order in which event articles are sorted. Options: date (published date), cosSim (closeness to event centroid), sourceImportanceRank (importance of the news source, custom set), sourceAlexaGlobalRank (global rank of the news source), sourceAlexaCountryRank (country rank of the news source)
+            sortByAsc: should the articles be sorted in ascending order (True) or descending (False) based on sortBy value
+            kwds: any other potential query parameters - can be any of the parameters used in RequestEventArticles() constructor
         """
         if lang is not None:
             self.articlesLang = lang
@@ -433,9 +382,11 @@ class RequestEventKeywordAggr(RequestEvent):
                 **kwds):
         """
         return keyword aggregate (tag-cloud) from articles in the event
-        @param lang: if not `None` then the top keywords will only be computed from the articles in the specified language.
-            The value should match one of the languages for which we have articles in the event.
-        @param kwds: any other potential query parameters - can be any of the parameters used in RequestEventArticles() constructor
+
+        Args:
+            lang: if not `None` then the top keywords will only be computed from the articles in the specified language.
+                The value should match one of the languages for which we have articles in the event.
+            kwds: any other potential query parameters - can be any of the parameters used in RequestEventArticles() constructor
         """
         self.resultType = "keywordAggr"
         self.articlesLang = lang
@@ -469,11 +420,13 @@ class RequestEventArticleTrend(RequestEvent):
                  returnInfo: Union[ReturnInfo, None] = None):
         """
         return trending information for the articles about the event
-        @param lang: languages for which to compute the trends. If None, then compute trends for all articles
-        @param page: page of the articles for which to return information (1, 2, ...)
-        @param count: number of articles returned per page (at most 100)
-        @param minArticleCosSim: ignore articles that have cos similarity to centroid lower than the specified value (-1 for no limit)
-        @param returnInfo: what details should be included in the returned information
+
+        Args:
+            lang: languages for which to compute the trends. If None, then compute trends for all articles
+            page: page of the articles for which to return information (1, 2, ...)
+            count: number of articles returned per page (at most 100)
+            minArticleCosSim: ignore articles that have cos similarity to centroid lower than the specified value (-1 for no limit)
+            returnInfo: what details should be included in the returned information
         """
         if not (page >= 1):
             raise ValueError("page has to be >= 1")
@@ -499,13 +452,15 @@ class RequestEventSimilarEvents(RequestEvent):
                 returnInfo: Union[ReturnInfo, None] = None):
         """
         compute and return a list of similar events
-        @param conceptInfoList: array of concepts and their importance, e.g. [{ "uri": "http://en.wikipedia.org/wiki/Barack_Obama", "wgt": 100 }, ...]
-        @param count: number of similar events to return (at most 50)
-        @param dateStart: what can be the oldest date of the similar events
-        @param dateEnd: what can be the newest date of the similar events
-        @param addArticleTrendInfo: for the returned events compute how they were trending (intensity of reporting) in different time periods
-        @param aggrHours: time span that is used as a unit when computing the trending info
-        @param returnInfo: what details should be included in the returned information
+
+        Args:
+            conceptInfoList: array of concepts and their importance, e.g. [{ "uri": "http://en.wikipedia.org/wiki/Barack_Obama", "wgt": 100 }, ...]
+            count: number of similar events to return (at most 50)
+            dateStart: what can be the oldest date of the similar events
+            dateEnd: what can be the newest date of the similar events
+            addArticleTrendInfo: for the returned events compute how they were trending (intensity of reporting) in different time periods
+            aggrHours: time span that is used as a unit when computing the trending info
+            returnInfo: what details should be included in the returned information
         """
         if not (count <= 50):
             raise ValueError("count should be at most 50")

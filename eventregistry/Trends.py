@@ -4,8 +4,13 @@ mentioned in the articles. By default trends are computed by comparing the total
 in the last two days compared to the number of mentions in the two weeks before. The trend for each concept/category
 is computed as the Pearson residual. The returned concepts/categories are the ones that have the highest residual.
 """
-from eventregistry.Base import *
-from eventregistry.ReturnInfo import *
+from typing import List, Union
+from eventregistry.Base import QueryParamsBase
+from eventregistry.ReturnInfo import ReturnInfo
+
+# the names exported by "from eventregistry import *"
+__all__ = ["TrendsBase", "GetTrendingConcepts", "GetTrendingCategories", "GetTrendingCustomItems",
+           "GetTrendingConceptGroups"]
 
 
 class TrendsBase(QueryParamsBase):
@@ -21,10 +26,12 @@ class GetTrendingConcepts(TrendsBase):
                  returnInfo: Union[ReturnInfo, None] = None):
         """
         get currently top trending concepts
-        @param source: source information from which to compute top trends. Options: "news", "social", "pr", "blogs"
-        @param count: number of top trends to return
-        @param conceptType: which types of concepts are we interested in
-        @param returnInfo: what details should be included in the returned information
+
+        Args:
+            source: source information from which to compute top trends. Options: "news", "social", "pr", "blogs"
+            count: number of top trends to return
+            conceptType: which types of concepts are we interested in
+            returnInfo: what details should be included in the returned information
         """
         TrendsBase.__init__(self)
         self._setVal("action", "getTrendingConcepts")
@@ -44,9 +51,11 @@ class GetTrendingCategories(TrendsBase):
                  returnInfo: Union[ReturnInfo, None] = None):
         """
         get currently top trending categories
-        @param source: source information from which to compute top trends. Options: "news", "social", "pr", "blogs"
-        @param count: number of top trends to return
-        @param returnInfo: what details should be included in the returned information
+
+        Args:
+            source: source information from which to compute top trends. Options: "news", "social", "pr", "blogs"
+            count: number of top trends to return
+            returnInfo: what details should be included in the returned information
         """
         TrendsBase.__init__(self)
         self._setVal("action", "getTrendingCategories")
@@ -65,8 +74,10 @@ class GetTrendingCustomItems(TrendsBase):
         """
         get currently top trending items for which the users provided the data
         this data can be stock prices, energy prices, etc...
-        @param count: number of top trends to return
-        @param returnInfo: what details should be included in the returned information
+
+        Args:
+            count: number of top trends to return
+            returnInfo: what details should be included in the returned information
         """
         TrendsBase.__init__(self)
         self._setVal("action", "getTrendingCustom")
@@ -83,9 +94,11 @@ class GetTrendingConceptGroups(TrendsBase):
         """
         get currently top trending groups of concepts
         a group can be identified by the concept type or by a concept class uri
-        @param source: source information from which to compute top trends. Options: "news", "social"
-        @param count: number of top trends to return
-        @param returnInfo: what details should be included in the returned information
+
+        Args:
+            source: source information from which to compute top trends. Options: "news", "social"
+            count: number of top trends to return
+            returnInfo: what details should be included in the returned information
         """
         TrendsBase.__init__(self)
         self._setVal("action", "getConceptTrendGroups")

@@ -5,9 +5,17 @@ from Event Registry requests
 the ReturnInfo class specifies all types of these parameters and is needed as
 a parameter in all query requests
 """
+import inspect
 import os
 import json
 from typing import Union
+
+from eventregistry.Logger import logger
+
+# the names exported by "from eventregistry import *"
+__all__ = ["ReturnInfoFlagsBase", "ArticleInfoFlags", "StoryInfoFlags", "EventInfoFlags", "MentionInfoFlags",
+           "SourceInfoFlags", "CategoryInfoFlags", "ConceptInfoFlags", "LocationInfoFlags", "ConceptClassInfoFlags",
+           "ConceptFolderInfoFlags", "ReturnInfo"]
 
 
 class ReturnInfoFlagsBase:
@@ -19,8 +27,16 @@ class ReturnInfoFlagsBase:
         """set the objects property propName if the dictKey key exists in dict and it is not the same as default value defVal"""
         if not hasattr(self, "flags"):
             self.flags = {}
+        self._getKnownApiNames().add(name)
         if val != defVal:
             self.flags[name] = val
+
+
+    def _getKnownApiNames(self) -> set:
+        """the names of the api parameters that the named parameters of the class set"""
+        if not hasattr(self, "_knownApiNames"):
+            self._knownApiNames: set = set()
+        return self._knownApiNames
 
 
     def _getFlags(self):
@@ -32,6 +48,7 @@ class ReturnInfoFlagsBase:
 
     def _setVal(self, name: str, val, defVal = None):
         """set value of name to val in case the val != defVal"""
+        self._getKnownApiNames().add(name)
         if val == defVal:
             return
         if not hasattr(self, "vals"):
@@ -59,7 +76,27 @@ class ReturnInfoFlagsBase:
 
 
     def _addKwdArgs(self, kwdArgs):
+        """
+        add the flags and values that are not among the named parameters of the class. They are sent to the server as they are,
+        so that also newly added flags can be used. A name that differs from a known parameter only in the letter case is
+        a typo, and for the other unknown names we log a warning, since the server silently ignores the flags it does not know.
+        Flags given with their full api name (e.g. includeArticleConcepts) are accepted without a warning
+        """
+        if not kwdArgs:
+            return
+        knownParams = {name.lower(): name for name in inspect.signature(type(self).__init__).parameters}
         for name, val in kwdArgs.items():
+            if name in self._getKnownApiNames():
+                # the full api name of a named parameter
+                if isinstance(val, bool):
+                    self._getFlags()[name] = val
+                else:
+                    self._setVal(name, val)
+                continue
+            if name.lower() in knownParams:
+                raise TypeError("%s() got an unknown argument '%s'. Did you mean '%s'?" % (type(self).__name__, name, knownParams[name.lower()]))
+            if not name.startswith("include"):
+                logger.warning("'%s' is not a known parameter of %s. It will be sent to the server as it is - check the name if this is not intended.", name, type(self).__name__)
             if isinstance(val, bool):
                 self._setFlag(name, val, not val)
             else:
@@ -70,25 +107,26 @@ class ArticleInfoFlags(ReturnInfoFlagsBase):
     """"
     What information about an article should be returned by the API call
 
-    @param bodyLen: max length of the article body (use -1 for full body, 0 for empty)
-    @param basicInfo: core article information -
-    @param title: article title
-    @param body: article body
-    @param url: article url
-    @param eventUri: uri of the event to which the article belongs
-    @param authors: the list of authors of the news article
-    @param concepts: the list of concepts mentioned in the article
-    @param categories: the list of categories assigned to the article
-    @param links: the list of urls of links identified in the article body
-    @param videos: the list of videos assigned to the article
-    @param image: url to the image associated with the article
-    @param socialScore: information about the number of times the article was shared on facebook and linkedin, instagram, ...
-    @param sentiment: sentiment about the article
-    @param location: the geographic location that the event mentioned in the article is about
-    @param dates: the dates when the articles was crawled and the date when it was published (based on the rss feed date)
-    @param extractedDates: the list of dates found mentioned in the article
-    @param originalArticle: if the article is a duplicate, this will provide information about the original article
-    @param storyUri: uri of the story (cluster) to which the article belongs
+    Args:
+        bodyLen: max length of the article body (use -1 for full body, 0 for empty)
+        basicInfo: core article information -
+        title: article title
+        body: article body
+        url: article url
+        eventUri: uri of the event to which the article belongs
+        authors: the list of authors of the news article
+        concepts: the list of concepts mentioned in the article
+        categories: the list of categories assigned to the article
+        links: the list of urls of links identified in the article body
+        videos: the list of videos assigned to the article
+        image: url to the image associated with the article
+        socialScore: information about the number of times the article was shared on facebook and linkedin, instagram, ...
+        sentiment: sentiment about the article
+        location: the geographic location that the event mentioned in the article is about
+        dates: the dates when the articles was crawled and the date when it was published (based on the rss feed date)
+        extractedDates: the list of dates found mentioned in the article
+        originalArticle: if the article is a duplicate, this will provide information about the original article
+        storyUri: uri of the story (cluster) to which the article belongs
     """
     def __init__(self,
                  bodyLen: int = -1,
@@ -136,18 +174,19 @@ class StoryInfoFlags(ReturnInfoFlagsBase):
     """
     What information about a story (cluster of articles) should be returned by the API call
 
-    @param basicStats: core stats about the story
-    @param location: geographic location that the story is about
-    @param date: date of the story
-    @param title: title of the story
-    @param summary: summary of the story
-    @param concepts: set of concepts associated with the story
-    @param categories: categories associated with the story
-    @param medoidArticle: the article that is closest to the center of the cluster of articles assigned to the story
-    @param infoArticle: the article from which we have extracted the title and summary for the story
-    @param commonDates: dates that were frequently identified in the articles belonging to the story
-    @param socialScore: score computed based on how frequently the articles in the story were shared on social media
-    @param imageCount: number of images to be returned for a story
+    Args:
+        basicStats: core stats about the story
+        location: geographic location that the story is about
+        date: date of the story
+        title: title of the story
+        summary: summary of the story
+        concepts: set of concepts associated with the story
+        categories: categories associated with the story
+        medoidArticle: the article that is closest to the center of the cluster of articles assigned to the story
+        infoArticle: the article from which we have extracted the title and summary for the story
+        commonDates: dates that were frequently identified in the articles belonging to the story
+        socialScore: score computed based on how frequently the articles in the story were shared on social media
+        imageCount: number of images to be returned for a story
     """
     def __init__(self,
                 basicStats: bool = True,
@@ -183,18 +222,19 @@ class EventInfoFlags(ReturnInfoFlagsBase):
     """
     What information about an event should be returned by the API call
 
-    @param title: return the title of the event
-    @param summary: return the summary of the event
-    @param articleCounts: return the number of articles that are assigned to the event
-    @param concepts: return information about the main concepts related to the event
-    @param categories: return information about the categories related to the event
-    @param location: return the location where the event occurred
-    @param date: return information about the date of the event
-    @param commonDates: return the dates that were commonly found in the articles about the event
-    @param infoArticle: return for each language the article from which we have extracted the summary and title for event for that language
-    @param stories: return the list of stories (clusters) that are about the event
-    @param socialScore: score computed based on how frequently the articles in the event were shared on social media
-    @param imageCount: number of images to be returned for an event
+    Args:
+        title: return the title of the event
+        summary: return the summary of the event
+        articleCounts: return the number of articles that are assigned to the event
+        concepts: return information about the main concepts related to the event
+        categories: return information about the categories related to the event
+        location: return the location where the event occurred
+        date: return information about the date of the event
+        commonDates: return the dates that were commonly found in the articles about the event
+        infoArticle: return for each language the article from which we have extracted the summary and title for event for that language
+        stories: return the list of stories (clusters) that are about the event
+        socialScore: score computed based on how frequently the articles in the event were shared on social media
+        imageCount: number of images to be returned for an event
     """
     def __init__(self,
                 title: bool = True,
@@ -231,10 +271,11 @@ class MentionInfoFlags(ReturnInfoFlagsBase):
     """
     What information about a mention should be returned by the API call
 
-    @param basicInfo: return basic information about the mention
-    @param slots: return the list of slots (concepts) related to the mention
-    @param categories: return the list of categories associated with the article that contains the sentence from the mention
-    @param frameworks: return list of frameworks to which the event type of the mention belongs
+    Args:
+        basicInfo: return basic information about the mention
+        slots: return the list of slots (concepts) related to the mention
+        categories: return the list of categories associated with the article that contains the sentence from the mention
+        frameworks: return list of frameworks to which the event type of the mention belongs
     """
     def __init__(self,
                 basicInfo: bool = True,
@@ -254,12 +295,13 @@ class SourceInfoFlags(ReturnInfoFlagsBase):
     """
     What information about a news source should be returned by the API call
 
-    @param title: title of the news source
-    @param description: description of the news source
-    @param location: geographic location of the news source
-    @param ranking: a set of rankings for the news source
-    @param image: different images associated with the news source
-    @param socialMedia: different social media accounts used by the news source
+    Args:
+        title: title of the news source
+        description: description of the news source
+        location: geographic location of the news source
+        ranking: a set of rankings for the news source
+        image: different images associated with the news source
+        socialMedia: different social media accounts used by the news source
     """
     def __init__(self,
                 title: bool = True,
@@ -283,7 +325,8 @@ class CategoryInfoFlags(ReturnInfoFlagsBase):
     """
     What information about a category should be returned by the API call
 
-    @param trendingScore: information about how the category is currently trending. The score is computed as Pearson residual by comparing the trending of the category in last 2 days compared to last 14 days
+    Args:
+        trendingScore: information about how the category is currently trending. The score is computed as Pearson residual by comparing the trending of the category in last 2 days compared to last 14 days
     """
     def __init__(self,
                 trendingScore: bool = False,
@@ -297,15 +340,15 @@ class ConceptInfoFlags(ReturnInfoFlagsBase):
     """
     What information about a concept should be returned by the API call
 
-    @param type: which types of concepts should be provided in events, stories, ... Options: person, loc, org, wiki (non-entities), concepts (=person+loc+org+wiki), conceptClass, conceptFolder
-    @param lang: in which languages should be the labels for provided concepts
-    @param label: return label(s) of the concept
-    @param synonyms: return concept synonyms (if any)
-    @param image: provide an image associated with the concept
-    @param description: description of the concept
-    @param trendingScore: information about how the concept is currently trending. The score is computed as Pearson residual by comparing the trending of the concept in last 2 days compared to last 14 days
-    @type type: str | list
-    @type lang: str | list
+    Args:
+        type (str | list): which types of concepts should be provided in events, stories, ... Options: person, loc, org, wiki (non-entities), concepts (=person+loc+org+wiki), conceptClass, conceptFolder
+        lang (str | list): in which languages should be the labels for provided concepts
+        label: return label(s) of the concept
+        synonyms: return concept synonyms (if any)
+        image: provide an image associated with the concept
+        description: description of the concept
+        trendingScore: information about how the concept is currently trending. The score is computed as Pearson residual by comparing the trending of the concept in last 2 days compared to last 14 days
+        maxConceptsPerType: the maximum number of concepts of each type to return
     """
     def __init__(self,
                 type: str = "concepts",
@@ -334,18 +377,18 @@ class LocationInfoFlags(ReturnInfoFlagsBase):
     What information about a geographic location should be returned by the API call
     Locations are sub-types of concepts so this information is always provided as a "location" property in concept information
     country* flags are taken into account when the locations represent countries. Similarly place* flags are relevant when the location is a place (city, area, ...)
-    @param label: return label of the place/country
-    @param wikiUri: return wiki url of the place/country
-    @param geoNamesId: return geonames id for the place/country
-    @param population: return the population of the place/country
-    @param geoLocation: return geographic coordinates of the place/country
 
-    @param countryArea: return geographic area of the country
-    @param countryDetails: return additional details about the country
-    @param countryContinent: return continent where the country is located
-
-    @param placeFeatureCode: return the geonames feature code of the place
-    @param placeCountry: return information about the country where the place is located
+    Args:
+        label: return label of the place/country
+        wikiUri: return wiki url of the place/country
+        geoNamesId: return geonames id for the place/country
+        population: return the population of the place/country
+        geoLocation: return geographic coordinates of the place/country
+        countryArea: return geographic area of the country
+        countryDetails: return additional details about the country
+        countryContinent: return continent where the country is located
+        placeFeatureCode: return the geonames feature code of the place
+        placeCountry: return information about the country where the place is located
     """
     def __init__(self,
                 label: bool = True,
@@ -381,8 +424,9 @@ class ConceptClassInfoFlags(ReturnInfoFlagsBase):
     """
     What information about a concept class should be returned by the API call
 
-    @param parentLabels: return the list of labels of the parent concept classes
-    @param concepts: return the list of concepts assigned to the concept class
+    Args:
+        parentLabels: return the list of labels of the parent concept classes
+        concepts: return the list of concepts assigned to the concept class
     """
     def __init__(self,
                 parentLabels: bool = True,
@@ -398,8 +442,9 @@ class ConceptFolderInfoFlags(ReturnInfoFlagsBase):
     """
     What information about a concept folder should be returned by the API call
 
-    @param definition: return the complete definition of the concept folder
-    @param owner: return information about the owner of the concept folder
+    Args:
+        definition: return the complete definition of the concept folder
+        owner: return information about the owner of the concept folder
     """
     def __init__(self,
                 definition: bool = False,
@@ -415,15 +460,16 @@ class ReturnInfo:
     """
     ReturnInfo specifies what content should be returned for each possible returned object type
 
-    @param articleInfo: what details about the articles should be returned
-    @param eventInfo: what details about the event should be returned
-    @param sourceInfo: what details about the article's news source should be returned
-    @param storyInfo: what details about the stories (clusters) should be returned
-    @param categoryInfo: what details about the categories should be returned
-    @param conceptInfo: what details about the concepts should be returned
-    @param locationInfo: what details about the locations should be returned (locations are sub-types of concepts so their information will be a property inside the concept information)
-    @param mentionInfo: what details about the mention should be returned
-    @param conceptFolderInfo: what details about the concept folders should be returned (concept folders are sub-types of concepts so their information will be a property inside the concept information)
+    Args:
+        articleInfo: what details about the articles should be returned
+        eventInfo: what details about the event should be returned
+        sourceInfo: what details about the article's news source should be returned
+        storyInfo: what details about the stories (clusters) should be returned
+        categoryInfo: what details about the categories should be returned
+        conceptInfo: what details about the concepts should be returned
+        locationInfo: what details about the locations should be returned (locations are sub-types of concepts so their information will be a property inside the concept information)
+        mentionInfo: what details about the mention should be returned
+        conceptFolderInfo: what details about the concept folders should be returned (concept folders are sub-types of concepts so their information will be a property inside the concept information)
     """
     def __init__(self,
                  articleInfo: Union[ArticleInfoFlags, None] = None,
@@ -468,7 +514,9 @@ class ReturnInfo:
     def loadFromFile(fileName: str):
         """
         load the configuration for the ReturnInfo from a fileName
-        @param fileName: filename that contains the json configuration to use in the ReturnInfo
+
+        Args:
+            fileName: filename that contains the json configuration to use in the ReturnInfo
         """
         if not (os.path.exists(fileName)):
             raise FileNotFoundError("File " + fileName + " does not exist")

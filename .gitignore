@@ -53,3 +53,21 @@ target/
 
 # Editor settings
 /.vscode/
+
+# Local settings with the API keys (root, eventregistry/, eventregistry/tests/, eventregistry/examples/, ...)
+settings*.json
+
+# Log of the requests made by the SDK
+requests_log.txt
+
+# Caches of the tools
+.pytest_cache/
+.mypy_cache/
+
+# Local release script
+uploadNewVersion.bat
+
+# The online tests use the live data (and a fixed backend instance), so they are kept only locally
+/eventregistry/tests/DataValidator.py
+/eventregistry/tests/TestER*.py
+/eventregistry/tests/TestAnalytics.py

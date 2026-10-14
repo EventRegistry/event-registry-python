@@ -27,9 +27,13 @@ where
 You can use QueryEvent or QueryStory to obtain more information about these events/stories
 """
 
-from eventregistry.Base import *
-from eventregistry.ReturnInfo import *
+from typing import List, Union
+from eventregistry.Base import QueryParamsBase
 from eventregistry.EventRegistry import EventRegistry
+
+# the names exported by "from eventregistry import *"
+__all__ = ["GetEventForText"]
+
 
 class GetEventForText(QueryParamsBase):
     def __init__(self,
@@ -40,11 +44,13 @@ class GetEventForText(QueryParamsBase):
         self._nrOfEventsToReturn = nrOfEventsToReturn
 
 
-    def compute(self, text: str, lang: str = "eng"):
+    def compute(self, text: str, lang: str = "eng") -> Union[List[dict], dict]:
         """
         compute the list of most similar events for the given text
-        @param text: text for which to find the most similar event
-        @param lang: language in which the text is written
+
+        Args:
+            text: text for which to find the most similar event
+            lang: language in which the text is written
         """
         params = { "lang": lang, "text": text, "topClustersCount": self._nrOfEventsToReturn }
         res = self._er.jsonRequest("/api/v1/getEventForText/getEventForText", params)

@@ -1,6 +1,11 @@
-﻿from eventregistry.Base import *
-from eventregistry.ReturnInfo import *
+﻿from eventregistry.Base import Query
+from eventregistry.ReturnInfo import ArticleInfoFlags, ReturnInfo
 from typing import List, Union
+
+# the names exported by "from eventregistry import *"
+__all__ = ["QueryArticle", "RequestArticle", "RequestArticleInfo", "RequestArticleSimilarArticles",
+           "RequestArticleDuplicatedArticles", "RequestArticleOriginalArticle"]
+
 
 class QueryArticle(Query):
     def __init__(self,
@@ -8,10 +13,12 @@ class QueryArticle(Query):
                  requestedResult: Union["RequestArticle", None] = None):
         """
         Class for obtaining available info for one or more articles in the Event Registry
-        @param articleUriOrUriList: a single article uri or a list of article uris
-        @param requestedResult: the information to return as the result of the query. By default return the information about the article
+
+        Args:
+            articleUriOrUriList: a single article uri or a list of article uris
+            requestedResult: the information to return as the result of the query. By default return the information about the article
         """
-        super(QueryArticle, self).__init__()
+        super().__init__()
         self._setVal("articleUri", articleUriOrUriList)
         self._setVal("action", "getArticle")
         self.setRequestedResult(requestedResult or RequestArticleInfo())
@@ -25,7 +32,9 @@ class QueryArticle(Query):
     def queryByUri(articleUriOrUriList: Union[str, List[str]]):
         """
         obtain information about one or more articles by providing their article uris (newsfeed ids, such as "284017606")
-        @param articleUriOrUriList: single article uri or a list of article uris to query
+
+        Args:
+            articleUriOrUriList: single article uri or a list of article uris to query
         """
         q = QueryArticle([])
         q.queryParams["articleUri"] = articleUriOrUriList
@@ -57,7 +66,9 @@ class RequestArticleInfo(RequestArticle):
     def __init__(self, returnInfo: Union[ReturnInfo, None] = None):
         """
         return details about the article
-        @param returnInfo: what details should be included in the returned information
+
+        Args:
+            returnInfo: what details should be included in the returned information
         """
         super().__init__()
         self.resultType = "info"
@@ -74,11 +85,13 @@ class RequestArticleSimilarArticles(RequestArticle):
                  returnInfo: Union[ReturnInfo, None] = None):
         """
         return a list of similar articles based on the CCA
-        @param page: page of the articles
-        @param count: number of articles to return (at most 200)
-        @param lang: in which language(s) should be the similar articles
-        @param limitPerLang: max number of articles per language to return (-1 for no limit)
-        @param returnInfo: what details should be included in the returned information
+
+        Args:
+            page: page of the articles
+            count: number of articles to return (at most 200)
+            lang: in which language(s) should be the similar articles
+            limitPerLang: max number of articles per language to return (-1 for no limit)
+            returnInfo: what details should be included in the returned information
         """
         super().__init__()
         if not (page >= 1):
@@ -102,11 +115,13 @@ class RequestArticleDuplicatedArticles(RequestArticle):
                  returnInfo: Union[ReturnInfo, None] = None):
         """
         return a list of duplicated articles of the current article
-        @param page: page of the articles
-        @param count: number of articles to return (at most 200)
-        @param sortBy: how are the articles sorted. Options: id, date, cosSim, fq, socialScore, facebookShares, twitterShares
-        @param sortByAsc: should the results be sorted in ascending order (True) or descending (False)
-        @param returnInfo: what details should be included in the returned information
+
+        Args:
+            page: page of the articles
+            count: number of articles to return (at most 200)
+            sortBy: how are the articles sorted. Options: date, cosSim, fq
+            sortByAsc: should the results be sorted in ascending order (True) or descending (False)
+            returnInfo: what details should be included in the returned information
         """
         super().__init__()
         if not (page >= 1):
@@ -127,7 +142,9 @@ class RequestArticleOriginalArticle(RequestArticle):
                  returnInfo: Union[ReturnInfo, None] = None):
         """
         return the article that is the original of the given article (the current article is a duplicate)
-        @param returnInfo: what details should be included in the returned information
+
+        Args:
+            returnInfo: what details should be included in the returned information
         """
         super().__init__()
         self.resultType = "originalArticle"

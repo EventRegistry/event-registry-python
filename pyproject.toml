@@ -1,0 +1,73 @@
+[build-system]
+# setuptools 77 is the first version that supports the SPDX license expression (license = "MIT")
+requires = ["setuptools>=77.0.3"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "eventregistry"
+# the version is defined in eventregistry/_version.py
+dynamic = ["version"]
+description = "A package that can be used to query information in Event Registry (https://eventregistry.org/)"
+readme = {file = "README.md", content-type = "text/markdown"}
+license = "MIT"
+license-files = ["LICENSE"]
+authors = [
+    {name = "Gregor Leban", email = "gregor@eventregistry.org"},
+]
+requires-python = ">=3.9"
+dependencies = [
+    "requests>=2.20",
+]
+keywords = ["news", "news api", "event registry", "articles", "events", "media monitoring"]
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Information Technology",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3 :: Only",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Text Processing :: General",
+    "Topic :: Scientific/Engineering :: Information Analysis",
+    "Topic :: Internet :: WWW/HTTP :: Indexing/Search",
+    "Typing :: Typed",
+]
+
+[project.optional-dependencies]
+# needed to run the tests: pip install -e ".[test]"
+test = [
+    "jmespath",
+]
+# tools used for development and for making a release: pip install -e ".[dev]"
+dev = [
+    "pyflakes",
+    "mypy",
+    "build",
+    "twine",
+    "pdoc",
+]
+
+[project.urls]
+Homepage = "https://eventregistry.org/"
+Documentation = "https://github.com/EventRegistry/event-registry-python/wiki"
+Changelog = "https://github.com/EventRegistry/event-registry-python/blob/master/CHANGELOG.md"
+Issues = "https://github.com/EventRegistry/event-registry-python/issues"
+Source = "https://github.com/EventRegistry/event-registry-python"
+
+[tool.setuptools]
+# only the package itself is distributed - the tests and the examples (eventregistry/tests, eventregistry/examples)
+# are available in the repository, but are not a part of the wheel or the sdist
+packages = ["eventregistry"]
+# files such as a local eventregistry/settings.json must never end up in a distribution -
+# the only non-python file that is packaged is the py.typed marker listed below
+include-package-data = false
+
+[tool.setuptools.package-data]
+eventregistry = ["py.typed"]
+
+[tool.setuptools.dynamic]
+version = {attr = "eventregistry._version.__version__"}

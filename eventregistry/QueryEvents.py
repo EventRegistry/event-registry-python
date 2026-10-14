@@ -1,10 +1,19 @@
 ﻿import json
-from eventregistry.Base import *
-from eventregistry.ReturnInfo import *
-from eventregistry.Query import *
-from eventregistry.Logger import logger
+import datetime
+from eventregistry.Base import IterableQuery, Query, QueryItems, QueryParamsBase, QueryResultsIter
+from eventregistry.Exceptions import QueryError
+from eventregistry.ReturnInfo import ReturnInfo
+from eventregistry.Query import ComplexEventQuery
 from eventregistry.EventRegistry import EventRegistry
 from typing import Union, List, Literal
+
+# the names exported by "from eventregistry import *"
+__all__ = ["QueryEvents", "QueryEventsIter", "RequestEvents", "RequestEventsInfo", "RequestEventsUriWgtList",
+           "RequestEventsTimeAggr", "RequestEventsKeywordAggr", "RequestEventsLocAggr", "RequestEventsLocTimeAggr",
+           "RequestEventsConceptAggr", "RequestEventsConceptGraph", "RequestEventsConceptMatrix",
+           "RequestEventsConceptTrends", "RequestEventsSourceAggr", "RequestEventsDateMentionAggr",
+           "RequestEventsCategoryAggr", "RequestEventsSentimentAggr", "RequestEventsAuthorAggr",
+           "RequestEventsRecentActivity", "RequestEventsBreakingEvents"]
 
 
 class QueryEvents(Query):
@@ -49,62 +58,61 @@ class QueryEvents(Query):
         The resulting events have to match all specified conditions. If a parameter value equals "" or [], then it is ignored.
         In order for query to be valid, it has to have at least one positive condition (condition that does not start with ignore*).
 
-        @param keywords: find events where articles mention all the specified keywords.
-            A single keyword/phrase can be provided as a string, multiple keywords/phrases can be provided as a list of strings.
-            Use QueryItems.AND() if *all* provided keywords/phrases should be mentioned, or QueryItems.OR() if *any* of the keywords/phrases should be mentioned.
-        @param conceptUri: find events where the concept with concept uri is important.
-            A single concept uri can be provided as a string, multiple concept uris can be provided as a list of strings.
-            Use QueryItems.AND() if *all* provided concepts should be mentioned, or QueryItems.OR() if *any* of the concepts should be mentioned.
-            To obtain a concept uri using a concept label use EventRegistry.getConceptUri().
-        @param categoryUri: find events that are assigned into a particular category.
-            A single category uri can be provided as a string, multiple category uris can be provided as a list of strings.
-            Use QueryItems.AND() if *all* provided categories should be mentioned, or QueryItems.OR() if *any* of the categories should be mentioned.
-            A category uri can be obtained from a category name using EventRegistry.getCategoryUri().
-        @param sourceUri: find events that contain one or more articles that have been written by a news source sourceUri.
-            If multiple sources should be considered use QueryItems.OR() to provide the list of sources.
-            Source uri for a given news source name can be obtained using EventRegistry.getNewsSourceUri().
-        @param sourceLocationUri: find events that contain one or more articles that were written by news sources located in the given geographic location.
-            If multiple source locations are provided, then put them into a list inside QueryItems.OR()
-            Location uri can either be a city or a country. Location uri for a given name can be obtained using EventRegistry.getLocationUri().
-        @param sourceGroupUri: find events that contain one or more articles that were written by news sources that are assigned to the specified source group.
-            If multiple source groups are provided, then put them into a list inside QueryItems.OR()
-            Source group uri for a given name can be obtained using EventRegistry.getSourceGroupUri().
-        @param authorUri: find events that contain one or more articles that have been written by a specific author.
-            If multiple authors should be considered use QueryItems.OR() or QueryItems.AND() to provide the list of authors.
-            Author uri for a given author name can be obtained using EventRegistry.getAuthorUri().
-        @param locationUri: find events that occurred at a particular location.
-            If value can be a string or a list of strings provided in QueryItems.OR().
-            Location uri can either be a city or a country. Location uri for a given name can be obtained using EventRegistry.getLocationUri().
-        @param lang: find events for which we found articles in the specified language.
-            If more than one language is specified, resulting events has to be reported in *any* of the languages.
-        @param dateStart: find events that occurred on or after dateStart. Date should be provided in YYYY-MM-DD format, datetime.time or datetime.datetime.
-        @param dateEnd: find events that occurred before or on dateEnd. Date should be provided in YYYY-MM-DD format, datetime.time or datetime.datetime.
-        @param reportingDateStart: find events where the average date of the articles about this event is on or after this date. Date should be provided in YYYY-MM-DD format, datetime.time or datetime.datetime.
-        @param reportingDateEnd: find events where the average date of the articles about this event is on or before this date. Date should be provided in YYYY-MM-DD format, datetime.time or datetime.datetime.
-        @param minSentiment: minimum value of the sentiment, that the returned events should have. Range [-1, 1]. Note: setting the value will remove all events that don't have
+        Args:
+            keywords: find events where articles mention all the specified keywords.
+                A single keyword/phrase can be provided as a string, multiple keywords/phrases can be provided as a list of strings.
+                Use QueryItems.AND() if *all* provided keywords/phrases should be mentioned, or QueryItems.OR() if *any* of the keywords/phrases should be mentioned.
+            conceptUri: find events where the concept with concept uri is important.
+                A single concept uri can be provided as a string, multiple concept uris can be provided as a list of strings.
+                Use QueryItems.AND() if *all* provided concepts should be mentioned, or QueryItems.OR() if *any* of the concepts should be mentioned.
+                To obtain a concept uri using a concept label use EventRegistry.getConceptUri().
+            categoryUri: find events that are assigned into a particular category.
+                A single category uri can be provided as a string, multiple category uris can be provided as a list of strings.
+                Use QueryItems.AND() if *all* provided categories should be mentioned, or QueryItems.OR() if *any* of the categories should be mentioned.
+                A category uri can be obtained from a category name using EventRegistry.getCategoryUri().
+            sourceUri: find events that contain one or more articles that have been written by a news source sourceUri.
+                If multiple sources should be considered use QueryItems.OR() to provide the list of sources.
+                Source uri for a given news source name can be obtained using EventRegistry.getNewsSourceUri().
+            sourceLocationUri: find events that contain one or more articles that were written by news sources located in the given geographic location.
+                If multiple source locations are provided, then put them into a list inside QueryItems.OR()
+                Location uri can either be a city or a country. Location uri for a given name can be obtained using EventRegistry.getLocationUri().
+            sourceGroupUri: find events that contain one or more articles that were written by news sources that are assigned to the specified source group.
+                If multiple source groups are provided, then put them into a list inside QueryItems.OR()
+                Source group uri for a given name can be obtained using EventRegistry.getSourceGroupUri().
+            authorUri: find events that contain one or more articles that have been written by a specific author.
+                If multiple authors should be considered use QueryItems.OR() or QueryItems.AND() to provide the list of authors.
+                Author uri for a given author name can be obtained using EventRegistry.getAuthorUri().
+            locationUri: find events that occurred at a particular location.
+                If value can be a string or a list of strings provided in QueryItems.OR().
+                Location uri can either be a city or a country. Location uri for a given name can be obtained using EventRegistry.getLocationUri().
+            lang: find events for which we found articles in the specified language.
+                If more than one language is specified, resulting events has to be reported in *any* of the languages.
+            dateStart: find events that occurred on or after dateStart. Date should be provided in YYYY-MM-DD format, datetime.time or datetime.datetime.
+            dateEnd: find events that occurred before or on dateEnd. Date should be provided in YYYY-MM-DD format, datetime.time or datetime.datetime.
+            reportingDateStart: find events where the average date of the articles about this event is on or after this date. Date should be provided in YYYY-MM-DD format, datetime.time or datetime.datetime.
+            reportingDateEnd: find events where the average date of the articles about this event is on or before this date. Date should be provided in YYYY-MM-DD format, datetime.time or datetime.datetime.
+            minSentiment: minimum value of the sentiment, that the returned events should have. Range [-1, 1]. Note: setting the value will remove all events that don't have
                 a computed value for the sentiment (all events that are not reported in English language)
-        @param maxSentiment: maximum value of the sentiment, that the returned events should have. Range [-1, 1]. Note: setting the value will remove all events that don't have
+            maxSentiment: maximum value of the sentiment, that the returned events should have. Range [-1, 1]. Note: setting the value will remove all events that don't have
                 a computed value for the sentiment (all events that are not reported in English language)
-        @param minArticlesInEvent: find events that have been reported in at least minArticlesInEvent articles (regardless of language)
-        @param maxArticlesInEvent: find events that have not been reported in more than maxArticlesInEvent articles (regardless of language)
-        @param dateMentionStart: find events where articles explicitly mention a date that is equal or greater than dateMentionStart.
-        @param dateMentionEnd: find events where articles explicitly mention a date that is lower or equal to dateMentionEnd.
-        @param keywordsLoc: what data should be used when searching using the keywords provided by "keywords" parameter. "body" (default), "title", or "body,title"
-        @param keywordSearchMode: what search mode to use when specifying keywords. Possible values are: simple, exact, phrase
-
-        @param ignoreKeywords: ignore events where articles about the event mention any of the provided keywords
-        @param ignoreConceptUri: ignore events that are about any of the provided concepts
-        @param ignoreCategoryUri: ignore events that are about any of the provided categories
-        @param ignoreSourceUri: ignore events that have have articles which have been written by any of the specified news sources
-        @param ignoreSourceLocationUri: ignore events that have articles which been written by sources located at *any* of the specified locations
-        @param ignoreSourceGroupUri: ignore events that have articles which have been written by sources in *any* of the specified source groups
-        @param ignoreAuthorUri: ignore articles that were written by *any* of the specified authors
-        @param ignoreLocationUri: ignore events that occurred in any of the provided locations. A location can be a city or a place
-        @param ignoreLang: ignore events that are reported in any of the provided languages
-        @param ignoreKeywordsLoc: what data should be used when searching using the keywords provided by "ignoreKeywords" parameter. "body" (default), "title", or "body,title"
-        @param ignoreKeywordSearchMode: what search mode to use when specifying ignoreKeywords. Possible values are: simple, exact, phrase
-
-        @param requestedResult: the information to return as the result of the query. By default return the list of matching events
+            minArticlesInEvent: find events that have been reported in at least minArticlesInEvent articles (regardless of language)
+            maxArticlesInEvent: find events that have not been reported in more than maxArticlesInEvent articles (regardless of language)
+            dateMentionStart: find events where articles explicitly mention a date that is equal or greater than dateMentionStart.
+            dateMentionEnd: find events where articles explicitly mention a date that is lower or equal to dateMentionEnd.
+            keywordsLoc: what data should be used when searching using the keywords provided by "keywords" parameter. "body" (default), "title", or "body,title"
+            keywordSearchMode: what search mode to use when specifying keywords. Possible values are: simple, exact, phrase
+            ignoreKeywords: ignore events where articles about the event mention any of the provided keywords
+            ignoreConceptUri: ignore events that are about any of the provided concepts
+            ignoreCategoryUri: ignore events that are about any of the provided categories
+            ignoreSourceUri: ignore events that have have articles which have been written by any of the specified news sources
+            ignoreSourceLocationUri: ignore events that have articles which been written by sources located at *any* of the specified locations
+            ignoreSourceGroupUri: ignore events that have articles which have been written by sources in *any* of the specified source groups
+            ignoreAuthorUri: ignore articles that were written by *any* of the specified authors
+            ignoreLocationUri: ignore events that occurred in any of the provided locations. A location can be a city or a place
+            ignoreLang: ignore events that are reported in any of the provided languages
+            ignoreKeywordsLoc: what data should be used when searching using the keywords provided by "ignoreKeywords" parameter. "body" (default), "title", or "body,title"
+            ignoreKeywordSearchMode: what search mode to use when specifying ignoreKeywords. Possible values are: simple, exact, phrase
+            requestedResult: the information to return as the result of the query. By default return the list of matching events
         """
         super().__init__()
 
@@ -151,7 +159,7 @@ class QueryEvents(Query):
 
 
         # for the negative conditions, only the OR is a valid operator type
-        self._setQueryArrVal(ignoreKeywords, "ignoreKeywords", None, "or")
+        self._setQueryArrVal(ignoreKeywords, "ignoreKeyword", None, "or")
         self._setQueryArrVal(ignoreConceptUri, "ignoreConceptUri", None, "or")
         self._setQueryArrVal(ignoreCategoryUri, "ignoreCategoryUri", None, "or")
         self._setQueryArrVal(ignoreSourceUri, "ignoreSourceUri", None, "or")
@@ -237,7 +245,7 @@ class QueryEvents(Query):
 
 
 
-class QueryEventsIter(QueryEvents):
+class QueryEventsIter(IterableQuery, QueryEvents):
     """
     class that simplifies and combines functionality from QueryEvents and RequestEventsInfo. It provides an iterator
     over the list of events that match the specified conditions
@@ -247,44 +255,35 @@ class QueryEventsIter(QueryEvents):
         """
         return the number of events that match the criteria
         """
-        # remember the currently requested result type so that calling count() does not change the query
-        prevResultTypeList = self.resultTypeList
-        self.setRequestedResult(RequestEventsInfo())
-        res = eventRegistry.execQuery(self)
-        self.resultTypeList = prevResultTypeList
+        # use a copy of the query so that calling count() does not change the requested results of the query
+        res = eventRegistry.execQuery(self._copyWithRequest(RequestEventsInfo()))
         if "error" in res:
-            logger.error(res["error"])
-        count = res.get("events", {}).get("totalResults", 0)
-        return count
+            raise QueryError(str(res["error"]), statusCode = 200, responseText = str(res["error"]))
+        return res.get("events", {}).get("totalResults", 0)
 
 
     def execQuery(self, eventRegistry: EventRegistry,
                   sortBy: str = "rel",
                   sortByAsc: bool = False,
                   returnInfo: Union[ReturnInfo, None] = None,
-                  maxItems: int = -1,
-                  **kwargs):
+                  maxItems: int = -1) -> QueryResultsIter:
         """
-        @param eventRegistry: instance of EventRegistry class. used to query new event list and uris
-        @param sortBy: how should the resulting events be sorted. Options: date (by event date), rel (relevance to the query), size (number of articles),
-            socialScore (amount of shares in social media), none (no specific sorting)
-        @param sortByAsc: should the results be sorted in ascending order (True) or descending (False)
-        @param returnInfo: what details should be included in the returned information
-        @param maxItems: maximum number of items to be returned. Used to stop iteration sooner than results run out
+        Args:
+            eventRegistry: instance of EventRegistry class. used to query new event list and uris
+            sortBy: how should the resulting events be sorted. Options: date (by event date), rel (relevance to the query), size (number of articles),
+                none (no specific sorting)
+            sortByAsc: should the results be sorted in ascending order (True) or descending (False)
+            returnInfo: what details should be included in the returned information
+            maxItems: maximum number of items to be returned. Used to stop iteration sooner than results run out
+
+        Returns:
+            iterator over the events that match the query. Each call returns a new, independent iterator and the query itself is not changed
         """
-        self._er = eventRegistry
-        self._sortBy = sortBy
-        self._sortByAsc = sortByAsc
-        self._returnInfo = returnInfo
-        self._eventBatchSize = 50      # always download max - best for the user since it uses his token and we want to download as much as possible in a single search
-        self._eventPage = 0
-        self._totalPages = None
-        # if we want to return only a subset of items:
-        self._maxItems = maxItems
-        self._currItem = 0
-        # list of cached events that are yet to be returned by the iterator
-        self._eventList = []
-        return self
+        batchSize = 50    # always download max - best for the user since it uses his token and we want to download as much as possible in a single search
+        return self._setResultsIter(QueryResultsIter(eventRegistry, self,
+            createRequest = lambda page: RequestEventsInfo(page = page, count = batchSize, sortBy = sortBy, sortByAsc = sortByAsc, returnInfo = returnInfo),
+            getResults = lambda res: res.get("events", {}),
+            maxItems = maxItems))
 
 
     @staticmethod
@@ -308,51 +307,6 @@ class QueryEventsIter(QueryEvents):
         return q
 
 
-    def _getNextEventBatch(self):
-        """download next batch of events based on the event uris in the uri list"""
-        self._eventPage += 1
-        # if we have already obtained all pages, then exit
-        if self._totalPages is not None and self._eventPage > self._totalPages:
-            return
-        self.setRequestedResult(RequestEventsInfo(page=self._eventPage, count=self._eventBatchSize,
-            sortBy= self._sortBy, sortByAsc=self._sortByAsc,
-            returnInfo = self._returnInfo))
-        # download articles and make sure that we set the same archive flag as it was returned when we were processing the uriList request
-        if self._er._verboseOutput:
-            logger.debug("Downloading event page %d...", self._eventPage)
-        res = self._er.execQuery(self)
-        if "error" in res:
-            logger.error("Error while obtaining a list of events: %s", res["error"])
-        else:
-            self._totalPages = res.get("events", {}).get("pages", 0)
-        results = res.get("events", {}).get("results", [])
-        self._eventList.extend(results)
-
-
-    def __iter__(self):
-        if not hasattr(self, "_er"):
-            raise RuntimeError("Iterating is only possible after calling the execQuery() method first")
-        # reset the paging state so that a new iteration starts from the first result again
-        self._eventPage = 0
-        self._totalPages = None
-        self._currItem = 0
-        self._eventList = []
-        return self
-
-
-    def __next__(self):
-        """iterate over the available events"""
-        self._currItem += 1
-        # if we want to return only the first X items, then finish once reached
-        if self._maxItems >= 0 and self._currItem > self._maxItems:
-            raise StopIteration
-        if len(self._eventList) == 0:
-            self._getNextEventBatch()
-        if len(self._eventList) > 0:
-            return self._eventList.pop(0)
-        raise StopIteration
-
-
 
 class RequestEvents:
     def __init__(self):
@@ -371,12 +325,14 @@ class RequestEventsInfo(RequestEvents):
                  returnInfo: Union[ReturnInfo, None] = None):
         """
         return event details for resulting events
-        @param page: page of the results to return (1, 2, ...)
-        @param count: number of events to return per page (at most 50)
-        @param sortBy: how should the resulting events be sorted. Options: date (by event date), rel (relevance to the query), size (number of articles),
-            socialScore (amount of shares in social media), none (no specific sorting)
-        @param sortByAsc: should the results be sorted in ascending order (True) or descending (False)
-        @param returnInfo: what details should be included in the returned information
+
+        Args:
+            page: page of the results to return (1, 2, ...)
+            count: number of events to return per page (at most 50)
+            sortBy: how should the resulting events be sorted. Options: date (by event date), rel (relevance to the query), size (number of articles),
+                none (no specific sorting)
+            sortByAsc: should the results be sorted in ascending order (True) or descending (False)
+            returnInfo: what details should be included in the returned information
         """
         super().__init__()
         if not (page >= 1):
@@ -410,11 +366,13 @@ class RequestEventsUriWgtList(RequestEvents):
                  sortBy: str = "rel", sortByAsc: bool = False):
         """
         return a simple list of event uris together with the scores for resulting events
-        @param page: page of the results (1, 2, ...)
-        @param count: number of results to include per page (at most 100000)
-        @param sortBy: how should the resulting events be sorted. Options: date (by event date), rel (relevance to the query), size (number of articles),
-            socialScore (amount of shares in social media), none (no specific sorting)
-        @param sortByAsc: should the events be sorted in ascending order (True) or descending (False)
+
+        Args:
+            page: page of the results (1, 2, ...)
+            count: number of results to include per page (at most 100000)
+            sortBy: how should the resulting events be sorted. Options: date (by event date), rel (relevance to the query), size (number of articles),
+                none (no specific sorting)
+            sortByAsc: should the events be sorted in ascending order (True) or descending (False)
         """
         super().__init__()
         if not (page >= 1):
@@ -449,7 +407,9 @@ class RequestEventsKeywordAggr(RequestEvents):
     def __init__(self, lang: Union[str, None] = None):
         """
         return keyword aggregate (tag cloud) on words in articles in resulting events
-        @param lang: in which language to produce the list of top keywords. If None, then compute on all articles
+
+        Args:
+            lang: in which language to produce the list of top keywords. If None, then compute on all articles
         """
         super().__init__()
         self.resultType = "keywordAggr"
@@ -464,8 +424,10 @@ class RequestEventsLocAggr(RequestEvents):
                  returnInfo: Union[ReturnInfo, None] = None):
         """
         return aggreate of locations of resulting events
-        @param eventsSampleSize: sample of events to use to compute the location aggregate (at most 100000)
-        @param returnInfo: what details (about locations) should be included in the returned information
+
+        Args:
+            eventsSampleSize: sample of events to use to compute the location aggregate (at most 100000)
+            returnInfo: what details (about locations) should be included in the returned information
         """
         super().__init__()
         if not (eventsSampleSize <= 100000):
@@ -483,8 +445,10 @@ class RequestEventsLocTimeAggr(RequestEvents):
                  returnInfo: Union[ReturnInfo, None] = None):
         """
         return aggreate of locations and times of resulting events
-        @param eventsSampleSize: sample of events to use to compute the location aggregate (at most 100000)
-        @param returnInfo: what details (about locations) should be included in the returned information
+
+        Args:
+            eventsSampleSize: sample of events to use to compute the location aggregate (at most 100000)
+            returnInfo: what details (about locations) should be included in the returned information
         """
         super().__init__()
         if not (eventsSampleSize <= 100000):
@@ -502,9 +466,11 @@ class RequestEventsConceptAggr(RequestEvents):
                  returnInfo: Union[ReturnInfo, None] = None):
         """
         compute which concept are the most frequently occuring in the list of resulting events
-        @param conceptCount: number of top concepts to return (at most 200)
-        @param eventsSampleSize: on what sample of results should the aggregate be computed (at most 1000000)
-        @param returnInfo: what details about the concepts should be included in the returned information
+
+        Args:
+            conceptCount: number of top concepts to return (at most 200)
+            eventsSampleSize: on what sample of results should the aggregate be computed (at most 1000000)
+            returnInfo: what details about the concepts should be included in the returned information
         """
         super().__init__()
         if not (conceptCount <= 200):
@@ -526,10 +492,12 @@ class RequestEventsConceptGraph(RequestEvents):
                  returnInfo: Union[ReturnInfo, None] = None):
         """
         compute which concept pairs frequently co-occur together in the resulting events
-        @param conceptCount: number of top concepts to return (at most 1,000)
-        @param linkCount: number of links between the concepts to return (at most 2,000)
-        @param eventsSampleSize: on what sample of results should the aggregate be computed (at most 100000)
-        @param returnInfo: what details about the concepts should be included in the returned information
+
+        Args:
+            conceptCount: number of top concepts to return (at most 1,000)
+            linkCount: number of links between the concepts to return (at most 2,000)
+            eventsSampleSize: on what sample of results should the aggregate be computed (at most 100000)
+            returnInfo: what details about the concepts should be included in the returned information
         """
         super().__init__()
         if not (conceptCount <= 1000):
@@ -556,10 +524,12 @@ class RequestEventsConceptMatrix(RequestEvents):
         get a matrix of concepts and their dependencies. For individual concept pairs
         return how frequently they co-occur in the resulting events and
         how "surprising" this is, based on the frequency of individual concepts
-        @param conceptCount: number of top concepts to return (at most 200)
-        @param measure: how should the interestingness between the selected pairs of concepts be computed. Options: pmi (pointwise mutual information), pairTfIdf (pair frequence * IDF of individual concepts), chiSquare
-        @param eventsSampleSize: on what sample of results should the aggregate be computed (at most 300000)
-        @param returnInfo: what details about the concepts should be included in the returned information
+
+        Args:
+            conceptCount: number of top concepts to return (at most 200)
+            measure: how should the interestingness between the selected pairs of concepts be computed. Options: pmi (pointwise mutual information), pairTfIdf (pair frequence * IDF of individual concepts), chiSquare
+            eventsSampleSize: on what sample of results should the aggregate be computed (at most 300000)
+            returnInfo: what details about the concepts should be included in the returned information
         """
         super().__init__()
         if not (conceptCount <= 200):
@@ -581,9 +551,11 @@ class RequestEventsConceptTrends(RequestEvents):
                  returnInfo: Union[ReturnInfo, None] = None):
         """
         return a list of top trending concepts and their daily trending info over time
-        @param conceptUris: list of concept URIs for which to return trending information. If None, then top concepts will be automatically computed
-        @param count: if the concepts are not provided, what should be the number of automatically determined concepts to return (at most 50)
-        @param returnInfo: what details about the concepts should be included in the returned information
+
+        Args:
+            conceptUris: list of concept URIs for which to return trending information. If None, then top concepts will be automatically computed
+            count: if the concepts are not provided, what should be the number of automatically determined concepts to return (at most 50)
+            returnInfo: what details about the concepts should be included in the returned information
         """
         super().__init__()
         if not (conceptCount <= 50):
@@ -603,9 +575,11 @@ class RequestEventsSourceAggr(RequestEvents):
                  returnInfo: Union[ReturnInfo, None] = None):
         """
         return top news sources that report about the events that match the search conditions
-        @param sourceCount: number of top sources to return (at most 200)
-        @param eventsSampleSize: on what sample of results should the aggregate be computed (at most 300000)
-        @param returnInfo: what details about the sources should be included in the returned information
+
+        Args:
+            sourceCount: number of top sources to return (at most 200)
+            eventsSampleSize: on what sample of results should the aggregate be computed (at most 300000)
+            returnInfo: what details about the sources should be included in the returned information
         """
         super().__init__()
         if not (sourceCount <= 200):
@@ -626,9 +600,11 @@ class RequestEventsDateMentionAggr(RequestEvents):
                  eventsSampleSize: int = 100000):
         """
         return events and the dates that are mentioned in articles about these events
-        @param minDaysApart: ignore events that don't have a date that is more than this number of days apart from the tested event
-        @param minDateMentionCount: report only dates that are mentioned at least this number of times
-        @param eventsSampleSize: on what sample of results should the aggregate be computed (at most 300000)
+
+        Args:
+            minDaysApart: ignore events that don't have a date that is more than this number of days apart from the tested event
+            minDateMentionCount: report only dates that are mentioned at least this number of times
+            eventsSampleSize: on what sample of results should the aggregate be computed (at most 300000)
         """
         super().__init__()
         if not (eventsSampleSize <= 300000):
@@ -645,11 +621,52 @@ class RequestEventsCategoryAggr(RequestEvents):
                  returnInfo: Union[ReturnInfo, None] = None):
         """
         return distribution of events into dmoz categories
-        @param returnInfo: what details about the categories should be included in the returned information
+
+        Args:
+            returnInfo: what details about the categories should be included in the returned information
         """
         super().__init__()
         self.resultType = "categoryAggr"
         self.__dict__.update((returnInfo if returnInfo is not None else ReturnInfo()).getParams("categoryAggr"))
+
+
+
+class RequestEventsSentimentAggr(RequestEvents):
+    def __init__(self):
+        """
+        return the distribution of the sentiment of the resulting events
+        """
+        super().__init__()
+        self.resultType = "sentimentAggr"
+
+
+
+class RequestEventsAuthorAggr(RequestEvents):
+    def __init__(self,
+                 authorCount: int = 50,
+                 includePeople: bool = True,
+                 includeAgencies: bool = True,
+                 eventsSampleSize: int = 50000,
+                 returnInfo: Union[ReturnInfo, None] = None):
+        """
+        get the authors that wrote the most articles about the resulting events
+
+        Args:
+            authorCount: the number of top authors to return
+            includePeople: should the authors that are people be included
+            includeAgencies: should the authors that are news agencies be included
+            eventsSampleSize: on what sample of results should the aggregate be computed (at most 100000)
+            returnInfo: what details about the authors should be included in the returned information
+        """
+        super().__init__()
+        if not (eventsSampleSize <= 100000):
+            raise ValueError("eventsSampleSize should be at most 100000")
+        self.resultType = "authorAggr"
+        self.authorAggrAuthorCount = authorCount
+        self.authorAggrIncludePeople = includePeople
+        self.authorAggrIncludeAgencies = includeAgencies
+        self.authorAggrSampleSize = eventsSampleSize
+        self.__dict__.update((returnInfo if returnInfo is not None else ReturnInfo()).getParams("authorAggr"))
 
 
 
@@ -663,12 +680,14 @@ class RequestEventsRecentActivity(RequestEvents):
                  returnInfo: Union[ReturnInfo, None] = None):
         """
         return a list of recently changed events that match search conditions
-        @param maxEventCount: max events to return (at most 200)
-        @param updatesAfterTm: the time after which the events were added/updated (returned by previous call to the same method)
-        @param updatesAfterMinsAgo: how many minutes into the past should we check (set either this or updatesAfterTm property, but not both)
-        @param mandatoryLocation: return only events that have a geographic location assigned to them
-        @param minAvgCosSim: the minimum avg cos sim of the events to be returned (events with lower quality should not be included)
-        @param returnInfo: what details should be included in the returned information
+
+        Args:
+            maxEventCount: max events to return (at most 200)
+            updatesAfterTm: the time after which the events were added/updated (returned by previous call to the same method)
+            updatesAfterMinsAgo: how many minutes into the past should we check (set either this or updatesAfterTm property, but not both)
+            mandatoryLocation: return only events that have a geographic location assigned to them
+            minAvgCosSim: the minimum avg cos sim of the events to be returned (events with lower quality should not be included)
+            returnInfo: what details should be included in the returned information
         """
         super().__init__()
         if not (maxEventCount <= 2000):
@@ -695,10 +714,12 @@ class RequestEventsBreakingEvents(RequestEvents):
                  returnInfo: Union[ReturnInfo, None] = None):
         """
         return a list of events that are currently breaking
-        @param page: page of the results to return (starting from 1)
-        @param count: max events to return (at most 50)
-        @param minBreakingScore: the minimum score of "breakingness" of the events to be returned
-        @param returnInfo: what details should be included in the returned information
+
+        Args:
+            page: page of the results to return (starting from 1)
+            count: max events to return (at most 50)
+            minBreakingScore: the minimum score of "breakingness" of the events to be returned
+            returnInfo: what details should be included in the returned information
         """
         super().__init__()
         if not (page >= 1):

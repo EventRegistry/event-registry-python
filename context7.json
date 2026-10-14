@@ -1,0 +1,31 @@
+{
+  "$schema": "https://context7.com/schema/context7.json",
+  "projectTitle": "Event Registry Python SDK",
+  "description": "Python SDK (the eventregistry package) for the Event Registry / NewsAPI.ai API: search news articles and events by keywords, concepts, categories, sources, locations, dates and sentiment, compute aggregates and trends, follow feeds of new content and use the text analytics services.",
+  "excludeFolders": [
+    "eventregistry/tests",
+    "dist",
+    "*.egg-info",
+    ".github"
+  ],
+  "excludeFiles": [
+    "CHANGELOG.md",
+    "LICENSE",
+    "requirements.txt",
+    "setup.py"
+  ],
+  "rules": [
+    "Install with `pip install eventregistry`, import with `from eventregistry import *` and create one `EventRegistry(apiKey = ...)` instance that is reused for all requests. If no key is passed, it is read from the EVENTREGISTRY_API_KEY environment variable.",
+    "To retrieve more than one page of results use the iterator classes (QueryArticlesIter, QueryEventsIter, QueryEventArticlesIter) with `q.execQuery(er, maxItems = N)` instead of paging manually. Always set maxItems, since every downloaded page of results uses tokens.",
+    "Filter by concepts, categories, sources, locations and authors using their URIs, not their names. Get the URI first with er.getConceptUri(), er.getCategoryUri(), er.getSourceUri(), er.getLocationUri() or er.getAuthorUri() - they return None when nothing matches.",
+    "Use concepts (conceptUri) to find content about an entity or a topic regardless of the language and the wording of the article; use keywords for exact words and phrases.",
+    "To pass several values to a parameter wrap them in QueryItems.AND([...]) or QueryItems.OR([...]) so that the operator is explicit. For nested boolean conditions use ComplexArticleQuery / ComplexEventQuery with BaseQuery and CombinedQuery, and initWithComplexQuery().",
+    "Choose the returned properties with ReturnInfo and the ArticleInfoFlags, EventInfoFlags, SourceInfoFlags, ConceptInfoFlags, ... classes. Request only what is needed (for example bodyLen = 0 when the article body is not used).",
+    "A query with QueryArticles or QueryEvents needs a requested result (RequestArticlesInfo, RequestArticlesTimeAggr, RequestEventsInfo, ...); er.execQuery(q) returns a dict in which the results are stored under the name of the result type, e.g. res[\"articles\"][\"results\"].",
+    "Dates are in UTC and are passed as \"YYYY-MM-DD\" strings or datetime.date / datetime.datetime objects.",
+    "Requests fail with subclasses of EventRegistryError: UnauthorizedError (invalid key or no tokens left), ForbiddenError, InvalidRequestError, ServerError, NetworkError. Temporary errors are already retried by the SDK with a backoff (requests rejected because of too many simultaneous requests until they succeed), so do not wrap the calls in an own retry loop.",
+    "Queries that search the archive (content older than 31 days) use more tokens. Create EventRegistry(allowUseOfArchive = False) when only recent content is needed.",
+    "Do not sort by socialScore or facebookShares - the data about the shares on social media is no longer collected and the server ignores these sort options. Sort by date, rel, sourceImportance (articles) or date, rel, size (events).",
+    "Make the requests sequentially. The number of requests that can be executed at the same time is limited and the extra ones are rejected."
+  ]
+}

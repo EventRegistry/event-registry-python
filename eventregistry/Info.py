@@ -1,6 +1,9 @@
-﻿from eventregistry.Base import *
-from eventregistry.ReturnInfo import *
+﻿from eventregistry.Base import QueryParamsBase
+from eventregistry.ReturnInfo import ReturnInfo
 from typing import Union, List
+
+# the names exported by "from eventregistry import *"
+__all__ = ["GetSourceInfo", "GetConceptInfo", "GetCategoryInfo", "GetSourceStats"]
 
 
 class GetSourceInfo(QueryParamsBase):
@@ -9,8 +12,10 @@ class GetSourceInfo(QueryParamsBase):
                  returnInfo: Union[ReturnInfo, None] = None):
         """
         obtain desired information about one or more news sources
-        @param uriOrUriList: single source uri or a list of source uris for which to return information
-        @param returnInfo: what details about the source should be included in the returned information
+
+        Args:
+            uriOrUriList: single source uri or a list of source uris for which to return information
+            returnInfo: what details about the source should be included in the returned information
         """
         QueryParamsBase.__init__(self)
         self._setVal("action", "getInfo")
@@ -40,8 +45,10 @@ class GetConceptInfo(QueryParamsBase):
                  returnInfo: Union[ReturnInfo, None] = None):
         """
         obtain information about concepts
-        @param uriOrUriList: single concept uri or a list of concept uris for which to return information
-        @param returnInfo: what details about the source should be included in the returned information
+
+        Args:
+            uriOrUriList: single concept uri or a list of concept uris for which to return information
+            returnInfo: what details about the source should be included in the returned information
         """
         QueryParamsBase.__init__(self)
         self._setVal("action", "getInfo")
@@ -61,8 +68,10 @@ class GetCategoryInfo(QueryParamsBase):
                  returnInfo: Union[ReturnInfo, None] = None):
         """
         obtain information about categories
-        @param uriOrUriList: single category uri or a list of category uris for which to return information
-        @param returnInfo: what details about the source should be included in the returned information
+
+        Args:
+            uriOrUriList: single category uri or a list of category uris for which to return information
+            returnInfo: what details about the source should be included in the returned information
         """
         QueryParamsBase.__init__(self)
         self._setVal("action", "getInfo")

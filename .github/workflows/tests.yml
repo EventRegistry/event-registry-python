@@ -1,0 +1,68 @@
+name: Tests
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: tests-${{ github.workflow }}-${{ github.ref }}-${{ github.event_name }}
+  cancel-in-progress: true
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  offline:
+    name: Offline tests (Python ${{ matrix.python-version }}, ${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest]
+        python-version: ["3.9", "3.10", "3.11", "3.12", "3.13"]
+        include:
+          - os: windows-latest
+            python-version: "3.13"
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-python@v7
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install the package and the tools
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e ".[test]" pyflakes mypy types-requests
+
+      - name: Check that all files compile
+        run: python -m compileall -q eventregistry
+
+      - name: Pyflakes (package)
+        # Unused imports are reported, but they do not fail the build: eventregistry/__init__.py re-exports the public
+        # names of the modules using star imports, which pyflakes reports as unused. Everything else (undefined names,
+        # redefinitions, unused variables, syntax errors, ...) is an error.
+        run: |
+          python -m pyflakes eventregistry/*.py > pyflakes.txt 2>&1 || true
+          cat pyflakes.txt
+          if grep -v -E "imported but unused|unable to detect undefined names" pyflakes.txt; then
+            echo "::error::pyflakes found errors in the package (listed above)"
+            exit 1
+          fi
+
+      - name: Mypy (package)
+        # the type hints of the package have to stay correct - the package is distributed as typed (py.typed)
+        run: python -m mypy eventregistry/*.py
+
+      - name: Pyflakes (examples)
+        # the examples use explicit imports and have to be completely clean
+        run: python -m pyflakes eventregistry/examples
+
+      - name: Run the offline tests
+        # these tests make no requests and need no API key
+        run: python -m unittest eventregistry.tests.TestOfflineUnit eventregistry.tests.TestRequestPayloads eventregistry.tests.TestQueryParamsBase -v

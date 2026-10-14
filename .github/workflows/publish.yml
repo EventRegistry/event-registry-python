@@ -1,0 +1,81 @@
+name: Publish to PyPI
+
+# Pushing a tag v<version> (for example v11.0) builds the package and publishes it to PyPI.
+# The upload uses PyPI Trusted Publishing (OpenID Connect) - no password or API token is stored in the repository.
+# One time setup: add this repository, the workflow file name (publish.yml) and the environment name (pypi)
+# as a trusted publisher of the eventregistry project on https://pypi.org/manage/project/eventregistry/settings/publishing/
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: read
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  build:
+    name: Build the distributions
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.13"
+
+      - name: Check that the tag matches the version of the package
+        run: |
+          VERSION=$(python -c "exec(open('eventregistry/_version.py', encoding='utf-8').read()); print(__version__)")
+          TAG="${GITHUB_REF_NAME#v}"
+          echo "tag: $GITHUB_REF_NAME, version in eventregistry/_version.py: $VERSION"
+          if [ "$TAG" != "$VERSION" ]; then
+            echo "::error::The tag $GITHUB_REF_NAME does not match the version $VERSION in eventregistry/_version.py"
+            exit 1
+          fi
+          echo "VERSION=$VERSION" >> "$GITHUB_ENV"
+
+      - name: Install the package and the tools
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e ".[test]" build twine
+
+      - name: Run the offline tests
+        run: python -m unittest eventregistry.tests.TestOfflineUnit eventregistry.tests.TestRequestPayloads
+
+      - name: Build the sdist and the wheel
+        run: python -m build
+
+      - name: Check the distributions
+        run: |
+          python -m twine check --strict dist/*
+          ls -l dist
+          test -f "dist/eventregistry-$VERSION.tar.gz"
+          test -f "dist/eventregistry-$VERSION-py3-none-any.whl"
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: dist
+          path: dist/
+          if-no-files-found: error
+
+  publish:
+    name: Publish to PyPI
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: pypi
+      url: https://pypi.org/project/eventregistry/
+    permissions:
+      # needed for the PyPI Trusted Publishing
+      id-token: write
+    steps:
+      - uses: actions/download-artifact@v8
+        with:
+          name: dist
+          path: dist/
+
+      - uses: pypa/gh-action-pypi-publish@release/v1
