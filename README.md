@@ -1,5 +1,7 @@
 # Event Registry / NewsAPI.ai Python SDK
 
+This is the official SDK for NewsAPI.ai, a news API developed and operated by Event Registry.
+
 `eventregistry` is a Python package for accessing the news API provided by [NewsAPI.ai](https://newsapi.ai/). The package is named after Event Registry, the company that develops NewsAPI.ai. It can be used to search for articles or events using a large set of filters, like keywords, concepts, categories, sources, sentiment, date, etc., to follow the feed of new content and to compute summaries (top sources, concepts, sentiment, ...) of the matching content. Details about the News API are available on the [landing page of the product](https://newsapi.ai/).
 
 ## Installation
